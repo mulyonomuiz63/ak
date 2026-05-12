@@ -31,11 +31,11 @@ class MigrasiController extends BaseController
         $idperusahaan = $request->getPost('idperusahaan');
         $tahun = $request->getPost('tahun');
         $bulan = $request->getPost('bulan');
+        $status = $request->getPost('status');
 
         $builder = $this->db->table('jurnalfile')
             ->select('jurnalfile.*, v_jurnal.tgljurnal, v_jurnal.idjurnal, v_jurnal.idperusahaan')
-            ->join('v_jurnal', 'v_jurnal.idjurnal = jurnalfile.idjurnal')
-            ->where('jurnalfile.kode_file', null); // Berjaga-jaga jika string kosong
+            ->join('v_jurnal', 'v_jurnal.idjurnal = jurnalfile.idjurnal');
 
         if (!empty($idperusahaan)) {
             $builder->where('v_jurnal.idperusahaan', $idperusahaan);
@@ -49,8 +49,36 @@ class MigrasiController extends BaseController
             $builder->where("MONTH(v_jurnal.tgljurnal)", $bulan);
         }
 
+        if (!empty($status)) {
+            if ($status === 'null') {
+                // BELUM MIGRASI: Tampilkan data yang kode_file-nya IS NULL (atau kosong "")
+                $builder->groupStart()
+                    ->where('jurnalfile.kode_file IS NULL')
+                    ->orWhere('jurnalfile.kode_file', '')
+                    ->groupEnd();
+            } elseif ($status === 'true') {
+                // SUDAH MIGRASI: Tampilkan data yang kode_file-nya IS NOT NULL dan ada isinya
+                $builder->where('jurnalfile.kode_file IS NOT NULL');
+                $builder->where('jurnalfile.kode_file !=', '');
+            }
+        }
+
         // Logika Server-Side Datatables (Simple version)
-        $i = 0;
+        $searchValue = $request->getPost('search')['value'];
+        if (!empty($searchValue)) {
+            $builder->groupStart()
+                    ->like('v_jurnal.idjurnal', $searchValue)
+                    ->orLike('jurnalfile.file', $searchValue)
+                    ->orLike('jurnalfile.nama_file', $searchValue)
+                    ->groupEnd();
+        }
+        $totalFiltered = $builder->countAllResults(false);
+        $limit = $request->getPost('length'); // Mengambil angka 10 dari pageLength JS
+        $start = $request->getPost('start');  // Mengambil posisi halaman saat ini (offset)
+
+        if ($limit != -1) { // -1 artinya jika user memilih "Tampilkan Semua (All)"
+            $builder->limit($limit, $start);
+        }
         $RsData = $builder->get();
         $data = [];
 
@@ -58,23 +86,77 @@ class MigrasiController extends BaseController
             $path = FCPATH . 'uploads/jurnal/thumbnails/' . $rowdata->file;
             $size = file_exists($path) ? round(filesize($path) / 1024, 2) . ' KB' : '<span class="text-danger">File Hilang</span>';
 
+            // 1. Logika Pengecekan Google Drive (Link Viewer & Status)
+            if (!empty($rowdata->kode_file)) {
+                // Jika kode_file ada isinya -> Tampilkan dari Drive
+                $linkViewer  = "https://drive.google.com/file/d/" . $rowdata->kode_file . "/preview";
+                $statusBadge = '<span class="badge badge-success px-2 py-1"><i class="fab fa-google-drive mr-1"></i> Sudah Terupload</span>';
+                $iconFile    = 'fa-google text-success';
+            } else {
+                // Jika kode_file kosong -> Tampilkan dari Server Lokal
+                $linkViewer  = site_url('uploads/jurnal/thumbnails/' . $rowdata->file);
+                $statusBadge = '<span class="badge badge-warning px-2 py-1"><i class="fas fa-server mr-1"></i> Belum Terupload</span>';
+                $iconFile    = 'fa-file-alt text-info';
+            }
+
+            // Penentuan nama yang akan ditampilkan
+            $namaTampil = $rowdata->nama_file ?? $rowdata->file;
+
             $row = [];
-            $row[] = '<input type="checkbox" class="check-item" name="id[]" data-idperusahaan="' . $rowdata->idperusahaan . '" data-tgljurnal="' . $rowdata->tgljurnal . '"value="' . $rowdata->id . '">';
+
+            // [0] Checkbox
+            $row[] = file_exists($path)
+                ? '<input type="checkbox" class="check-item" name="id[]" data-idperusahaan="' . $rowdata->idperusahaan . '" data-tgljurnal="' . $rowdata->tgljurnal . '" value="' . $rowdata->id . '">'
+                : '<input type="checkbox" disabled title="File fisik tidak ditemukan di server">';
+
+            // [1] Tanggal
             $row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
+
+            // [2] ID / No Jurnal
             $row[] = $rowdata->idjurnal;
-            $row[] = $rowdata->nama_file ?? $rowdata->file;
+
+            // [3] Nama File (Clickable memanggil modal viewer)
+            $row[] = '<a id="cetak-pdf" 
+                 data-cetak_pdf="' . $linkViewer . '" 
+                 data-toggle="modal" 
+                 data-target="#modalcetakpdf" 
+                 href="javascript:void(0)" 
+                 class="font-weight-bold text-wrap">
+                 <i class="fa ' . $iconFile . ' mr-1"></i> ' . $namaTampil . '
+              </a>';
+
+            // [4] Ukuran File
             $row[] = $size;
+
+            // [5] Status (Kolom Baru)
+            $row[] = $statusBadge;
+
             $data[] = $row;
         }
 
         $output = [
-            "draw" => $request->getPost('draw'),
-            "recordsTotal" => count($data),
-            "recordsFiltered" => count($data),
-            "data" => $data,
+            "draw"            => intval($request->getPost('draw')),
+            "recordsTotal"    => $totalFiltered, // Beri tahu DataTables total aslinya
+            "recordsFiltered" => $totalFiltered, // Beri tahu DataTables total aslinya
+            "data"            => $data           // Data 10 barisnya
         ];
 
         return $this->response->setJSON($output);
+    }
+
+    public function autocomplatePerusahaan()
+    {
+        $cari = $this->request->getPost('term');
+        $query = "SELECT * FROM perusahaan WHERE namaperusahaan like '%" . $cari . "%' order by namaperusahaan asc limit 10";
+        $res = $this->db->query($query);
+        $result = array();
+        foreach ($res->getResult() as $row) {
+            array_push($result, array(
+                'idperusahaan' => $row->idperusahaan,
+                'namaperusahaan' => $row->namaperusahaan,
+            ));
+        }
+        return $this->response->setJSON($result);
     }
 
     /**
@@ -82,58 +164,50 @@ class MigrasiController extends BaseController
      */
     public function prosesUpload()
     {
-        // Tangkap data array dari AJAX
-        $file_migrasi = $this->request->getPost('file_migrasi');
+        $id           = $this->request->getPost('id');
+        $idperusahaan = $this->request->getPost('idperusahaan');
+        $tgljurnal    = $this->request->getPost('tgljurnal');
 
-        if (empty($file_migrasi)) {
-            return $this->response->setJSON(['status' => false, 'msg' => 'Tidak ada file dipilih.']);
+        if (empty($id)) {
+            return $this->response->setJSON(['status' => false, 'msg' => 'Data tidak valid.']);
         }
 
-        $successCount = 0;
-        $failCount = 0;
+        $tahunBulan = date('Ym', strtotime($tgljurnal));
 
-        // Looping data yang dikirim dari Javascript
-        foreach ($file_migrasi as $row) {
-            $id           = $row['id'];
-            $idperusahaan = $row['idperusahaan'];
-            $tgljurnal    = $row['tgljurnal'];
+        // Ambil data satu file dari database
+        $fileData = $this->db->table('jurnalfile')->where('id', $id)->get()->getRowArray();
 
-            // Format TahunBulan (Misal: 202605)
-            $tahunBulan = date('Ym', strtotime($tgljurnal));
+        if (!$fileData) {
+            return $this->response->setJSON(['status' => false, 'msg' => 'File tidak ditemukan di database.']);
+        }
 
-            // --- Mulai proses ambil database dan upload seperti biasa ---
-            $fileData = $this->db->table('jurnalfile')->where('id', $id)->get()->getRowArray();
+        $filePath = FCPATH . 'uploads/jurnal/thumbnails/' . $fileData['file'];
 
-            if (!$fileData) {
-                $failCount++;
-                continue;
-            }
-
-            $filePath = FCPATH . 'uploads/jurnal/thumbnails/' . $fileData['file'];
-
-            if (file_exists($filePath)) {
-                try {
-                    // Upload ke GDrive menggunakan nama folder yang spesifik
-                    $gdriveId = $this->_uploadToGoogleDrive($filePath, $fileData['file'], $idperusahaan, $tahunBulan);
-
-                    if ($gdriveId) {
-                        $this->db->table('jurnalfile')
-                            ->where('id', $id)
-                            ->update(['kode_file' => $gdriveId]);
-                        $successCount++;
+        if (file_exists($filePath)) {
+            try {
+                if (!empty($fileData['kode_file'])) {
+                    try {
+                        // Panggil fungsi delete drive Anda
+                        $this->_deleteFromGoogleDrive($fileData['kode_file']);
+                    } catch (\Exception $e) {
                     }
-                } catch (\Exception $e) {
-                    $failCount++;
                 }
-            } else {
-                $failCount++;
+                // Upload 1 file ini ke GDrive
+                $gdriveId = $this->_uploadToGoogleDrive($filePath, $fileData['file'], $idperusahaan, $tahunBulan);
+
+                if ($gdriveId) {
+                    // Update ke database
+                    $this->db->table('jurnalfile')
+                        ->where('id', $id)
+                        ->update(['kode_file' => $gdriveId]);
+                    return $this->response->setJSON(['status' => true, 'msg' => 'Sukses']);
+                }
+            } catch (\Exception $e) {
+                return $this->response->setJSON(['status' => false, 'msg' => $e->getMessage()]);
             }
         }
 
-        return $this->response->setJSON([
-            'status' => true,
-            'msg' => "Migrasi Selesai! Berhasil: $successCount, Gagal: $failCount."
-        ]);
+        return $this->response->setJSON(['status' => false, 'msg' => 'File fisik sudah tidak ada di server.']);
     }
 
     /**
@@ -247,5 +321,37 @@ class MigrasiController extends BaseController
         ]);
 
         return $uploadedFile->id;
+    }
+
+    private function _deleteFromGoogleDrive($fileId)
+    {
+        try {
+            $client = new \Google\Client();
+            $client->setAuthConfig(APPPATH . 'ThirdParty/oauth-credentials.json'); // Gunakan file Kredensial OAuth Anda
+            $client->addScope(\Google\Service\Drive::DRIVE_FILE);
+
+            // Load Token OAuth
+            $tokenPath = WRITEPATH . 'google-token-admin.json';
+            if (file_exists($tokenPath)) {
+                $accessToken = json_decode(file_get_contents($tokenPath), true);
+                $client->setAccessToken($accessToken);
+            }
+
+            // Auto Refresh Token jika expired
+            if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+                $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+            }
+
+            $driveService = new \Google\Service\Drive($client);
+
+            // Perintah untuk menghapus/memindahkan file ke Trash Google Drive
+            $driveService->files->delete($fileId);
+
+            return true;
+        } catch (\Exception $e) {
+            // Jika file sudah tidak ada di Drive (atau error lain), biarkan berlalu agar proses DB tetap jalan
+            return false;
+        }
     }
 }

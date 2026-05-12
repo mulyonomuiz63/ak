@@ -1,4 +1,15 @@
 <?= $this->extend('template/admin') ?>
+<?= $this->section('css') ?>
+<style>
+  .ui-autocomplete {
+      z-index: 9999 !important; /* Pastikan di atas modal atau elemen tabel */
+      max-height: 250px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+  }
+</style>
+<?= $this->endSection() ?>
 <?= $this->section('content') ?>
 
 <?php
@@ -549,6 +560,14 @@ $levelSuper = session()->get('level_super');
 
     $(`#nama_file${counter}`).autocomplete({
       minLength: 0,
+      // Tambahkan appendTo agar dropdown tidak terpengaruh overflow tabel
+      appendTo: "body",
+      // Logika posisi agar otomatis "Dropup" (ke atas) jika ruang di bawah sempit
+      position: {
+        my: "left bottom",
+        at: "left top",
+        collision: "flip" // Ini otomatis membalikkan posisi ke atas jika mentok di bawah
+      },
       source: function(request, response) {
         $.ajax({
           type: "POST",
@@ -570,14 +589,17 @@ $levelSuper = session()->get('level_super');
       select: function(event, ui) {
         $(`#nama_file${counter}`).val(ui.item.nama_file);
         $(`#file3${counter}`).val(ui.item.file);
-        // Assign ID Google Drive arsip jika ada
+
         if (ui.item.kode_file !== undefined) {
           $(`#kode_file${counter}`).val(ui.item.kode_file);
         }
         return false;
       }
     }).autocomplete("instance")._renderItem = function(ul, item) {
-      return $("<li>").append(`<div><b>${item.nama_file} - ${item.nama_pengirim}</b></div>`).appendTo(ul);
+      // Menambahkan class agar styling lebih mudah dikontrol jika perlu
+      return $("<li>")
+        .append(`<div><b>${item.nama_file} - ${item.nama_pengirim}</b></div>`)
+        .appendTo(ul);
     };
 
     if (counter > 2) $(`#file3${counter}`).focus();

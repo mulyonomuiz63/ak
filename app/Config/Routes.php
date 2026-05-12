@@ -139,6 +139,7 @@ $routes->group('migrasi', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('/', 'MigrasiController::index');
     $routes->post('datatablesource', 'MigrasiController::datatablesource');
     $routes->post('proses-upload', 'MigrasiController::prosesUpload');
+    $routes->post('autocomplatePerusahaan', 'MigrasiController::autocomplatePerusahaan');
 });
 
 //reload
