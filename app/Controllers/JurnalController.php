@@ -1,0 +1,1631 @@
+<?php
+
+
+
+namespace App\Controllers;
+
+
+
+class JurnalController extends BaseController
+
+{
+
+
+
+	public $menuaktif = 'Jurnal';
+
+
+	public function notif()
+	{
+		$session = session();
+		$session->set('status_approve', 'all');
+		return redirect()->to('jurnal');
+	}
+
+	public function index()
+
+	{
+
+		cek_jurnal();
+
+		$data['cari'] = "";
+
+		if ($this->request->getPost('cari') != "") {
+
+			$data['cari'] = $this->request->getPost('cari');
+		}
+
+		$data['jurnal'] = $this->jurnal_model->get_jurnal()->getResult();
+		$data['jurnal_bulan'] = $this->jurnal_model->get_jurnal_bulan()->getRowObject();
+
+		$data['menuaktif'] = $this->menuaktif;
+
+		return view('jurnal/index', $data);
+	}
+
+
+
+	public function tambah($kondisi = null)
+
+	{
+
+		if (!(session()->get('databaseHitJurnal') <= session()->get('hitJurnal'))) {
+
+			return redirect()->to('jurnal');
+		}
+
+		$data['idjurnal'] = "";
+
+		$data['menuaktif'] = $this->menuaktif;
+
+		$data['kondisi'] = $kondisi;
+
+		return view('jurnal/inputdata', $data);
+	}
+
+
+
+	public function edit($idjurnal, $kondisi = null, $kdakun = null)
+	{
+
+
+
+		if ($this->jurnal_model->get_by_id($idjurnal)->getNumRows() < 1) {
+
+			$pesan = '<div>
+
+						<div class="alert alert-danger alert-dismissable">
+
+			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+
+			                <strong>Ilegal!</strong> Data tidak ditemukan 
+
+					    </div>
+
+					</div>';
+
+			$this->session->setFlashdata('pesan', $pesan);
+
+			return redirect()->to('jurnal');
+
+			exit();
+		};
+
+		$data['jurnalfile'] = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
+
+		$data['jurnal'] = $this->jurnal_model->getJurnal($idjurnal)->getRow();
+
+		$data['idjurnal'] = $idjurnal;
+
+		$data['menuaktif'] = $this->menuaktif;
+
+		$data['kondisi'] = $kondisi;
+
+		$data['kdakun'] = $kdakun;
+
+		return view('jurnal/inputdata', $data);
+	}
+
+
+
+	public function datatablesource()
+
+	{
+
+		$RsData = $this->jurnal_model->get_datatables();
+
+		$no = $this->request->getPost('start');
+
+		$data = array();
+
+
+
+		if ($RsData->getNumRows() > 0) {
+
+			foreach ($RsData->getResult() as $rowdata) {
+
+
+				if (session()->get('level_super') != 3) {
+					if ($rowdata->approve == 1) {
+						$approve = '<a href="#" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+					} elseif ($rowdata->approve == 2) {
+						$approve = '<a href="#" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+					} else {
+						$approve = '<a href="#" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Sedang di proses PIC"><i class="bi bi-check-circle-fill"></i></a>';
+					}
+
+
+					$opsi = ' <a href="javascript:void(0)" data-cetak_pdf="' . site_url('jurnal/lihat/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-secondary btn-circle tooltips" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" id="cetak-pdf" title="Cetak jurnal ke pdf"><i class="fa fa-print"></i></a> <a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-warning btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Ubah data jurnal"><i class="fa fa-edit"></i></a>
+
+						<a href="' . site_url('jurnal/delete/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle" id="hapus"><i class="fa fa-trash tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"></i></a>
+						';
+
+					$app = $approve;
+				} else {
+					if ($rowdata->approve == 0 || $rowdata->id_pic == null) {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Menunggu Persetujuan"><i class="bi bi-check-circle-fill"></i></a>';
+					} elseif ($rowdata->approve == 1 || $rowdata->id_pic == null) {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+					} else {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+					}
+					$app = $approve;
+					$opsi = $approve;
+				}
+
+				if (session()->get('level_super') != 3) {
+					$option = '<div class="dropdown custom-dropdown dropleft mr-2">
+    
+    						<a class="badge btn-info" href="#" role="button" id="dropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    							<i class="bi bi-three-dots"></i>
+    						</a>
+    
+    						<div class="dropdown-menu" >
+    
+        						<div class="mx-2">
+        						' . $opsi . '
+        
+        						
+        						</div>
+    
+    						</div>
+    
+    					</div>';
+				} else {
+					$option = "";
+				}
+
+				$no++;
+
+				$row = array();
+
+				$row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
+
+				$row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
+				$row[] = $rowdata->idjurnal;
+				$row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
+
+
+				$teks = ringkas_teks($rowdata->keterangan, 5);
+
+				if ($teks['full'] == '') {
+					$row[] = '<span>' . $teks['short'] . '</span>';
+				} else {
+					$row[] = '
+                        <span class="text-short">' . $teks['short'] . '...</span>
+                        <span class="text-full d-none">' . $teks['full'] . '</span>
+                        <a href="javascript:void(0)" class="toggle-text text-primary ml-1">
+                            Lihat semua
+                        </a>
+                    ';
+				}
+
+				$row[] = $rowdata->namapengguna;
+
+				$row[] = number_format($rowdata->jumlah);
+
+				$lamp = '-';
+
+				if ($rowdata->totalfile != 0) {
+					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+				} else if ($rowdata->filelampiran != null || $rowdata->filelampiran != '') {
+					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+				}
+				$row[] = $lamp;
+
+
+
+				$row[] =
+
+					'<div class="d-flex justify-content-center align-items-center">
+    					' . $option . '
+    					' . $app . '
+    					
+    				</div>
+					';
+
+				$data[] = $row;
+			}
+		}
+
+
+
+		$output = array(
+
+			"draw" => $this->request->getPost('draw'),
+
+			"recordsTotal" => $this->jurnal_model->count_all(),
+
+			"recordsFiltered" => $this->jurnal_model->count_filtered(),
+
+			"data" => $data,
+
+		);
+
+
+
+		//output to json format
+
+		return $this->response->setJSON($output);
+	}
+
+
+
+	public function delete($id)
+	{
+		// 1. Cek apakah data jurnal ada di database
+		$rsjurnal = $this->jurnal_model->get_by_id($id);
+
+		if ($rsjurnal->getNumRows() < 1) {
+			$pesan = '<div>
+                    <div class="alert alert-danger alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                        <strong>Ilegal!</strong> Data tidak ditemukan 
+                    </div>
+                </div>';
+			$this->session->setFlashdata('pesan', $pesan);
+			return redirect()->to('jurnal');
+		}
+
+		// 2. Ambil informasi file sebelum database dihapus
+		$rowJurnal     = $rsjurnal->getRow();
+		$filelampiran  = $rowJurnal->filelampiran;
+		// Berjaga-jaga jika tabel utama 'jurnal' juga memiliki field 'kode_file'
+		$kodeFileUtama = isset($rowJurnal->kode_file) ? $rowJurnal->kode_file : null;
+
+		// Ambil semua data file arsip (tabel jurnalfile)
+		$jurnalfile    = $this->jurnal_model->getJurnalFile($id)->getResult();
+
+		// 3. Eksekusi Hapus Database
+		$hapus = $this->jurnal_model->hapus($id);
+
+		// 4. Jika database berhasil dihapus, bersihkan file-filenya
+		if ($hapus) {
+
+			// --- A. Hapus Arsip / Multi File (Tabel jurnalfile) ---
+			foreach ($jurnalfile as $rows) {
+
+				// Hapus dari Google Drive (Jika memiliki kode_file)
+				if (!empty($rows->kode_file)) {
+					$this->_deleteFromGoogleDrive($rows->kode_file);
+				}
+
+				// Hapus dari Server Lokal (Untuk file-file lama yang belum migrasi)
+				if (!empty($rows->file)) {
+					$pathThumb = FCPATH . 'uploads/jurnal/thumbnails/' . $rows->file;
+					if (file_exists($pathThumb)) {
+						unlink($pathThumb);
+					}
+				}
+			}
+
+			// --- B. Hapus Lampiran Utama (Tabel jurnal) ---
+			// Hapus dari Google Drive
+			if (!empty($kodeFileUtama)) {
+				$this->_deleteFromGoogleDrive($kodeFileUtama);
+			}
+
+			// Hapus dari Server Lokal
+			if (!empty($filelampiran)) {
+				$pathUtama = FCPATH . 'uploads/jurnal/' . $filelampiran;
+				if (file_exists($pathUtama)) {
+					unlink($pathUtama);
+				}
+			}
+
+			$pesan = '<div>
+                    <div class="alert alert-success alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                        <strong>Berhasil.</strong> Data beserta lampirannya telah dihapus
+                    </div>
+                </div>';
+		} else {
+			// Jika gagal hapus database (misal karena relasi tabel), file aman tidak ikut terhapus
+			$eror = $this->db->error();
+			$pesan = '<div>
+                    <div class="alert alert-danger alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                        <strong>Maaf,</strong> Data gagal dihapus karena sudah digunakan di transaksi lain. <br>
+                    </div>
+                </div>';
+		}
+
+		$this->session->setFlashdata('pesan', $pesan);
+		return redirect()->to('jurnal');
+	}
+
+
+
+	public function deleteAll()
+
+	{
+
+		$dataJurnal = $this->request->getPost('idjurnal');
+
+		$dataBerhasil = 0;
+
+		$dataGagal = 0;
+
+		foreach ($dataJurnal as $id) {
+
+			$rsjurnal = $this->jurnal_model->get_by_id($id);
+
+			$filelampiran = $rsjurnal->getRow()->filelampiran;
+
+
+
+			$jurnalfile = $this->jurnal_model->getJurnalFile($id)->getResult();
+
+			foreach ($jurnalfile as $rows) {
+
+				if (file_exists('./uploads/jurnal/thumbnails/' . $rows->file)) {
+
+					unlink('./uploads/jurnal/thumbnails/' . $rows->file);
+				};
+			}
+
+			$hapus = $this->jurnal_model->hapus($id);
+
+			if ($hapus) {
+
+
+
+				if ($filelampiran != '' && $filelampiran != null) {
+
+					if (file_exists('./uploads/jurnal/' . $filelampiran)) {
+
+						unlink('./uploads/jurnal/' . $filelampiran);
+					};
+				}
+
+
+
+				$dataBerhasil +=  1;
+			} else {
+
+				$dataGagal += 1;
+			}
+		}
+
+		$pesan = '<div>
+
+						<div class="alert alert-success alert-dismissable">
+
+			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+
+			                <strong>Berhasil.</strong> Data telah berhasil dihapus ' . $dataBerhasil . ' dan data gagal dihapus ' . $dataGagal . '
+
+					    </div>
+
+					</div>';
+
+		$this->session->setFlashdata('pesan', $pesan);
+
+		return redirect()->to('jurnal');
+	}
+
+
+
+	public function store()
+	{
+		$request     = $this->request;
+		$totaldebet  = $request->getPost('totaldebet');
+		$totalkredit = $request->getPost('totalkredit');
+		$kondisi     = $request->getPost('kondisi');
+
+		// 1. Guard Clause: Validasi Total Debet & Kredit
+		if ($totaldebet !== $totalkredit) {
+			$pesanError = $this->_alertMessage('Maaf, Data gagal disimpan, Total Debet dan Total Kredit tidak sama.', 'danger');
+			$this->session->setFlashdata('pesan', $pesanError);
+			return redirect()->to($kondisi == null ? 'jurnal' : 'laporan/lapbukubesar');
+		}
+
+		// 2. Inisialisasi Variabel
+		$idjurnal   = $request->getPost('idjurnal');
+		$isUpdate   = ($idjurnal != '');
+		$tgljurnal  = date('Y-m-d', strtotime($request->getPost('tgljurnal')));
+		$jumlah     = str_replace(',', '', $totaldebet);
+
+		if (!$isUpdate) {
+			$tgljurnalId = date('ymd', strtotime($tgljurnal));
+			$idjurnal    = "JU{$tgljurnalId}" . rand(00000, 99999);
+		}
+
+		$idperusahaan = session()->get('idperusahaan');
+		$tahunBulan = date('Ym', strtotime($tgljurnal));
+		$fileif           = '0';
+
+		if (session()->get('hitLanggana')) {
+
+			// ====================================================
+			// 3A. PROSES FILE BARU (Langsung ke GDrive, 0% di Server)
+			// ====================================================
+			$files = $request->getFileMultiple('file2');
+			if ($files) {
+				foreach ($files as $file) {
+					if ($file->isValid()) {
+						$newName  = $file->getRandomName();
+						// getTempName() adalah folder temporari bawaan PHP (/tmp)
+						$tempPath = $file->getTempName();
+						$isImage  = ($file->guessExtension() !== 'pdf');
+						$pathToUpload = $tempPath;
+						$resizedPath  = '';
+
+						// Jika gambar, kompres dan simpan ke WRITEPATH sementara waktu
+						if ($isImage) {
+							$resizedPath = WRITEPATH . 'uploads/' . $newName;
+							$this->image->withFile($tempPath)
+								->resize(1012, 1012, true, 'auto')
+								->save($resizedPath, 80);
+							$pathToUpload = $resizedPath;
+						}
+
+						// Lempar ke Google Drive API
+						$gdriveFileId = $this->_uploadToGoogleDrive($pathToUpload, $newName, $idperusahaan, $tahunBulan);
+
+						// PENTING: Hapus file kompresi dari server lokal seketika itu juga!
+						if ($isImage && file_exists($resizedPath)) {
+							unlink($resizedPath);
+						}
+
+						// Simpan ID Drive-nya ke DB
+						$this->jurnal_model->simpanfile([
+							'idjurnal'  => $idjurnal,
+							'file'      => $newName,
+							'nama_file' => $file->getClientName(),
+							'kode_file' => $gdriveFileId
+						]);
+						$fileif = '1';
+					}
+				}
+			}
+
+			// ====================================================
+			// 3B. PROSES ARSIP & MIGRASI
+			// ====================================================
+			// ====================================================
+			// 3B. PROSES ARSIP (file3) & COPY GOOGLE DRIVE
+			// ====================================================
+			$files3      = $request->getPost('file3');
+			$namaFile3   = $request->getPost('nama_file');
+			$kodeFile3   = $request->getPost('kode_file');
+
+			if ($files3) {
+				foreach ($files3 as $key => $fileValue) {
+					if ($fileValue != '') {
+						$gdriveId = $kodeFile3[$key] ?? '';
+
+						if (empty($gdriveId)) {
+							// KONDISI 1: Kode File Kosong (Masih file fisik di server)
+							// Migrasikan dengan cara upload ke GDrive
+							$arsipPath = FCPATH . 'uploads/arsip/thumbnails/' . $fileValue;
+							if (file_exists($arsipPath)) {
+								$gdriveId = $this->_uploadToGoogleDrive($arsipPath, $fileValue, $idperusahaan, $tahunBulan);
+							}
+						} else {
+							// KONDISI 2: Kode File Terisi (Sudah ada di GDrive Arsip)
+							// Duplikasi (Copy) file tersebut ke folder Perusahaan Jurnal
+							$gdriveId = $this->_copyFileInGoogleDrive($gdriveId, $idperusahaan, $tahunBulan);
+						}
+
+						$this->jurnal_model->simpanfile([
+							'idjurnal'  => $idjurnal,
+							'file'      => $fileValue,
+							'nama_file' => $namaFile3[$key] ?? 'Arsip',
+							'kode_file' => $gdriveId // Gdrive ID yang baru hasil duplikasi/upload
+						]);
+						$fileif = '1';
+					}
+				}
+			}
+		}
+
+		// ====================================================
+		// 4. PROSES FILE LAMA SAAT UPDATE (Migrasi Otomatis)
+		// ====================================================
+		$file2_lama     = $request->getPost('file2_lama');
+		$kode_file_lama = $request->getPost('kode_file_lama');
+
+		if ($isUpdate && !empty($file2_lama)) {
+			$gdriveIdLama = $kode_file_lama;
+
+			// Migrasi ke Drive jika sebelumnya masih ada di lokal
+			if (empty($gdriveIdLama)) {
+				$pathLama = FCPATH . 'uploads/jurnal/' . $file2_lama;
+				if (file_exists($pathLama)) {
+					$gdriveIdLama = $this->_uploadToGoogleDrive($pathLama, $file2_lama, $idperusahaan, $tahunBulan);
+				}
+			}
+
+			// Jika user menambahkan file baru, pindahkan file lama ini ke tabel jurnalfile agar seragam
+			if ($fileif == '1') {
+				$this->jurnal_model->simpanfile([
+					'idjurnal'  => $idjurnal,
+					'file'      => $file2_lama,
+					'nama_file' => 'Lampiran Utama',
+					'kode_file' => $gdriveIdLama
+				]);
+			}
+		}
+
+		// ====================================================
+		// 5. SUSUN ARRAY DETAIL AKUN (DEBET & KREDIT)
+		// ====================================================
+		$arrDetail = [];
+		$keyakun   = $request->getPost('keyakun');
+		$debet     = $request->getPost('debet');
+		$kredit    = $request->getPost('kredit');
+		$urut      = 1;
+
+		if ($keyakun) {
+			foreach ($keyakun as $key => $value) {
+				if (!$value) continue;
+				$arrDetail[] = [
+					'idjurnal'  => $idjurnal,
+					'keyakun'   => $value,
+					'deskripsi' => "",
+					'debet'     => str_replace(',', '', $debet[$key]),
+					'kredit'    => str_replace(',', '', $kredit[$key]),
+					'nourut'    => $urut++,
+				];
+			}
+		}
+
+		// ====================================================
+		// 6. SIMPAN DATA UTAMA (CREATE ATAU UPDATE)
+		// ====================================================
+		$dataUtama = [
+			'tgljurnal'  => $tgljurnal,
+			'tag'        => '',
+			'keterangan' => $request->getPost('keterangan'),
+			'jumlah'     => $jumlah,
+			'tglupdate'  => date('Y-m-d H:i:s'),
+			'idpengguna' => $request->getPost('idpengguna'),
+			'referensi'  => $request->getPost('referensi'),
+		];
+
+		if (!$isUpdate) { // CREATE
+			$dataUtama['idjurnal']     = $idjurnal;
+			$dataUtama['tglinsert']    = $dataUtama['tglupdate'];
+			$dataUtama['filelampiran'] = null;
+			$simpan = $this->jurnal_model->simpan($dataUtama, $arrDetail, $idjurnal);
+		} else { // UPDATE
+			// Logika: Jika user tambah file baru ($fileif=1), file lama otomatis pindah ke tabel jurnalfile
+			// Oleh karena itu, kita kosongkan 'filelampiran' di tabel utama. Jika tidak, biarkan nilainya
+			$dataUtama['filelampiran'] = ($fileif == '1') ? null : $file2_lama;
+			$dataUtama['approve']      = '0';
+			$simpan = $this->jurnal_model->updateWhere($dataUtama, $arrDetail, $idjurnal);
+		}
+
+		// ====================================================
+		// 7. PENANGANAN RESPON KE USER
+		// ====================================================
+		if ($simpan) {
+			$msg = $this->_alertMessage('<strong>Berhasil.</strong> Data telah disimpan', 'success');
+		} else {
+			$eror = $this->db->error();
+			$msg  = $this->_alertMessage("<strong>Maaf,</strong> Data gagal disimpan <br> Pesan Error : {$eror['code']} {$eror['message']}", 'danger');
+		}
+
+		$this->session->setFlashdata('pesan', $msg);
+		return redirect()->to($kondisi == null ? 'jurnal' : 'laporan/lapbukubesar');
+	}
+
+
+
+	public function getEdit()
+	{
+		$idjurnal = $this->request->getPost('idjurnal');
+		$RsData = $this->jurnal_model->get_by_id($idjurnal)->getRow();
+
+
+
+		$RsDataDetail = $this->jurnal_model->get_detail_by_id($idjurnal)->getResultArray();
+
+
+
+		$data = array(
+
+			'idjurnal' =>  $RsData->idjurnal,
+
+			'idpengguna' =>  session()->get('idpengguna') == '8888888888' ? $RsData->idpengguna : session()->get('idpengguna'),
+
+			'tgljurnal' =>  date('Y-m-d', strtotime($RsData->tgljurnal)),
+
+			'tag' =>  $RsData->tag,
+
+			'keterangan' =>  $RsData->keterangan,
+
+			'filelampiran' =>  $RsData->filelampiran,
+
+			'referensi' 	=> $RsData->referensi,
+			'namapengguna' 	=> $RsData->namapengguna,
+			'approve' 	    => $RsData->approve,
+			'keterangan_approve' 	=> $RsData->keterangan_approve,
+
+			'RsDataDetail' => $RsDataDetail,
+
+		);
+
+
+
+		return $this->response->setJSON($data);
+	}
+
+
+
+
+
+	public function upload_foto($file, $nama)
+
+	{
+
+
+
+		if (!empty($file[$nama]['name'])) {
+
+			$saved_file = $this->request->getFile($nama);
+
+			$newName = $saved_file->getRandomName();
+
+			$upload_path = FCPATH . 'uploads/jurnal';
+
+			$moved = $saved_file->move($upload_path, $newName);
+
+			if ($moved) {
+
+				$gambar = $newName;
+			} else {
+
+				$gambar = "";
+			}
+		} else {
+
+			$gambar = "";
+		}
+
+
+
+		return $gambar;
+	}
+
+
+
+	public function update_upload_foto($file, $nama, $file_lama, $file_lama_hapus)
+
+	{
+
+		if (!empty($file[$nama]['name'])) {
+
+			if ($file_lama != '' && $file_lama != null) {
+
+				//hapus file lama
+
+				if (file_exists('./uploads/jurnal/' . $file_lama)) {
+
+					unlink('./uploads/jurnal/' . $file_lama);
+				};
+			}
+
+			$saved_file = $this->request->getFile($nama);
+
+			$newName = $saved_file->getRandomName();
+
+			$upload_path = FCPATH . 'uploads/jurnal';
+
+			$moved = $saved_file->move($upload_path, $newName);
+
+			if ($moved) {
+
+				$gambar = $newName;
+			} else {
+
+				$gambar = $file_lama;
+			}
+		} else {
+
+			if ($file_lama_hapus != '' && $file_lama_hapus != null) {
+
+				$gambar = $file_lama;
+			} else {
+
+				if ($file_lama != '' && $file_lama != null) {
+
+					//hapus file lama
+
+					if (file_exists('./uploads/jurnal/' . $file_lama)) {
+
+						unlink('./uploads/jurnal/' . $file_lama);
+					};
+				}
+
+				$gambar = "";
+			}
+		}
+
+
+
+		return $gambar;
+	}
+
+
+
+
+
+	public function lihat($idjurnal)
+	{
+		$rsDataJurnal = $this->jurnal_model->get_by_id($idjurnal)->getRow();
+
+		$idperusahaan = encrypt($rsDataJurnal->idperusahaan);
+		$idpengguna = encrypt($rsDataJurnal->idpengguna);
+
+		$namaperusahaan = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->namaperusahaan;
+		$alamat = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->alamat;
+		$hp = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->notelp;
+		$email = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->email_pengguna;
+
+		$pics = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
+		$pic_ttds = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
+
+		if ($pics != null) {
+			$pic = $pics->namapengguna;
+		} else {
+			$pic = '';
+		}
+
+		if ($pics != null) {
+			$pic_ttd = $pic_ttds->pic_ttd;
+		} else {
+			$pic_ttd = '';
+		}
+
+		$namapengguna = $this->pengguna_model->get_by_id($idpengguna)->getRow()->namapengguna;
+		$file_ttd = $this->pengguna_model->get_by_id($idpengguna)->getRow()->file_ttd;
+
+		// [PERBAIKAN]: Bungkus dengan div align="center", beri <br> untuk jarak atas/bawah agar secara vertikal ke tengah, 
+		// serta sesuaikan ukuran height agar pas dan tidak merusak batas tabel.
+		// Tentukan path fisik gambarnya
+		$path_ttd_pembuat = FCPATH . 'uploads/ttd/' . $file_ttd;
+		$path_ttd_pemeriksa = FCPATH . 'uploads/ttd/' . $pic_ttd;
+
+		// [BARU] Panggil fungsi Auto Crop untuk membersihkan ruang kosong
+		if ($file_ttd != '') {
+			$this->autoCropImage($path_ttd_pembuat);
+		}
+		if ($pic_ttd != '') {
+			$this->autoCropImage($path_ttd_pemeriksa);
+		}
+		// Variabel gambar yang sudah bersih dan presisi
+		$file_pembuat = '<img src="' . $path_ttd_pembuat . '" height="60" />';
+		$file_pemeriksa = '<img src="' . $path_ttd_pemeriksa . '" height="60" />';
+
+		$rsData = $this->jurnal_model->get_jurnal_cetak($idjurnal);
+
+		$builder = $this->db->table('jurnal');
+
+		$lampiran = $builder->getWhere(array('md5(idjurnal)' => decrypt($idjurnal)))->getRow()->filelampiran;
+
+		$pdf = new \TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+		$pdf->setPrintHeader(false);
+
+		$pdf->SetMargins(20, 20, 10);
+
+		$pdf->AddPage();
+		$pdf->SetCreator("akuntanmu.com");
+		$pdf->SetAuthor(trim($namaperusahaan));
+		$pdf->SetTitle('Nomor Jurnal ' . $rsDataJurnal->idjurnal);
+		$pdf->SetSubject('Nomor Jurnal ' . $rsDataJurnal->idjurnal);
+		$pdf->SetKeywords('Akuntanmu, Jurnal');
+
+		$hp_tamp = '';
+		$email_tamp = '';
+
+		if ($hp != '' && $hp != '-' && $hp != null) {
+			$hp_tamp = "No. Telp :  $hp, ";
+		}
+
+		if ($email != '' && $email != '-' && $email != null) {
+			$email_tamp = "E-mail :  $email ";
+		}
+
+		$title = '
+            <table width="100%">
+                <tr>
+                    <th width="100%" align="center" style="text-align:center; font-size:16px; color:#2f3031; font-weight:bold; padding-top:10px;">' . trim($namaperusahaan) . '</th>
+                </tr>';
+
+		if ($alamat != '' && $alamat != '-' && $alamat != null) {
+			$title .= '
+                <tr>
+                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">
+                        ' . $alamat . '
+                    </th>
+                </tr>
+                <tr>
+                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">
+                        ' . $hp_tamp . ' ' . $email_tamp . '
+                    </th>
+                </tr>';
+		}
+
+		$title .= '
+                <tr >
+                    <th width="100%"  align="center" style="text-align:center; font-size:12px; color:#2f3031; font-weight:bold; ">JURNAL UMUM</th>
+                </tr>
+            </table>
+            <hr>
+        ';
+
+		$pdf->SetFont('times', '', 16);
+		$pdf->writeHTML($title, true, false, false, false, '');
+		$pdf->SetTopMargin(15);
+
+		$table = '<table>';
+		$table .= '<tr>';
+		$table .= '<th>';
+		$table .= '<table cellpadding="5">';
+		$table .= '<tr>';
+		$table .= '<th width="40%" height="20px"  style="font-size:12px">No. Jurnal</th>';
+		$table .= '<th width="60%" style="font-size:12px">: ' . $rsDataJurnal->idjurnal  . '</th>';
+		$table .= '</tr>';
+		$table .= '<tr>';
+		$table .= '<th height="20px" style="font-size:12px">Referensi</th>';
+		$table .= '<th style="font-size:12px">: ' . ($rsData->getRow()->referensi == '' ? '-' : $rsData->getRow()->referensi) . '</th>';
+		$table .= '</tr>';
+		$table .= '<tr>';
+		$table .= '<th height="20px" style="font-size:12px">Tanggal</th>';
+		$table .= '<th style="font-size:12px">: ' . date('d-m-Y', strtotime($rsData->getRow()->tgljurnal)) . '</th>';
+		$table .= '</tr>';
+		$table .= '</table>';
+		$table .= '</th>';
+
+		$table .= '<th>';
+		$table .= '<table cellpadding="5">';
+		$table .= '<tr>';
+		$table .= '<th height="20px" style="font-size:12px">Keterangan Transaksi:</th>';
+		$table .= '</tr>';
+		$table .= '<tr>';
+
+		$keterangan_aman = htmlspecialchars($rsData->getRow()->keterangan, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+		$table .= '<td style="font-size:12px;border:1px solid gray;height:60px;" >' . $keterangan_aman . '</td>';
+
+		$table .= '</tr>';
+		$table .= '</table>';
+		$table .= '</th>';
+		$table .= '</tr>';
+		$table .= '</table>';
+
+		$table .= '<br><br><table border="0.5" style="border:1px solid gray;" cellpadding="4">';
+		$table .= ' 
+                    <thead>
+                        <tr>
+                            <th width="50%" style="font-size:12px; font-weight:bold; text-align:center;border:1px solid gray;">Akun</th>
+                            <th width="14%" style="font-size:12px; font-weight:bold; text-align:center;border:1px solid gray;">No. Akun</th>
+                            <th width="18%" style="font-size:12px; font-weight:bold; text-align:center;border:1px solid gray;">Debit</th>
+                            <th width="18%" style="font-size:12px; font-weight:bold; text-align:center;border:1px solid gray;">Kredit</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+
+		$writer = new \Endroid\QrCode\Writer\PngWriter();
+		$qrCode = \Endroid\QrCode\QrCode::create(site_url('validasi-jurnal/' . $idjurnal));
+
+		$logo = \Endroid\QrCode\Logo\Logo::create(FCPATH . 'uploads/icon/iconqr.png')->setResizeToWidth(100);
+
+		$result = $writer->write($qrCode, $logo, null);
+		$qrCodes = $result->getDataUri();
+		$total1 = 0;
+		$total2 = 0;
+		foreach ($rsData->getResult() as $data) {
+			$total1 = $total1 + $data->debet;
+			$total2 = $total2 + $data->kredit;
+
+			$table .= '
+                        <tr>
+                            <td width="50%" style="font-size:12px; text-align:left;border:1px solid gray;">' . ($data->debet == 0 ? str_repeat("&nbsp;", 5) : "") . $data->nmakun . '</td>
+                            <td width="14%" style="font-size:12px; text-align:center;border:1px solid gray;">' . $data->kdakun . '</td>
+                            <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;">' . ($data->debet == 0 ? "" : number_format($data->debet)) . '</td>
+                            <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;">' . ($data->kredit == 0 ? "" : number_format($data->kredit)) . '</td>          
+                        </tr>';
+		}
+
+		$table .= '
+                        <tr>
+                            <td width="64%" style="font-size:12px; text-align:right;border:1px solid gray;" colspan="2"><B>TOTAL       </B></td>
+                            <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;"><B>' . number_format($total1, 0, "", '.') . '</B></td>
+                            <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;"><B>' . number_format($total2, 0, "", '.') . '</B></td>
+                        </tr>';
+		$table .= ' </tbody>
+                    </table>';
+
+		$table .= '<br><br><table cellpadding="5">';
+		$table .= '<tr>';
+		$table .= '<td width="50%"></td>';
+		$table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Dibuat Oleh:</td>';
+		$table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Disetujui Oleh:</td>';
+		$table .= '</tr>';
+
+		$table .= '<tr>';
+		// QR Code (Tambahkan juga width di sini)
+		$table .= '<td width="50%" style="text-align:center;"><br><br><img src="' . $qrCodes . '" width="70" height="70" /><br><br></td>';
+
+		// TTD Pembuat
+		$table .= '<td width="25%" style="border:1px solid gray; text-align:center;"><br><br>' . $file_pembuat . '<br><br></td>';
+		// TTD Pemeriksa
+		$table .= '<td width="25%" style="border:1px solid gray; text-align:center;"><br><br>' . ($rsData->getRow()->approve == 1 ? $file_pemeriksa : '') . '<br><br></td>';
+		$table .= '</tr>';
+
+		$table .= '<tr>';
+		$table .= '<td width="50%"></td>';
+		$table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $namapengguna . '</td>';
+		$table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $pic . '</td>';
+		$table .= '</tr>';
+		$table .= '</table>';
+
+		$table .= '<br>';
+		$table .= '<br>';
+
+		if ($lampiran == '' || $lampiran == null) {
+			$jurnalfile = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
+
+			if (!empty($jurnalfile)) {
+				$table .= '<table>';
+				$table .= '<tr>';
+				$table .= '<td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td>';
+				$table .= '</tr>';
+				$table .= '</table>';
+				$table .= '<table><tr><td></td></tr></table>';
+
+				$table .= '<table>';
+				$table .= '<tr>';
+				$table .= '<td style="height:20px;border:1px solid gray;text-align:center"><b>Lampiran Dokumen / Bukti Transfer</b></td>';
+				$table .= '</tr>';
+				$table .= '</table>';
+			}
+
+			$table .= '<table cellpadding="5" >';
+			foreach ($jurnalfile as $rowsFile) {
+				if (strtolower(substr($rowsFile->file, -3)) != 'pdf') {
+					$table .= '<tr nobr="true">';
+					$table .= '<td style="border:1px solid gray;text-align:center">';
+					$table .=  '<img src="' . FCPATH . 'uploads/jurnal/thumbnails/' . $rowsFile->file . '" height="350">';
+					$table .= '<object id="exPDF" type="application/pdf" data="' . base_url('uploads/jurnal/tugas.pdf')  . '" width="100%" height="500"/>';
+					$table .= '</td>';
+					$table .= '</tr>';
+				}
+			}
+			$table .= '</table>';
+		} else {
+			$table .= '<table>';
+			$table .= '<tr>';
+			$table .= '<td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td>';
+			$table .= '</tr>';
+			$table .= '</table>';
+			$table .= '<table><tr><td></td></tr></table>';
+			$table .= '<table>';
+			$table .= '<tr>';
+			$table .= '<td style="height:20px;border:1px solid gray;text-align:center"><b>Lampiran Dokumen / Bukti Transfer</b></td>';
+			$table .= '</tr>';
+			$table .= '</table>';
+
+			$table .= '<table cellpadding="5">';
+			$table .= '<tr>';
+			$table .= '<td style="text-align:center">';
+			$table .= $lampiran == '' ? '' :  '<img src="' . FCPATH . 'uploads/jurnal/' . $lampiran  . '" height="350">';
+			$table .= '</td>';
+			$table .= '</tr>';
+			$table .= '</table>';
+		}
+
+		$pdf->SetTopMargin(35);
+		$pdf->SetFont('times', '', 10);
+		$pdf->writeHTML($table, true, false, false, false, '');
+
+		$pdf->Output('Laporan Jurnal.pdf', 'I');
+		exit;
+	}
+
+
+
+	function viewfile($id, $fil)
+
+	{
+
+		$data['menuaktif'] = $this->menuaktif;
+
+		$data['file'] = $id;
+
+		$data['fil'] = $fil;
+
+		return view("jurnal/viewfile", $data);
+	}
+
+
+
+	public function deleteFile($idjurnal, $nama_file = null)
+	{
+		$db = \Config\Database::connect();
+
+		// 1. Ambil data jurnal
+		$jurnal = $db->table('jurnal')->where('idjurnal', $idjurnal)->get()->getRow();
+
+		if ($jurnal) {
+			// Asumsi: Jika tabel jurnal Anda sudah memiliki kolom kode_file, hapus GDrive-nya
+			// Jika tidak ada kolom kode_file di tabel utama, kita cari dari tabel jurnalfile menggunakan nama file
+			$fileGdrive = $db->table('jurnalfile')->where('idjurnal', $idjurnal)->where('file', $nama_file)->get()->getRow();
+
+			if ($fileGdrive && !empty($fileGdrive->kode_file)) {
+				$this->_deleteFromGoogleDrive($fileGdrive->kode_file);
+				$db->table('jurnalfile')->where('id', $fileGdrive->id)->delete();
+			} else {
+				// Hapus file fisik lokal jika masih berupa file lama
+				$pathFile = FCPATH . 'uploads/jurnal/' . $nama_file;
+				if (file_exists($pathFile)) unlink($pathFile);
+			}
+
+			// 2. Kosongkan field filelampiran di tabel jurnal utama
+			$db->table('jurnal')->where('idjurnal', $idjurnal)->update(['filelampiran' => null]);
+		}
+
+		$pesan = $this->_alertMessage('<strong>Berhasil!</strong> Lampiran utama berhasil dihapus.', 'success');
+		$this->session->setFlashdata('pesan', $pesan);
+
+		// Kembalikan user ke halaman edit
+		return redirect()->to('jurnal/edit/' . $idjurnal);
+	}
+
+
+
+	public function deleteFileNew($id_jurnalfile, $idjurnal, $nama_file = null)
+	{
+		// 1. Ambil data spesifik dari tabel jurnalfile untuk mendapatkan kode_file (ID GDrive)
+		$db = \Config\Database::connect();
+		$fileData = $db->table('jurnalfile')->where('id', $id_jurnalfile)->get()->getRow();
+
+		if ($fileData) {
+			$gdriveId = $fileData->kode_file;
+
+			// 2. Jika punya ID GDrive, hapus dari Google Drive
+			if (!empty($gdriveId)) {
+				$this->_deleteFromGoogleDrive($gdriveId);
+			} else {
+				// [Opsional] Jika file tersebut adalah file lama yang belum di-Drive-kan, hapus fisik lokalnya
+				$pathFile = FCPATH . 'uploads/jurnal/' . $fileData->file;
+				$pathThumb = FCPATH . 'uploads/jurnal/thumbnails/' . $fileData->file;
+				if (file_exists($pathFile)) unlink($pathFile);
+				if (file_exists($pathThumb)) unlink($pathThumb);
+			}
+
+			// 3. Hapus data dari tabel database
+			$db->table('jurnalfile')->where('id', $id_jurnalfile)->delete();
+		}
+
+		$pesan = $this->_alertMessage('<strong>Berhasil!</strong> Lampiran berhasil dihapus.', 'success');
+		$this->session->setFlashdata('pesan', $pesan);
+
+		// Kembalikan user ke halaman edit
+		return redirect()->to('jurnal/edit/' . $idjurnal);
+	}
+
+
+
+	public function autocomplate()
+
+	{
+		$cari = $this->request->getPost('term');
+
+		$idperusahaan = $this->session->get('idperusahaan');
+
+		if ($idperusahaan == "9999999999") {
+
+			$tampil =  $this->request->getPost('idperusahaan');
+		} else {
+
+			$tampil =  $idperusahaan;
+		}
+		$query = "SELECT * FROM arsip WHERE idperusahaan = '$tampil' and
+
+        		( nama_file like '%" . $cari . "%' or nama_pengirim like '%" . $cari . "%' ) order by nama_file asc limit 10";
+
+		$res = $this->db->query($query);
+
+		$result = array();
+
+		foreach ($res->getResult() as $row) {
+
+			array_push($result, array(
+
+				'id' => $row->id,
+
+				'nama_file' => $row->nama_file,
+
+				'nama_pengirim' => $row->nama_pengirim,
+
+				'file' => $row->file,
+				'kode_file' => $row->kode_file,
+			));
+		}
+
+		return $this->response->setJSON($result);
+	}
+
+	public function autocomplatePerusahaan()
+
+	{
+		$cari = $this->request->getPost('term');
+		$query = "SELECT * FROM perusahaan WHERE namaperusahaan like '%" . $cari . "%' order by namaperusahaan asc limit 10";
+		$res = $this->db->query($query);
+		$result = array();
+		foreach ($res->getResult() as $row) {
+			array_push($result, array(
+				'idperusahaan' => $row->idperusahaan,
+				'namaperusahaan' => $row->namaperusahaan,
+			));
+		}
+		return $this->response->setJSON($result);
+	}
+
+	public function getFile()
+	{
+		$idjurnal = $this->request->getPost('idjurnal');
+		$query = "SELECT * FROM jurnalfile WHERE idjurnal = '$idjurnal'";
+		$res = $this->db->query($query);
+		$data = array();
+		foreach ($res->getResult() as $row) {
+
+			// array_push($result, array(
+
+			// 	'file' => $row->file,
+			// 	'nama_file' => $row->nama_file,
+			// ));
+			$rows = array();
+			// 1. Tentukan sumber file (Google Drive atau Server Lokal)
+			if (!empty($row->kode_file)) {
+				// Jika kode_file ada, gunakan link Google Drive
+				$linkViewer = "https://drive.google.com/file/d/" . $row->kode_file . "/preview";
+			} else {
+				// Jika kosong, gunakan file lokal yang ada di server
+				$linkViewer = base_url('uploads/jurnal/thumbnails/' . $row->file);
+			}
+
+			// 2. Tentukan nama yang akan ditampilkan (nama_file atau nama fisik file)
+			$teksTampil = ($row->nama_file == null) ? $row->file : $row->nama_file;
+
+			// 3. Masukkan ke dalam array baris tabel
+			// Catatan: Saya mengubah id="cetak-pdf" menjadi class "cetak-file-pdf" karena di dalam tabel (looping), ID tidak boleh ganda/duplikat agar modal Javascript tidak error.
+			$rows[] = '<tr>
+				<td class="text-left"> 
+				<a href="javascript:void(0)" data-cetak_pdf="' . $linkViewer . '" class="tooltips cetak-file-pdf" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" title="Lihat dokumen">
+					<i class="fa ' . (!empty($row->kode_file) ? 'fa-google' : 'fa-file') . ' mr-1"></i> ' . $teksTampil . '
+				</a> 
+				</td>
+			</tr>';
+			$data[] = $rows;
+		}
+
+		$output = array(
+			"data" => $data,
+
+		);
+
+		return $this->response->setJSON($output);
+	}
+
+
+	public function simpanApprove()
+	{
+		$kondisi = $this->request->getPost('kondisi');
+		$idpengguna = $this->request->getPost('idpengguna');
+		$idjurnal = $this->request->getPost('idjurnal');
+
+		if ($this->request->getPost('status_approve') != 'all'):
+			$status_approve = $this->request->getPost('status_approve');
+
+			if ($this->request->getPost('status_approve') == '1') {
+				$keterangan_approve = '';
+			} else {
+				$keterangan_approve = $this->request->getPost('keterangan_approve');
+			}
+		else:
+			$status_approve = '1';
+			$keterangan_approve = $this->request->getPost('keterangan_approve');
+		endif;
+
+		$data = array(
+			'approve' 	            => $status_approve,
+			'keterangan_approve' 	=> $keterangan_approve,
+			'id_pic' 	            => $idpengguna,
+		);
+		$simpan = $this->jurnal_model->updateApprove($idjurnal, $data);
+		if ($simpan) {
+
+			$pesan = '<div>
+
+						<div class="alert alert-success alert-dismissable">
+
+			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+
+			                <strong>Berhasil.</strong> Jurnal telah disetujui
+
+					    </div>
+
+					</div>';
+		} else {
+
+			$eror = $this->db->error();
+
+			$pesan = '<div>
+
+						<div class="alert alert-danger alert-dismissable">
+
+			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+
+			                <strong>Maaf,</strong> Data gagal diapprove <br>
+
+			                Pesan Error : ' . $eror['code'] . ' ' . $eror['message'] . '
+
+					    </div>
+
+					</div>';
+		}
+
+
+		$this->session->setFlashdata('pesan', $pesan);
+
+
+		if ($kondisi == null) {
+
+			return redirect()->to('jurnal');
+		} else {
+
+			return redirect()->to('Laporan/lapbukubesar');
+		}
+	}
+
+	/**
+	 * Fungsi untuk memotong (crop) otomatis ruang kosong/transparan pada gambar
+	 */
+	private function autoCropImage($filePath)
+	{
+		if (!file_exists($filePath)) return false;
+
+		$mime = mime_content_type($filePath);
+		if ($mime == 'image/png') {
+			$img = imagecreatefrompng($filePath);
+		} elseif ($mime == 'image/jpeg' || $mime == 'image/jpg') {
+			$img = imagecreatefromjpeg($filePath);
+		} else {
+			return false;
+		}
+
+		$width = imagesx($img);
+		$height = imagesy($img);
+
+		// Siapkan variabel untuk mencari batas tinta
+		$min_x = $width;
+		$min_y = $height;
+		$max_x = 0;
+		$max_y = 0;
+		$has_ink = false;
+
+		// Deteksi batas tinta dengan memindai seluruh piksel
+		for ($x = 0; $x < $width; $x++) {
+			for ($y = 0; $y < $height; $y++) {
+				$rgb = imagecolorat($img, $x, $y);
+				$colors = imagecolorsforindex($img, $rgb);
+
+				// Abaikan background transparan (di PHP GD, alpha > 110 itu hampir tembus pandang)
+				if (isset($colors['alpha']) && $colors['alpha'] > 110) continue;
+
+				// Hitung tingkat kegelapan piksel (0 = Hitam pekat, 255 = Putih terang)
+				$avg_color = ($colors['red'] + $colors['green'] + $colors['blue']) / 3;
+
+				// Jika warnanya gelap (di bawah 220, bukan putih/abu-abu kertas), anggap itu TINTA!
+				if ($avg_color < 220) {
+					$has_ink = true;
+					if ($x < $min_x) $min_x = $x;
+					if ($x > $max_x) $max_x = $x;
+					if ($y < $min_y) $min_y = $y;
+					if ($y > $max_y) $max_y = $y;
+				}
+			}
+		}
+
+		// Jika tinta ditemukan, potong gambarnya!
+		if ($has_ink && ($min_x < $max_x) && ($min_y < $max_y)) {
+			// Beri sedikit jarak aman (padding) 5 piksel agar tinta tidak terpotong ekstrem
+			$padding = 5;
+			$min_x = max(0, $min_x - $padding);
+			$min_y = max(0, $min_y - $padding);
+			$max_x = min($width - 1, $max_x + $padding);
+			$max_y = min($height - 1, $max_y + $padding);
+
+			$crop_width = $max_x - $min_x;
+			$crop_height = $max_y - $min_y;
+
+			$cropped = imagecrop($img, ['x' => $min_x, 'y' => $min_y, 'width' => $crop_width, 'height' => $crop_height]);
+
+			if ($cropped !== false) {
+				// Simpan gambar menimpa file lama
+				if ($mime == 'image/png') {
+					imagealphablending($cropped, false);
+					imagesavealpha($cropped, true);
+					imagepng($cropped, $filePath);
+				} else {
+					imagejpeg($cropped, $filePath, 90);
+				}
+				imagedestroy($cropped);
+				imagedestroy($img);
+				return true; // Berhasil dipotong secara presisi!
+			}
+		}
+
+		imagedestroy($img);
+		return false;
+	}
+
+
+	/**
+	 * Fungsi untuk mengupload file ke Google Drive berdasarkan Folder ID Perusahaan
+	 */
+	private function _uploadToGoogleDrive($filePath, $fileName, $folderPerusahaan, $folderBulan)
+	{
+		$client = new \Google\Client();
+
+		// 1. Kredensial & Scope Akses
+		$client->setAuthConfig(APPPATH . 'ThirdParty/oauth-credentials.json');
+		$client->addScope(\Google\Service\Drive::DRIVE);
+		$client->setAccessType('offline');
+		$client->setPrompt('select_account consent');
+
+		// 2. Load Token JSON
+		$tokenPath = WRITEPATH . 'google-token-admin.json';
+		if (file_exists($tokenPath)) {
+			$accessToken = json_decode(file_get_contents($tokenPath), true);
+			$client->setAccessToken($accessToken);
+		} else {
+			throw new \Exception("File token.json tidak ditemukan. Harap generate ulang token.");
+		}
+
+		// 3. Refresh Token Otomatis jika Expired
+		if ($client->isAccessTokenExpired()) {
+			if ($client->getRefreshToken()) {
+				$client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+				file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+			} else {
+				throw new \Exception("Token expired dan Refresh Token tidak tersedia. Harap hapus token.json dan otorisasi ulang.");
+			}
+		}
+
+		$driveService = new \Google\Service\Drive($client);
+
+		// ==============================================================
+		// Logika Pembuatan Folder Bertingkat & Dukungan Shared Drive
+		// ==============================================================
+
+		// ID Folder Utama (Root) tempat menampung seluruh folder perusahaan
+		$parentFolderId     = env('IDJURNAL');
+		$perusahaanFolderId = null; // Penampung ID folder Level 1
+		$bulanFolderId      = null; // Penampung ID folder Level 2
+
+		// -------------------------------------------------------------
+		// TAHAP 1: Cari atau Buat Folder PERUSAHAAN (Level 1)
+		// -------------------------------------------------------------
+		$query1 = "mimeType='application/vnd.google-apps.folder' and name='{$folderPerusahaan}' and '{$parentFolderId}' in parents and trashed=false";
+		$searchParams1 = [
+			'q' => $query1,
+			'fields' => 'files(id, name)',
+			'supportsAllDrives' => true,
+			'includeItemsFromAllDrives' => true
+		];
+		$results1 = $driveService->files->listFiles($searchParams1);
+
+		if (count($results1->getFiles()) == 0) {
+			$folderMetadata1 = new \Google\Service\Drive\DriveFile([
+				'name'     => $folderPerusahaan,
+				'mimeType' => 'application/vnd.google-apps.folder',
+				'parents'  => [$parentFolderId]
+			]);
+			$folder1 = $driveService->files->create($folderMetadata1, ['fields' => 'id', 'supportsAllDrives' => true]);
+			$perusahaanFolderId = $folder1->id;
+		} else {
+			$perusahaanFolderId = $results1->getFiles()[0]->id;
+		}
+
+		// -------------------------------------------------------------
+		// TAHAP 2: Cari atau Buat Folder TAHUN-BULAN (Level 2)
+		// -------------------------------------------------------------
+		// Mencari di dalam $perusahaanFolderId, bukan lagi di $parentFolderId
+		$query2 = "mimeType='application/vnd.google-apps.folder' and name='{$folderBulan}' and '{$perusahaanFolderId}' in parents and trashed=false";
+		$searchParams2 = [
+			'q' => $query2,
+			'fields' => 'files(id, name)',
+			'supportsAllDrives' => true,
+			'includeItemsFromAllDrives' => true
+		];
+		$results2 = $driveService->files->listFiles($searchParams2);
+
+		if (count($results2->getFiles()) == 0) {
+			$folderMetadata2 = new \Google\Service\Drive\DriveFile([
+				'name'     => $folderBulan,
+				'mimeType' => 'application/vnd.google-apps.folder',
+				'parents'  => [$perusahaanFolderId]
+			]);
+			$folder2 = $driveService->files->create($folderMetadata2, ['fields' => 'id', 'supportsAllDrives' => true]);
+			$bulanFolderId = $folder2->id;
+		} else {
+			$bulanFolderId = $results2->getFiles()[0]->id;
+		}
+
+		// -------------------------------------------------------------
+		// TAHAP 3: Upload File ke dalam Folder TAHUN-BULAN
+		// -------------------------------------------------------------
+		$fileMetadata = new \Google\Service\Drive\DriveFile([
+			'name'    => $fileName,
+			'parents' => [$bulanFolderId] // File dimasukkan ke folder Level 2
+		]);
+
+		$content = file_get_contents($filePath);
+		$uploadedFile = $driveService->files->create($fileMetadata, [
+			'data'       => $content,
+			'mimeType'   => mime_content_type($filePath),
+			'uploadType' => 'multipart',
+			'fields'     => 'id',
+			'supportsAllDrives' => true // Memastikan bisa upload ke folder Shared Drive
+		]);
+
+		return $uploadedFile->id;
+	}
+	/**
+	 * Fungsi untuk menghapus file dari Google Drive berdasarkan ID File
+	 */
+	private function _deleteFromGoogleDrive($fileId)
+	{
+		try {
+			$client = new \Google\Client();
+			$client->setAuthConfig(APPPATH . 'ThirdParty/oauth-credentials.json'); // Gunakan file Kredensial OAuth Anda
+			$client->addScope(\Google\Service\Drive::DRIVE_FILE);
+
+			// Load Token OAuth
+			$tokenPath = WRITEPATH . 'google-token-admin.json';
+			if (file_exists($tokenPath)) {
+				$accessToken = json_decode(file_get_contents($tokenPath), true);
+				$client->setAccessToken($accessToken);
+			}
+
+			// Auto Refresh Token jika expired
+			if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+				$client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+				file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+			}
+
+			$driveService = new \Google\Service\Drive($client);
+
+			// Perintah untuk menghapus/memindahkan file ke Trash Google Drive
+			$driveService->files->delete($fileId);
+
+			return true;
+		} catch (\Exception $e) {
+			// Jika file sudah tidak ada di Drive (atau error lain), biarkan berlalu agar proses DB tetap jalan
+			return false;
+		}
+	}
+
+	/**
+	 * Fungsi untuk menduplikasi (Copy) file yang sudah ada di GDrive ke Folder Target
+	 */
+	private function _copyFileInGoogleDrive($sourceFileId, $folderPerusahaan, $folderBulan)
+	{
+		$client = new \Google\Client();
+		$client->setAuthConfig(APPPATH . 'ThirdParty/oauth-credentials.json');
+		$client->addScope(\Google\Service\Drive::DRIVE);
+		$client->setAccessType('offline');
+		$client->setPrompt('select_account consent');
+
+		$tokenPath = WRITEPATH . 'google-token-admin.json';
+		if (file_exists($tokenPath)) {
+			$client->setAccessToken(json_decode(file_get_contents($tokenPath), true));
+		}
+
+		if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+			$client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+			file_put_contents($tokenPath, json_encode($client->getAccessToken()));
+		}
+
+		$driveService = new \Google\Service\Drive($client);
+
+		// ==============================================================
+		// Logika Folder Bertingkat untuk COPY File
+		// ==============================================================
+
+		$parentFolderId     = env('IDJURNAL');
+		$perusahaanFolderId = null;
+		$bulanFolderId      = null;
+
+		// -------------------------------------------------------------
+		// TAHAP 1: Cari atau Buat Folder PERUSAHAAN (Level 1)
+		// -------------------------------------------------------------
+		$query1 = "mimeType='application/vnd.google-apps.folder' and name='{$folderPerusahaan}' and '{$parentFolderId}' in parents and trashed=false";
+		$results1 = $driveService->files->listFiles([
+			'q' => $query1,
+			'fields' => 'files(id, name)',
+			'supportsAllDrives' => true,
+			'includeItemsFromAllDrives' => true
+		]);
+
+		if (count($results1->getFiles()) == 0) {
+			$folderMetadata1 = new \Google\Service\Drive\DriveFile([
+				'name'     => $folderPerusahaan,
+				'mimeType' => 'application/vnd.google-apps.folder',
+				'parents'  => [$parentFolderId]
+			]);
+			$folder1 = $driveService->files->create($folderMetadata1, ['fields' => 'id', 'supportsAllDrives' => true]);
+			$perusahaanFolderId = $folder1->id;
+		} else {
+			$perusahaanFolderId = $results1->getFiles()[0]->id;
+		}
+
+		// -------------------------------------------------------------
+		// TAHAP 2: Cari atau Buat Folder TAHUN-BULAN (Level 2)
+		// -------------------------------------------------------------
+		$query2 = "mimeType='application/vnd.google-apps.folder' and name='{$folderBulan}' and '{$perusahaanFolderId}' in parents and trashed=false";
+		$results2 = $driveService->files->listFiles([
+			'q' => $query2,
+			'fields' => 'files(id, name)',
+			'supportsAllDrives' => true,
+			'includeItemsFromAllDrives' => true
+		]);
+
+		if (count($results2->getFiles()) == 0) {
+			$folderMetadata2 = new \Google\Service\Drive\DriveFile([
+				'name'     => $folderBulan,
+				'mimeType' => 'application/vnd.google-apps.folder',
+				'parents'  => [$perusahaanFolderId]
+			]);
+			$folder2 = $driveService->files->create($folderMetadata2, ['fields' => 'id', 'supportsAllDrives' => true]);
+			$bulanFolderId = $folder2->id;
+		} else {
+			$bulanFolderId = $results2->getFiles()[0]->id;
+		}
+
+		// -------------------------------------------------------------
+		// TAHAP 3: Duplikasi (Copy) File ke Folder TAHUN-BULAN
+		// -------------------------------------------------------------
+		$copiedFileMetadata = new \Google\Service\Drive\DriveFile([
+			'parents' => [$bulanFolderId]
+		]);
+
+		try {
+			$copiedFile = $driveService->files->copy($sourceFileId, $copiedFileMetadata, [
+				'supportsAllDrives' => true,
+				'fields' => 'id'
+			]);
+
+			// Kembalikan ID File hasil kopian (ID Baru)
+			return $copiedFile->id;
+		} catch (\Exception $e) {
+			// Jika gagal (misal file asli di arsip terhapus manual), kembalikan ID lama sebagai fallback
+			return $sourceFileId;
+		}
+	}
+
+	/**
+	 * Fungsi helper untuk merapikan penulisan HTML Alert
+	 */
+	private function _alertMessage($text, $type)
+	{
+		return '<div>
+                <div class="alert alert-' . $type . ' alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                    ' . $text . '
+                </div>
+            </div>';
+	}
+}
+
+
+
+/* End of file Jurnal.php */
+
+/* Location: ./application/controllers/Jurnal.php */
