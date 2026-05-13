@@ -74,6 +74,7 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('/', 'JurnalController::index');
     $routes->post('/', 'JurnalController::index');
     $routes->post('datatablesource', 'JurnalController::datatablesource');
+    $routes->post('get_detail_jurnal', 'JurnalController::get_detail_jurnal');
     $routes->post('autocomplate', 'JurnalController::autocomplate');
     $routes->post('autocomplatePerusahaan', 'JurnalController::autocomplatePerusahaan');
     $routes->get('tambah', 'JurnalController::tambah');
@@ -274,3 +275,6 @@ $routes->group('payment', ['filter' => 'authFilter'], function ($routes) {
 
 $routes->get('auth/admin-drive', 'LoginController::authAdminDrive');
 $routes->get('google-callback-admin', 'LoginController::adminDriveCallback');
+
+//maintenance mode
+$routes->get('maintenance', 'Maintenance::index');

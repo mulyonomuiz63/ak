@@ -1,7 +1,20 @@
 <?= $this->extend('template/admin') ?>
-<?= $this->section('css') ?>
+<style>
+  /* Memaksa semua kolom (td) pada baris yang error menjadi merah muda */
+table.dataTable tbody tr.row-tidak-balance td {
+    background-color: red !important; /* Warna merah muda pucat */
+}
 
-<?= $this->endSection() ?>
+/* Membedakan warna sedikit saat kursor melewati baris tersebut (Hover) */
+table.dataTable tbody tr.row-tidak-balance:hover td {
+    background-color: red !important; 
+}
+
+/* Agar teks status badge tetap terlihat rapi */
+table.dataTable tbody tr.row-tidak-balance td .badge {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
 <?= $this->section('content') ?>
 <!-- Begin Page Content -->
 <div class="container-fluid">
@@ -9,96 +22,96 @@
   <!-- Page Heading -->
   <div class="card shadow mb-4">
     <form action="<?php echo site_url('jurnal/delete-all') ?>" id="form-delete" method="post" enctype="multipart/form-data">
-        <div class="card-header d-sm-flex align-items-center justify-content-between py-3">
-          <div class="row">
-            <?php if (session()->get('idpengguna') != '8888888888') { ?>
-              <!--<h6 class="m-0 font-weight-bold text-info">Data Jurnal</h6>-->
-                <div class="col-4">
-                  <select class="form-control" name="bulan" id="bulan">
-                        <option value="">Semua Bulan</option>
-                        <option value="1" <?= $jurnal_bulan->bulan == '1'? 'selected':'' ?>>Januari</option>
-                        <option value="2" <?= $jurnal_bulan->bulan == '2'? 'selected':'' ?>>Februari</option>
-                        <option value="3" <?= $jurnal_bulan->bulan == '3'? 'selected':'' ?>>Maret</option>
-                        <option value="4" <?= $jurnal_bulan->bulan == '4'? 'selected':'' ?>>April</option>
-                        <option value="5" <?= $jurnal_bulan->bulan == '5'? 'selected':'' ?>>Mei</option> 
-                        <option value="6" <?= $jurnal_bulan->bulan == '6'? 'selected':'' ?>>Juni</option>
-                        <option value="7" <?= $jurnal_bulan->bulan == '7'? 'selected':'' ?>>Juli</option>
-                        <option value="8" <?= $jurnal_bulan->bulan == '8'? 'selected':'' ?>>Agustus</option>
-                        <option value="9" <?= $jurnal_bulan->bulan == '9'? 'selected':'' ?>>September</option>
-                        <option value="10" <?= $jurnal_bulan->bulan == '10'? 'selected':'' ?>>Oktober</option>
-                        <option value="11" <?= $jurnal_bulan->bulan == '11'? 'selected':'' ?>>November</option>
-                        <option value="12" <?= $jurnal_bulan->bulan == '12'? 'selected':'' ?>>Desember</option>
-                  </select>
-                </div>
-                <div class="col-3">
-                    <select class="form-control" name="tahun" id="tahun">
-                        <?php foreach($jurnal as $rows): ?>
-                            <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal? 'selected':'' ?>><?= $rows->tgljurnal ?></option>
-                        <?php endforeach; ?>
-                        <option value="null">Kosong</option>
-                    </select>
-                </div>
-                
-                <div class="col-5">
-                    <select class="form-control" name="status_approve" id="status_approve">
-                        <option class="bg-warning text-light" value="0" <?= session('status_approve') == '0'? 'selected':'' ?>>Menunggu</option>
-                        <option class="bg-success text-light" value="1" <?= session('status_approve') == '1'? 'selected':'' ?>>Disetujui</option>
-                        <option class="bg-danger text-light" value="all" <?= session('status_approve') == 'all'? 'selected':'' ?>>Perbaikan</option>
-                        <!--<option class="bg-danger text-light" value="2" <?= session('status_approve') == '2'? 'selected':'' ?>>Perbaikan</option>-->
-                    </select>
-                </div>
-            <?php } else { ?>
-              <input type="hidden" id="idperusahaan" name="idperusahaan">
-                <div class="col-4">
-                  <input type="text" id="tampilperusahaan" class="form-control" value="" style="width: 100%;" placeholder="Cari nama perusahaan..">
-                </div>
-                <div class="col-3">
-                  <select class="form-control" name="bulan" id="bulan">
-                        <option value="">Semua Bulan</option>
-                        <option value="1" <?= $jurnal_bulan->bulan == '1'? 'selected':'' ?>>Januari</option>
-                        <option value="2" <?= $jurnal_bulan->bulan == '2'? 'selected':'' ?>>Februari</option>
-                        <option value="3" <?= $jurnal_bulan->bulan == '3'? 'selected':'' ?>>Maret</option>
-                        <option value="4" <?= $jurnal_bulan->bulan == '4'? 'selected':'' ?>>April</option>
-                        <option value="5" <?= $jurnal_bulan->bulan == '5'? 'selected':'' ?>>Mei</option> 
-                        <option value="6" <?= $jurnal_bulan->bulan == '6'? 'selected':'' ?>>Juni</option>
-                        <option value="7" <?= $jurnal_bulan->bulan == '7'? 'selected':'' ?>>Juli</option>
-                        <option value="8" <?= $jurnal_bulan->bulan == '8'? 'selected':'' ?>>Agustus</option>
-                        <option value="9" <?= $jurnal_bulan->bulan == '9'? 'selected':'' ?>>September</option>
-                        <option value="10" <?= $jurnal_bulan->bulan == '10'? 'selected':'' ?>>Oktober</option>
-                        <option value="11" <?= $jurnal_bulan->bulan == '11'? 'selected':'' ?>>November</option>
-                        <option value="12" <?= $jurnal_bulan->bulan == '12'? 'selected':'' ?>>Desember</option>
-                  </select>
-                </div>
-                <div class="col-2">
-                    <select class="form-control" name="tahun" id="tahun">
-                        <?php foreach($jurnal as $rows): ?>
-                            <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal? 'selected':'' ?>><?= $rows->tgljurnal ?></option>
-                        <?php endforeach; ?>
-                        <option value="null">Kosong</option>
-                    </select>
-                </div>
-                <div class="col-3">
-                    <select class="form-control" name="status_approve" id="status_approve">
-                        <option value="0" <?= session('status_approve') == '0'? 'selected':'' ?>>Menunggu Persetujuan</option>
-                        <option value="1" <?= session('status_approve') == '1'? 'selected':'' ?>>Telah Disetujui</option>
-                        <option value="2" <?= session('status_approve') == '2'? 'selected':'' ?>>Perlu Perbaikan</option>
-                    </select>
-                </div>
-            <?php } ?>
-          </div>
-          <div>
-                <?php if(session()->get('level_nama') !='Supervisor' ): ?>
-                    <?php if (session()->get('databaseHitJurnal') <= session()->get('hitJurnal')) { ?>
-                      <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></button>
-                      <a href="<?php echo ('jurnal/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
-                    <?php } else { ?>
-                      <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-danger tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></a>
-                      <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
-                    <?php } ?>
-                <?php endif; ?>
-          </div>
+      <div class="card-header d-sm-flex align-items-center justify-content-between py-3">
+        <div class="row">
+          <?php if (session()->get('idpengguna') != '8888888888') { ?>
+            <!--<h6 class="m-0 font-weight-bold text-info">Data Jurnal</h6>-->
+            <div class="col-4">
+              <select class="form-control" name="bulan" id="bulan">
+                <option value="">Semua Bulan</option>
+                <option value="1" <?= $jurnal_bulan->bulan == '1' ? 'selected' : '' ?>>Januari</option>
+                <option value="2" <?= $jurnal_bulan->bulan == '2' ? 'selected' : '' ?>>Februari</option>
+                <option value="3" <?= $jurnal_bulan->bulan == '3' ? 'selected' : '' ?>>Maret</option>
+                <option value="4" <?= $jurnal_bulan->bulan == '4' ? 'selected' : '' ?>>April</option>
+                <option value="5" <?= $jurnal_bulan->bulan == '5' ? 'selected' : '' ?>>Mei</option>
+                <option value="6" <?= $jurnal_bulan->bulan == '6' ? 'selected' : '' ?>>Juni</option>
+                <option value="7" <?= $jurnal_bulan->bulan == '7' ? 'selected' : '' ?>>Juli</option>
+                <option value="8" <?= $jurnal_bulan->bulan == '8' ? 'selected' : '' ?>>Agustus</option>
+                <option value="9" <?= $jurnal_bulan->bulan == '9' ? 'selected' : '' ?>>September</option>
+                <option value="10" <?= $jurnal_bulan->bulan == '10' ? 'selected' : '' ?>>Oktober</option>
+                <option value="11" <?= $jurnal_bulan->bulan == '11' ? 'selected' : '' ?>>November</option>
+                <option value="12" <?= $jurnal_bulan->bulan == '12' ? 'selected' : '' ?>>Desember</option>
+              </select>
+            </div>
+            <div class="col-3">
+              <select class="form-control" name="tahun" id="tahun">
+                <?php foreach ($jurnal as $rows): ?>
+                  <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
+                <?php endforeach; ?>
+                <option value="null">Kosong</option>
+              </select>
+            </div>
+
+            <div class="col-5">
+              <select class="form-control" name="status_approve" id="status_approve">
+                <option class="bg-warning text-light" value="0" <?= session('status_approve') == '0' ? 'selected' : '' ?>>Menunggu</option>
+                <option class="bg-success text-light" value="1" <?= session('status_approve') == '1' ? 'selected' : '' ?>>Disetujui</option>
+                <option class="bg-danger text-light" value="all" <?= session('status_approve') == 'all' ? 'selected' : '' ?>>Perbaikan</option>
+                <!--<option class="bg-danger text-light" value="2" <?= session('status_approve') == '2' ? 'selected' : '' ?>>Perbaikan</option>-->
+              </select>
+            </div>
+          <?php } else { ?>
+            <input type="hidden" id="idperusahaan" name="idperusahaan">
+            <div class="col-4">
+              <input type="text" id="tampilperusahaan" class="form-control" value="" style="width: 100%;" placeholder="Cari nama perusahaan..">
+            </div>
+            <div class="col-3">
+              <select class="form-control" name="bulan" id="bulan">
+                <option value="">Semua Bulan</option>
+                <option value="1" <?= $jurnal_bulan->bulan == '1' ? 'selected' : '' ?>>Januari</option>
+                <option value="2" <?= $jurnal_bulan->bulan == '2' ? 'selected' : '' ?>>Februari</option>
+                <option value="3" <?= $jurnal_bulan->bulan == '3' ? 'selected' : '' ?>>Maret</option>
+                <option value="4" <?= $jurnal_bulan->bulan == '4' ? 'selected' : '' ?>>April</option>
+                <option value="5" <?= $jurnal_bulan->bulan == '5' ? 'selected' : '' ?>>Mei</option>
+                <option value="6" <?= $jurnal_bulan->bulan == '6' ? 'selected' : '' ?>>Juni</option>
+                <option value="7" <?= $jurnal_bulan->bulan == '7' ? 'selected' : '' ?>>Juli</option>
+                <option value="8" <?= $jurnal_bulan->bulan == '8' ? 'selected' : '' ?>>Agustus</option>
+                <option value="9" <?= $jurnal_bulan->bulan == '9' ? 'selected' : '' ?>>September</option>
+                <option value="10" <?= $jurnal_bulan->bulan == '10' ? 'selected' : '' ?>>Oktober</option>
+                <option value="11" <?= $jurnal_bulan->bulan == '11' ? 'selected' : '' ?>>November</option>
+                <option value="12" <?= $jurnal_bulan->bulan == '12' ? 'selected' : '' ?>>Desember</option>
+              </select>
+            </div>
+            <div class="col-2">
+              <select class="form-control" name="tahun" id="tahun">
+                <?php foreach ($jurnal as $rows): ?>
+                  <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
+                <?php endforeach; ?>
+                <option value="null">Kosong</option>
+              </select>
+            </div>
+            <div class="col-3">
+              <select class="form-control" name="status_approve" id="status_approve">
+                <option value="0" <?= session('status_approve') == '0' ? 'selected' : '' ?>>Menunggu Persetujuan</option>
+                <option value="1" <?= session('status_approve') == '1' ? 'selected' : '' ?>>Telah Disetujui</option>
+                <option value="2" <?= session('status_approve') == '2' ? 'selected' : '' ?>>Perlu Perbaikan</option>
+              </select>
+            </div>
+          <?php } ?>
         </div>
-        
+        <div>
+          <?php if (session()->get('level_nama') != 'Supervisor'): ?>
+            <?php if (session()->get('databaseHitJurnal') <= session()->get('hitJurnal')) { ?>
+              <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></button>
+              <a href="<?php echo ('jurnal/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
+            <?php } else { ?>
+              <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-danger tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></a>
+              <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
+            <?php } ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
       <div class="card-body">
 
         <?php
@@ -170,11 +183,11 @@
 </div>
 <!--modal cetak pdf-->
 <div class="modal fade" id="modalcetakpdf" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
-        <div class="modal-content">
-            <div class="isiKonten"></div>
-        </div>
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="isiKonten"></div>
     </div>
+  </div>
 </div>
 <!--modal cetak pdf-->
 
@@ -187,74 +200,134 @@
 
   $(document).ready(function() {
 
-    //defenisi datatable
-    var t = $('#table').DataTable({
-      "select": true,
-      "processing": true,
-      "serverSide": true,
-      "order": [],
-      "ajax": {
-        "url": "<?php echo site_url('jurnal/datatablesource') ?>",
-        "type": "POST",
-        data: function(d) {
-          d.cari = $('input[name=cari]').val();
-          d.idperusahaan = $('input[name=idperusahaan]').val();
-          d.tahun = $('#tahun').val();
-          d.bulan = $('#bulan').val();
-          d.status_approve = $('#status_approve').val();
+      // 1. INISIALISASI DATATABLES (Script asli Anda)
+      var t = $('#table').DataTable({
+        "select": true,
+        "processing": true,
+        "serverSide": true,
+        "order": [],
+        "ajax": {
+          "url": "<?php echo site_url('jurnal/datatablesource') ?>",
+          "type": "POST",
+          data: function(d) {
+            d.cari = $('input[name=cari]').val();
+            d.idperusahaan = $('input[name=idperusahaan]').val();
+            d.tahun = $('#tahun').val();
+            d.bulan = $('#bulan').val();
+            d.status_approve = $('#status_approve').val();
+          }
+        },
+        "columnDefs": [{
+            "targets": [0],
+            "orderable": false,
+            "className": 'dt-body-center'
+          },
+          {
+            "targets": [1],
+            "className": 'dt-body-center'
+          },
+          {
+            "targets": [2],
+            "className": 'dt-body-center'
+          },
+          {
+            "targets": [5],
+            "className": 'dt-body-right'
+          },
+          {
+            "targets": [6],
+            "orderable": false,
+            "className": 'dt-body-right'
+          },
+          {
+            "targets": [7],
+            "orderable": false,
+            "className": 'dt-body-center'
+          },
+        ],
+        "language": {
+          "infoFiltered": ""
+        },
+        
+        // =========================================================
+        // TAMBAHKAN FITUR INI UNTUK MEWARNAI BARIS SECARA PAKSA
+        // =========================================================
+        "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
+            
+            // Jika baris memiliki class TIDAK BALANCE (MERAH)
+            if ($(row).hasClass('row-tidak-balance')) {
+                $('td', row).each(function() {
+                    this.style.setProperty('background-color', '#f8d7da', 'important'); // Merah muda
+                    this.style.setProperty('color', '#721c24', 'important');            // Teks merah gelap
+                    this.style.setProperty('border-color', '#f5c6cb', 'important');
+                });
+            } 
+            
+            // Jika baris memiliki class BALANCE (HIJAU)
+            else if ($(row).hasClass('row-balance')) {
+                $('td', row).each(function() {
+                    this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
+                    this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
+                    this.style.setProperty('border-color', '#c3e6cb', 'important');
+                });
+            }
+            
         }
-      },
-      "columnDefs": [{
-          "targets": [0],
-          "orderable": false,
-          "className": 'dt-body-center'
-        },
-        {
-          "targets": [1],
-          "className": 'dt-body-center'
-        },
-        {
-          "targets": [2],
-          "className": 'dt-body-center'
-        },
-        {
-          "targets": [5],
-          "className": 'dt-body-right'
-        },
-        {
-          "targets": [6],
-          "orderable": false,
-          "className": 'dt-body-right'
-        },
-        {
-          "targets": [7],
-          "orderable": false,
-          "className": 'dt-body-center'
-        },
-      ],
-      "language": {
-        "infoFiltered": ""
-      },
-       
+        // =========================================================
 
-    });
-    
-    //untuk lihat semua pada kolom Keterangan
-    $('#table').on('click', '.toggle-text', function () {
-        let $cell = $(this).closest('td');
-    
-        let shortText = $cell.find('.text-short');
-        let fullText  = $cell.find('.text-full');
-    
-        if (fullText.hasClass('d-none')) {
-            shortText.addClass('d-none');
-            fullText.removeClass('d-none');
-            $(this).text('ringkas');
+      });
+
+      // 2. TAMBAHKAN EVENT LISTENER KLIK BARIS DI SINI
+      $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function() {
+        var tr = $(this).closest('tr');
+        var row = t.row(tr);
+
+        if (row.child.isShown()) {
+          // Jika detail sudah terbuka, tutup detailnya
+          row.child.hide();
+          tr.removeClass('shown bg-light');
         } else {
-            fullText.addClass('d-none');
-            shortText.removeClass('d-none');
-            $(this).text('lihat semua');
+          // Ambil idjurnal dari meta data (Pastikan Langkah 1 di PHP sudah Anda terapkan)
+          var idjurnal = row.data().DT_RowData.idjurnal;
+
+          // Tampilkan animasi loading sementara menunggu data dari server
+          row.child('<div class="text-center p-3"><i class="fas fa-spinner fa-spin text-primary"></i> Mengambil detail data...</div>').show();
+          tr.addClass('shown bg-light');
+
+          // Ambil data detail menggunakan AJAX
+          $.ajax({
+            url: "<?php echo site_url('jurnal/get_detail_jurnal') ?>", // Pastikan nama controller sesuai
+            type: "POST",
+            data: {
+              idjurnal: idjurnal
+            },
+            success: function(response) {
+              // Masukkan tabel HTML yang di-return oleh PHP ke dalam child row
+              row.child(response).show();
+            },
+            error: function() {
+              row.child('<div class="p-3 text-danger">Gagal mengambil data detail, periksa koneksi.</div>').show();
+            }
+          });
         }
+      });
+
+    //untuk lihat semua pada kolom Keterangan
+    $('#table').on('click', '.toggle-text', function() {
+      let $cell = $(this).closest('td');
+
+      let shortText = $cell.find('.text-short');
+      let fullText = $cell.find('.text-full');
+
+      if (fullText.hasClass('d-none')) {
+        shortText.addClass('d-none');
+        fullText.removeClass('d-none');
+        $(this).text('ringkas');
+      } else {
+        fullText.addClass('d-none');
+        shortText.removeClass('d-none');
+        $(this).text('lihat semua');
+      }
     });
 
     $('#search-form').on('keyup', function(e) {
@@ -263,19 +336,19 @@
     });
     //end (document).ready
 
-    $('#tahun').on('change', function(){
-        t.draw();
-        e.preventDefault();
+    $('#tahun').on('change', function() {
+      t.draw();
+      e.preventDefault();
     })
-    
-    $('#bulan').on('change', function(){
-        t.draw();
-        e.preventDefault();
+
+    $('#bulan').on('change', function() {
+      t.draw();
+      e.preventDefault();
     })
-    
-    $('#status_approve').on('change', function(){
-        t.draw();
-        e.preventDefault();
+
+    $('#status_approve').on('change', function() {
+      t.draw();
+      e.preventDefault();
     })
 
     $(document).on("click", "#hapus", function(e) {
@@ -403,9 +476,9 @@
     });
   });
 
-    $(document).on("click", "#cetak-pdf, [data-cetak_pdf]", function(e) {
-        const url = $(this).data('cetak_pdf');
-        $(".isiKonten").html(`
+  $(document).on("click", "#cetak-pdf, [data-cetak_pdf]", function(e) {
+    const url = $(this).data('cetak_pdf');
+    $(".isiKonten").html(`
             <div class="modal-header">
                 <h5 class="modal-title">Tampilan laporan</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -430,14 +503,14 @@
             </div>
         `);
 
-        // 2. Deteksi kapan Iframe selesai memuat SELURUH data dari server
-        $("#frameBukuBesar").on("load", function() {
-          // Sembunyikan loading
-          $("#loadingIframe").fadeOut();
+    // 2. Deteksi kapan Iframe selesai memuat SELURUH data dari server
+    $("#frameBukuBesar").on("load", function() {
+      // Sembunyikan loading
+      $("#loadingIframe").fadeOut();
 
-          // Tampilkan iframe secara halus
-          $(this).css("opacity", "1");
-        });
+      // Tampilkan iframe secara halus
+      $(this).css("opacity", "1");
     });
+  });
 </script>
 <?= $this->endSection() ?>

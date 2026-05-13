@@ -41,7 +41,6 @@ class Jurnal_model extends Model
             }
         }
         
-        
         if (session()->get('idpengguna') != '8888888888') {
             if(session('level') == 1){
                 $this->builder->where('idperusahaan', session()->get('idperusahaan'));
@@ -51,7 +50,6 @@ class Jurnal_model extends Model
                 $this->builder->where('idpengguna', session()->get('idpengguna'));
             }
         }
-        
         
         if($_POST['status_approve'] != '2'){
             if ($_POST['tahun'] != '') {
@@ -95,12 +93,12 @@ class Jurnal_model extends Model
         foreach ($this->column_search as $item) {
             if (!empty($_POST['search']['value'])) {
                 if ($i === 0) {
-                    $this->builder->groupStart(); // Untuk Menggabung beberapa kondisi "AND"
+                    $this->builder->groupStart();
                     $this->builder->like($item, $_POST['search']['value']);
                 } else {
                     $this->builder->orLike($item, $_POST['search']['value']);
                 }
-                if (count($this->column_search) - 1 == $i) //last loop
+                if (count($this->column_search) - 1 == $i)
                     $this->builder->groupEnd();
             }
             $i++;
@@ -110,6 +108,17 @@ class Jurnal_model extends Model
         if (isset($_POST['order'])) {
             $this->builder->orderBy($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
         } else if (isset($this->order)) {
+            
+            // =========================================================================================
+            // PERUBAHAN DI SINI: MENGURUTKAN JURNAL TIDAK BALANCE KE PALING ATAS
+            // Logic: Jika Debet == Kredit beri nilai 1. Jika tidak, beri nilai 0. Urutkan dari 0 (ASC)
+            // =========================================================================================
+            $subquery_balance = '(SELECT CASE WHEN COALESCE(SUM(debet), 0) = COALESCE(SUM(kredit), 0) THEN 1 ELSE 0 END FROM jurnaldetail WHERE jurnaldetail.idjurnal = ' . $this->tabelview . '.idjurnal)';
+            
+            // Parameter ke-3 (false) sangat penting agar CI4 tidak menambahkan tanda backtick (`) yang merusak query
+            $this->builder->orderBy($subquery_balance, 'ASC', false);
+            
+            // Urutan selanjutnya baru berdasarkan tanggal terbaru
             $this->builder->orderBy('tgljurnal', 'desc');
             $this->builder->orderBy('tglinsert', 'desc');
         }

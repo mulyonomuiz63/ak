@@ -109,144 +109,210 @@ class JurnalController extends BaseController
 
 
 	public function datatablesource()
-
-	{
-
-		$RsData = $this->jurnal_model->get_datatables();
-
-		$no = $this->request->getPost('start');
-
-		$data = array();
-
-
-
-		if ($RsData->getNumRows() > 0) {
-
-			foreach ($RsData->getResult() as $rowdata) {
-
-
-				if (session()->get('level_super') != 3) {
-					if ($rowdata->approve == 1) {
-						$approve = '<a href="#" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
-					} elseif ($rowdata->approve == 2) {
-						$approve = '<a href="#" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
-					} else {
-						$approve = '<a href="#" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Sedang di proses PIC"><i class="bi bi-check-circle-fill"></i></a>';
-					}
-
-
-					$opsi = ' <a href="javascript:void(0)" data-cetak_pdf="' . site_url('jurnal/lihat/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-secondary btn-circle tooltips" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" id="cetak-pdf" title="Cetak jurnal ke pdf"><i class="fa fa-print"></i></a> <a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-warning btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Ubah data jurnal"><i class="fa fa-edit"></i></a>
-
-						<a href="' . site_url('jurnal/delete/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle" id="hapus"><i class="fa fa-trash tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"></i></a>
-						';
-
-					$app = $approve;
-				} else {
-					if ($rowdata->approve == 0 || $rowdata->id_pic == null) {
-						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Menunggu Persetujuan"><i class="bi bi-check-circle-fill"></i></a>';
-					} elseif ($rowdata->approve == 1 || $rowdata->id_pic == null) {
-						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
-					} else {
-						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
-					}
-					$app = $approve;
-					$opsi = $approve;
-				}
-
-				if (session()->get('level_super') != 3) {
-					$option = '<div class="dropdown custom-dropdown dropleft mr-2">
-    
-    						<a class="badge btn-info" href="#" role="button" id="dropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    							<i class="bi bi-three-dots"></i>
-    						</a>
-    
-    						<div class="dropdown-menu" >
-    
-        						<div class="mx-2">
-        						' . $opsi . '
+    {
+        $RsData = $this->jurnal_model->get_datatables();
+        $no = $this->request->getPost('start');
         
-        						
-        						</div>
-    
-    						</div>
-    
-    					</div>';
-				} else {
-					$option = "";
-				}
+        // 1. SIAPKAN 2 ARRAY TERPISAH
+        $dataBalance = array();
+        $dataTidakBalance = array();
 
-				$no++;
+        // Panggil koneksi database sekali di luar loop untuk efisiensi
+        $db = \Config\Database::connect();
 
-				$row = array();
+        if ($RsData->getNumRows() > 0) {
+            foreach ($RsData->getResult() as $rowdata) {
 
-				$row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
+                // ========================================================================
+                // 1. CEK STATUS BALANCE UNTUK BARIS INI
+                // ========================================================================
+                $cekBalance = $db->table('jurnaldetail')
+                    ->select('SUM(debet) as t_debet, SUM(kredit) as t_kredit')
+                    ->where('idjurnal', $rowdata->idjurnal)
+                    ->get()
+                    ->getRow();
 
-				$row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
-				$row[] = $rowdata->idjurnal;
-				$row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
+                // Tentukan apakah balance atau tidak (anggap balance jika debet == kredit)
+                $isBalance = ($cekBalance->t_debet == $cekBalance->t_kredit);
+                // ========================================================================
 
+                if (session()->get('level_super') != 3) {
+                    if ($rowdata->approve == 1) {
+                        $approve = '<a href="#" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+                    } elseif ($rowdata->approve == 2) {
+                        $approve = '<a href="#" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+                    } else {
+                        $approve = '<a href="#" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Sedang di proses PIC"><i class="bi bi-check-circle-fill"></i></a>';
+                    }
 
-				$teks = ringkas_teks($rowdata->keterangan, 5);
+                    $opsi = ' <a href="javascript:void(0)" data-cetak_pdf="' . site_url('jurnal/lihat/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-secondary btn-circle tooltips" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" id="cetak-pdf" title="Cetak jurnal ke pdf"><i class="fa fa-print"></i></a> <a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-warning btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Ubah data jurnal"><i class="fa fa-edit"></i></a>
+                          <a href="' . site_url('jurnal/delete/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle" id="hapus"><i class="fa fa-trash tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"></i></a>';
+                    $app = $approve;
+                } else {
+                    if ($rowdata->approve == 0 || $rowdata->id_pic == null) {
+                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Menunggu Persetujuan"><i class="bi bi-check-circle-fill"></i></a>';
+                    } elseif ($rowdata->approve == 1 || $rowdata->id_pic == null) {
+                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+                    } else {
+                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+                    }
+                    $app = $approve;
+                    $opsi = $approve;
+                }
 
-				if ($teks['full'] == '') {
-					$row[] = '<span>' . $teks['short'] . '</span>';
-				} else {
-					$row[] = '
-                        <span class="text-short">' . $teks['short'] . '...</span>
-                        <span class="text-full d-none">' . $teks['full'] . '</span>
-                        <a href="javascript:void(0)" class="toggle-text text-primary ml-1">
-                            Lihat semua
-                        </a>
-                    ';
-				}
+                if (session()->get('level_super') != 3) {
+                    $option = '<div class="dropdown custom-dropdown dropleft mr-2">
+                                <a class="badge btn-info" href="#" role="button" id="dropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="bi bi-three-dots"></i>
+                                </a>
+                                <div class="dropdown-menu" >
+                                    <div class="mx-2">
+                                    ' . $opsi . '
+                                    </div>
+                                </div>
+                            </div>';
+                } else {
+                    $option = "";
+                }
 
-				$row[] = $rowdata->namapengguna;
+                $no++;
+                $row = array();
 
-				$row[] = number_format($rowdata->jumlah);
+                $row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
+                $row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
 
-				$lamp = '-';
+                // ========================================================================
+                // 2. TAMBAHKAN BADGE JIKA TIDAK BALANCE DI KOLOM ID JURNAL
+                // ========================================================================
+                if ($isBalance) {
+                    $badgePeringatan = '<br><span class="badge badge-success mt-1" style="font-size:10px;"><i class="fa fa-check-circle"></i> BALANCE</span>';
+                    $row['DT_RowClass'] = 'row-balance'; 
+                } else {
+                    $badgePeringatan = '<br><span class="badge badge-danger mt-1" style="font-size:10px;"><i class="fa fa-exclamation-triangle"></i> TIDAK BALANCE</span>';
+                    $row['DT_RowClass'] = 'row-tidak-balance';
+                }
 
-				if ($rowdata->totalfile != 0) {
-					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
-				} else if ($rowdata->filelampiran != null || $rowdata->filelampiran != '') {
-					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
-				}
-				$row[] = $lamp;
+                $row[] = $rowdata->idjurnal . $badgePeringatan;
+                $row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
 
+                $teks = ringkas_teks($rowdata->keterangan, 5);
+                if ($teks['full'] == '') {
+                    $row[] = '<span>' . $teks['short'] . '</span>';
+                } else {
+                    $row[] = '
+                    <span class="text-short">' . $teks['short'] . '...</span>
+                    <span class="text-full d-none">' . $teks['full'] . '</span>
+                    <a href="javascript:void(0)" class="toggle-text text-primary ml-1">Lihat semua</a>
+                ';
+                }
 
+                $row[] = $rowdata->namapengguna;
+                $row[] = '<span class="font-weight-bold">' . number_format($rowdata->jumlah) . '</span>';
 
-				$row[] =
+                $lamp = '-';
+                if ($rowdata->totalfile != 0) {
+                    $lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+                } else if ($rowdata->filelampiran != null || $rowdata->filelampiran != '') {
+                    $lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+                }
+                $row[] = $lamp;
 
-					'<div class="d-flex justify-content-center align-items-center">
-    					' . $option . '
-    					' . $app . '
-    					
-    				</div>
-					';
+                $row[] = '<div class="d-flex justify-content-center align-items-center">
+                        ' . $option . '
+                        ' . $app . '
+                      </div>';
 
-				$data[] = $row;
+                $row['DT_RowData'] = array(
+                    'idjurnal' => $rowdata->idjurnal
+                );
+
+                // ========================================================================
+                // 3. MASUKKAN KE ARRAY YANG SESUAI (PISAHKAN BALANCE & TIDAK BALANCE)
+                // ========================================================================
+                if (!$isBalance) {
+                    // Masukkan ke keranjang merah
+                    $dataTidakBalance[] = $row;
+                } else {
+                    // Masukkan ke keranjang aman
+                    $dataBalance[] = $row;
+                }
+            }
+        }
+
+        // ========================================================================
+        // 4. GABUNGKAN ARRAY: YANG TIDAK BALANCE SELALU DI ATAS
+        // ========================================================================
+        $dataFinal = array_merge($dataTidakBalance, $dataBalance);
+
+        $output = array(
+            "draw" => $this->request->getPost('draw'),
+            "recordsTotal" => $this->jurnal_model->count_all(),
+            "recordsFiltered" => $this->jurnal_model->count_filtered(),
+            "data" => $dataFinal, // <-- Gunakan data yang sudah digabung
+        );
+
+        return $this->response->setJSON($output);
+    }
+
+	public function get_detail_jurnal()
+	{
+		$idjurnal = $this->request->getPost('idjurnal');
+		$db = \Config\Database::connect();
+
+		// Sesuaikan nama tabel dan kolom dengan database Anda
+		$detail = $this->db->table('jurnaldetail')
+			->select('akun.kdakun, akun.nmakun, jurnaldetail.debet, jurnaldetail.kredit')
+			->join('akun', 'akun.keyakun = jurnaldetail.keyakun', 'left')
+			->where('jurnaldetail.idjurnal', $idjurnal)
+			->get()
+			->getResult();
+
+		$html = '<div class="p-3 bg-light rounded">';
+		$html .= '<table class="table table-sm table-bordered table-striped" style="width: 100%;">';
+		$html .= '<thead class="thead-dark">
+                    <tr>
+                        <th>Kode Akun</th>
+                        <th>Nama Akun</th>
+                        <th class="text-right">Debet</th>
+                        <th class="text-right">Kredit</th>
+                    </tr>
+                  </thead>';
+		$html .= '<tbody>';
+
+		$tDebet = 0;
+		$tKredit = 0;
+
+		if (count($detail) > 0) {
+			foreach ($detail as $d) {
+				$html .= '<tr>';
+				$html .= '<td>' . $d->kdakun . '</td>';
+				$html .= '<td>' . $d->nmakun . '</td>';
+				$html .= '<td class="text-right">' . number_format($d->debet, 0, ',', '.') . '</td>';
+				$html .= '<td class="text-right">' . number_format($d->kredit, 0, ',', '.') . '</td>';
+				$html .= '</tr>';
+
+				$tDebet += $d->debet;
+				$tKredit += $d->kredit;
 			}
+		} else {
+			$html .= '<tr><td colspan="4" class="text-center text-muted">Tidak ada detail data jurnal</td></tr>';
 		}
 
+		$html .= '</tbody>';
+		$html .= '<tfoot>';
+		$html .= '<tr>
+                    <th colspan="2" class="text-right">TOTAL</th>
+                    <th class="text-right">' . number_format($tDebet, 0, ',', '.') . '</th>
+                    <th class="text-right">' . number_format($tKredit, 0, ',', '.') . '</th>
+                  </tr>';
 
+		// Cek Balance
+		$status = ($tDebet == $tKredit) ? '<span class="badge badge-success px-3 py-2">BALANCE</span>' : '<span class="badge badge-danger px-3 py-2">TIDAK BALANCE</span>';
 
-		$output = array(
+		$html .= '<tr><th colspan="5" class="text-center bg-white border-0 pt-3">STATUS JURNAL: ' . $status . '</th></tr>';
+		$html .= '</tfoot></table></div>';
 
-			"draw" => $this->request->getPost('draw'),
-
-			"recordsTotal" => $this->jurnal_model->count_all(),
-
-			"recordsFiltered" => $this->jurnal_model->count_filtered(),
-
-			"data" => $data,
-
-		);
-
-
-
-		//output to json format
-
-		return $this->response->setJSON($output);
+		echo $html;
 	}
 
 

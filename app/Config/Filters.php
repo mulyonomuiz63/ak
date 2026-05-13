@@ -39,6 +39,7 @@ class Filters extends BaseFilters
 
         'authFilter'     => \App\Filters\AuthFilter::class,
         'guestFilter'    => \App\Filters\GuestFilter::class,
+        'maintenance' => \App\Filters\MaintenanceFilter::class,
     ];
 
     /**
@@ -80,6 +81,7 @@ class Filters extends BaseFilters
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
+            'maintenance'
         ],
         'after' => [
             // 'honeypot',
