@@ -309,7 +309,10 @@ class LapPerubahanEkuitasController extends BaseController
         $pdf->SetTopMargin(35);
         $pdf->SetFont('times', '', 10);
         $pdf->writeHTML($table, true, false, false, false, '');
-        $pdf->Output('Laporan Perubahan Ekuitas.pdf', 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Perubahan Ekuitas ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 }

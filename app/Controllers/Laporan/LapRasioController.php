@@ -473,7 +473,10 @@ class LapRasioController extends BaseController
         $pdf->SetTopMargin(35);
         $pdf->SetFont('times', '', 10);
         $pdf->writeHTML($table, true, false, false, false, '');
-        $pdf->Output('Laporan Rasio Keuangan.pdf', 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Rasio Keuangan ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -590,8 +593,12 @@ class LapRasioController extends BaseController
         $totallabasetelahpajak = $totallabasebelumpajak + ($totalpendapatandanbebanlainnya - $totalbebanpajakpenghasilan);
 
         // --- Render Excel ---
-        header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-        header("Content-Disposition: attachment; filename=LAPORAN RASIO KEUANGAN.xls");
+        $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Rasio Keuangan ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
 
         $table = '
             <div style="text-align:center; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</div>

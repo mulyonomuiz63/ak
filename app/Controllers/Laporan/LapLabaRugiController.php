@@ -274,7 +274,10 @@ class LapLabaRugiController extends BaseController
         $pdf->SetTopMargin(35);
         $pdf->SetFont('times', '', 10);
         $pdf->writeHTML($htmlChunk, true, false, false, false, '');
-        $pdf->Output("Laporan Laba Rugi$namaCetak.pdf", 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Laba Rugi '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -309,8 +312,12 @@ class LapLabaRugiController extends BaseController
         $rsData = $this->laporan_model->get_laplabarugi($tglawal, $tglakhir, $idperusahaan);
 
         // [UBAH KE CSV]
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Laporan Laba Rugi ' . $namaCetak . '.csv"');
+        $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Laba Rugi '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
 
         $output = fopen('php://output', 'w');
         fputs($output, "\xEF\xBB\xBF");

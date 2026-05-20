@@ -194,3 +194,23 @@ function ringkas_teks($text, $limit = 10)
     ];
 }
 
+if (! function_exists('bulan_tahun')) {
+    function bulan_tahun($tanggal)
+    {
+        if (empty($tanggal)) return '-';
+
+        $daftarBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $angkaBulan = (int) date('m', strtotime($tanggal));
+        $tahun      = date('Y', strtotime($tanggal));
+
+        return $daftarBulan[$angkaBulan] . ' ' . $tahun;
+    }
+}
+
+

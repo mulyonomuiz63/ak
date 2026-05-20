@@ -157,7 +157,10 @@ class LapJurnalController extends BaseController
         // Cetak sisa sisa baris yang belum mencapai 500 (atau kelipatannya)
         $pdf->writeHTML($html, true, false, false, false, '');
 
-        $pdf->Output('Laporan Jurnal.pdf', 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -184,10 +187,12 @@ class LapJurnalController extends BaseController
         }
 
         // [4. SETUP HEADER HTTP UNTUK DOWNLOAD CSV]
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Laporan_Jurnal_Umum.csv"');
-        header('Pragma: no-cache');
-        header('Expires: 0');
+        $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
 
         // [5. BUKA JALUR STREAM LANGSUNG KE BROWSER]
         // "php://output" akan langsung mengirim data yang di-echo ke file yang di-download user, 

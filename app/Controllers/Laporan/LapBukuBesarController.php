@@ -234,7 +234,10 @@ class LapBukuBesarController extends BaseController
         $pdf->SetFont('times', '', 10);
         $pdf->writeHTML($htmlChunk, true, false, false, false, '');
 
-        $pdf->Output("Laporan Buku Besar $nmakun.pdf", 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' '.$nmakun.' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -409,7 +412,10 @@ class LapBukuBesarController extends BaseController
             $pdf->writeHTML($htmlChunk, true, false, false, false, '');
         }
 
-        $pdf->Output('Laporan Buku Besar All.pdf', 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -445,8 +451,12 @@ class LapBukuBesarController extends BaseController
         $akun = $builder->getWhere(array('idperusahaan' => $idperusahaan, 'keyakun' => $keyakun));
 
         // Setup Header untuk Download CSV
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Laporan Buku Besar ' . $nmakun . '.csv"');
+        $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' '.$nmakun.' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
         
         $output = fopen('php://output', 'w');
         fputs($output, "\xEF\xBB\xBF"); // BOM untuk Excel
@@ -555,8 +565,12 @@ class LapBukuBesarController extends BaseController
         $akun = $builder->getWhere(array('idperusahaan' => $idperusahaan, 'level' => 4));
 
         // [UBAH KE CSV]: Set Header HTTP
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Laporan Buku Besar Semua Akun.csv"');
+        $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
         
         $output = fopen('php://output', 'w');
         fputs($output, "\xEF\xBB\xBF"); // Tambahkan BOM agar Excel membaca UTF-8

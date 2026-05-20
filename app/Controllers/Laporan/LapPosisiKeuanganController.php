@@ -265,7 +265,10 @@ class LapPosisiKeuanganController extends BaseController
         $pdf->SetFont('times', '', 10);
         $pdf->writeHTML($htmlChunk, true, false, false, false, '');
 
-        $pdf->Output("Laporan Posisi Keuangan$namaCetak.pdf", 'I');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Posisi Keuangan '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $pdf->Output($namaFile, 'I');
         exit;
     }
 
@@ -299,8 +302,12 @@ class LapPosisiKeuanganController extends BaseController
         $rsDataBerjalan = $this->laporan_model->get_lapposisikeuangan($tglakhirberjalan, $tglakhir, $idperusahaan, $level);
         
         // [UBAH KE FORMAT CSV STREAMING]
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Laporan Posisi Keuangan ' . $namaCetak . '.csv"');
+        $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
+        $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaFile = 'Laporan Posisi Keuangan ' . $namaCetak . ' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
+        header("Content-Type: application/vnd.ms-excel");
+        header("Cache-Control: max-age=0");
 
         $output = fopen('php://output', 'w');
         fputs($output, "\xEF\xBB\xBF"); // Tambahkan BOM agar terbaca di Excel dengan rapi
