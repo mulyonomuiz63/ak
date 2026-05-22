@@ -394,7 +394,7 @@
       source: function(request, response) {
         $.ajax({
           type: "POST",
-          url: "<?php echo site_url('Perusahaan/autocomplate'); ?>",
+          url: "<?php echo site_url('perusahaan/autocomplate'); ?>",
           dataType: "json",
           data: {
             term: request.term
