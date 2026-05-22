@@ -35,6 +35,13 @@ $routes->group('perusahaan', ['filter' => 'authFilter'], function ($routes) {
     $routes->post('get-edit', 'PerusahaanController::getEdit');
     $routes->post('store', 'PerusahaanController::store');
     $routes->post('delete-all', 'PerusahaanController::deleteAll');
+
+    //export data
+    // --- ROUTES UNTUK EXPORT DATA (CHUNK/BATCH PROCESSING) ---
+    $routes->post('export-init', 'ExportDataController::export_init');
+    $routes->post('export-process', 'ExportDataController::export_process');
+    $routes->post('export-finalize', 'ExportDataController::export_finalize');
+    $routes->get('download-zip/(:segment)', 'ExportDataController::download_zip/$1');
 });
 
 
@@ -47,7 +54,6 @@ $routes->group('pengguna', ['filter' => 'authFilter'], function ($routes) {
     $routes->post('get-edit', 'PenggunaController::getEdit');
     $routes->post('store', 'PenggunaController::store');
     $routes->post('delete-all', 'PenggunaController::deleteAll');
-
 });
 
 //akun
@@ -66,7 +72,6 @@ $routes->group('akun', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('status/(:segment)/(:segment)', 'AkunController::status/$1/$2');
     $routes->get('export-excel', 'AkunController::exportExcel');
     $routes->get('export', 'AkunController::export');
-
 });
 
 //jurnal
@@ -88,7 +93,6 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('lihat/(:segment)', 'JurnalController::lihat/$1');
     $routes->get('delete-file-new/(:segment)/(:segment)/(:segment)', 'JurnalController::deleteFileNew/$1/$2/$3');
     $routes->get('delete-file/(:segment)/(:segment)', 'JurnalController::deleteFile/$1/$2');
-
 });
 
 //laporan
@@ -110,30 +114,29 @@ $routes->group('laporan', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('lapbukubesar-excel-semua/(:segment)/(:segment)/(:segment)', 'Laporan\LapBukuBesarController::lapBukuBesarExcelSemua/$1/$2/$3');
     $routes->post('fetchLapbukuBesar', 'Laporan\LapBukuBesarController::fetchLapbukuBesar');
     $routes->post('totalFetchBukubesar', 'Laporan\LapBukuBesarController::totalFetchBukubesar');
-    
+
     //laporan posisi keuangan
     $routes->get('lapposisikeuangan', 'Laporan\LapPosisiKeuanganController::index');
     $routes->post('lapposisikeuangan', 'Laporan\LapPosisiKeuanganController::index');
     $routes->get('lapposisikeuangan-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapPosisiKeuanganController::lapPosisiKeuanganCetak/$1/$2/$3/$4');
     $routes->get('lapposisikeuangan-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapPosisiKeuanganController::lapPosisiKeuanganExcel/$1/$2/$3/$4');
-    
+
     //laporan laba rugi
     $routes->get('laplabarugi', 'Laporan\LapLabarugiController::index');
     $routes->post('laplabarugi', 'Laporan\LapLabarugiController::index');
     $routes->get('laplabarugi-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabarugiController::lapLabaRugiCetak/$1/$2/$3/$4');
     $routes->get('laplabarugi-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabarugiController::lapLabaRugiugiExcel/$1/$2/$3/$4');
-    
+
     //laporan ekuitas
     $routes->get('lapperubahanekuitas', 'Laporan\LapPerubahanEkuitasController::index');
     $routes->post('lapperubahanekuitas', 'Laporan\LapPerubahanEkuitasController::index');
     $routes->get('lapperubahanekuitas-cetak/(:segment)/(:segment)/(:segment)', 'Laporan\LapPerubahanEkuitasController::lapPerubahanEkuitasCetak/$1/$2/$3');
-    
+
     //laporan laprasio
     $routes->get('laprasio', 'Laporan\LapRasioController::index');
     $routes->post('laprasio', 'Laporan\LapRasioController::index');
     $routes->get('laprasio-cetak/(:segment)/(:segment)', 'Laporan\LapRasioController::lapRasioCetak/$1/$2');
     $routes->get('laprasio-excel/(:segment)/(:segment)', 'Laporan\LapRasioController::lapRasioExcel/$1/$2');
-
 });
 
 $routes->group('migrasi', ['filter' => 'authFilter'], function ($routes) {
@@ -142,6 +145,14 @@ $routes->group('migrasi', ['filter' => 'authFilter'], function ($routes) {
     $routes->post('proses-upload', 'MigrasiController::prosesUpload');
     $routes->post('autocomplatePerusahaan', 'MigrasiController::autocomplatePerusahaan');
 });
+
+$routes->group('migrasi-file-utama', ['filter' => 'authFilter'], function ($routes) {
+    $routes->get('/', 'MigrasiFileUtamaController::index');
+    $routes->post('datatablesource', 'MigrasiFileUtamaController::datatablesource');
+    $routes->post('proses-upload', 'MigrasiFileUtamaController::prosesUpload');
+    $routes->post('autocomplatePerusahaan', 'MigrasiFileUtamaController::autocomplatePerusahaan');
+});
+
 
 //reload
 $routes->post('check-reload', 'CheckReload::index');

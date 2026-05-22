@@ -57,7 +57,7 @@
         <div class="col-md-2 mb-3">
           <label class="font-weight-bold">Tahun</label>
           <select class="form-control" id="filter_tahun">
-            <option value="">Semua Bulan</option>
+            <option value="">Semua Tahun</option>
             <?php for ($i = date('Y'); $i >= 2020; $i--) echo "<option value='$i'>$i</option>"; ?>
           </select>
         </div>
@@ -127,7 +127,6 @@
 <script src="<?php echo (base_url('assets/jquery-ui/jquery-ui-2.js')) ?>"></script>
 <script type="text/javascript">
   var t;
-
   $(document).ready(function() {
     t = $('#table').DataTable({
       "select": true,
@@ -136,16 +135,18 @@
       "order": [],
       "pageLength": 50,
       "ajax": {
-        "url": "<?php echo site_url('migrasi/datatablesource') ?>",
+        "url": "<?php echo site_url('migrasi-file-utama/datatablesource') ?>",
         "type": "POST",
         "data": function(d) {
           d.idperusahaan = $('#idperusahaan').val();
           d.tahun = $('#filter_tahun').val();
           d.bulan = $('#filter_bulan').val();
-
-          // Tambahkan parameter filter status ke backend
           d.status = $('#filter_status').val();
         },
+        // PERBAIKAN: Tambahan penangkap error DataTables
+        "error": function(xhr, error, thrown) {
+          console.error("DataTables Error: ", xhr.responseText);
+        }
       },
       "columnDefs": [{
           "targets": [0],
@@ -164,56 +165,38 @@
       t.draw();
     });
 
-    // --- (Script Autocomplete Perusahaan Anda Tetap di Sini) ---
-
-    // --- (Script Button Migrasi Anda Tetap di Sini) ---
-
     // 3. Script untuk Modal Viewer
     $('#modalcetakpdf').on('show.bs.modal', function(event) {
-      var button = $(event.relatedTarget); // Tombol/Link yang diklik
-      var urlFile = button.data('cetak_pdf'); // Ambil URL dari atribut data-cetak_pdf
-
-      // Masukkan URL ke dalam atribut src milik iframe
+      var button = $(event.relatedTarget);
+      var urlFile = button.data('cetak_pdf');
       var modal = $(this);
       modal.find('#iframe-viewer').attr('src', urlFile);
     });
 
-    // Bersihkan Iframe saat modal ditutup agar memori lega
     $('#modalcetakpdf').on('hidden.bs.modal', function() {
       $(this).find('#iframe-viewer').attr('src', '');
     });
 
     // Check All
-    // 1. Script Check-All Khusus Halaman Aktif
     $("#check-all").click(function() {
       var isChecked = $(this).is(":checked");
-
-      // Menggunakan t.rows({ page: 'current' }) agar hanya menargetkan halaman yang sedang dilihat
-      $('.check-item', t.rows({
-        page: 'current'
-      }).nodes()).prop('checked', isChecked);
+      $('.check-item', t.rows({ page: 'current' }).nodes()).prop('checked', isChecked);
     });
 
-    // 2. Script Tambahan: Hapus ceklis "Check All" saat pindah halaman
-    // (Penting agar saat pindah ke Page 2, kotaknya tidak otomatis tercentang)
     t.on('draw.dt', function() {
       $('#check-all').prop('checked', false);
     });
 
-
-
+    // Autocomplete Perusahaan
     $("#tampilperusahaan").autocomplete({
       minLength: 0,
       source: function(request, response) {
         $.ajax({
           type: "POST",
-          url: "<?php echo site_url('migrasi/autocomplatePerusahaan'); ?>",
+          url: "<?php echo site_url('migrasi-file-utama/autocomplatePerusahaan'); ?>",
           dataType: "json",
-          data: {
-            term: request.term
-          },
+          data: { term: request.term },
           success: function(data) {
-            // Map data agar memiliki properti label dan value yang dikenali jQuery UI
             response($.map(data, function(item) {
               return {
                 label: item.namaperusahaan,
@@ -225,16 +208,11 @@
         });
       },
       select: function(event, ui) {
-        // 1. Masukkan data ke input hidden dan input tampil
         $('#idperusahaan').val(ui.item.idperusahaan);
         $('#tampilperusahaan').val(ui.item.label);
-
-        // 2. Langsung panggil t.draw() untuk memfilter tabel
-        // Pastikan variabel 't' adalah variabel DataTable Anda
         if ($.fn.DataTable.isDataTable('#table')) {
           t.draw();
         }
-
         return false;
       }
     }).autocomplete("instance")._renderItem = function(ul, item) {
@@ -243,7 +221,6 @@
         .appendTo(ul);
     };
 
-    // Tambahan: Jika user menghapus isi teks perusahaan, kosongkan idperusahaan dan draw ulang
     $('#tampilperusahaan').on('keyup', function() {
       if ($(this).val() === "") {
         $('#idperusahaan').val("");
@@ -256,20 +233,21 @@
       var $checkedItems = $(".check-item:checked");
       var totalFiles = $checkedItems.length;
 
-      // Peringatan jika belum ada file yang diceklis (Menggunakan Bootbox Alert)
       if (totalFiles === 0) {
         bootbox.alert({
           title: "Perhatian!",
           message: "Pilih minimal satu file untuk dimigrasi!",
           backdrop: true,
-          centerVertical: true
+          centerVertical: true,
+          callback: function() {
+            $('body').focus(); // PERBAIKAN: Bersihkan fokus dari modal
+          }
         });
         return;
       }
 
-      // Konfirmasi Migrasi (Menggunakan Bootbox Confirm)
       bootbox.confirm({
-        closeButton: false, // Hilangkan tombol [X] di atas agar lebih rapi
+        closeButton: false,
         message: `
         <div class="text-center p-2">
             <i class="fas fa-cloud-upload-alt text-primary mb-3" style="font-size: 65px;"></i>
@@ -286,7 +264,7 @@
         buttons: {
           cancel: {
             label: '<i class="fas fa-times"></i> Batal',
-            className: 'btn-outline-secondary px-4' // Menggunakan outline agar tidak terlalu mencolok
+            className: 'btn-outline-secondary px-4'
           },
           confirm: {
             label: '<i class="fas fa-paper-plane"></i> Ya, Migrasi Sekarang',
@@ -294,102 +272,103 @@
           }
         },
         callback: function(result) {
-          // Jika user mengklik tombol "Ya, Migrasi Sekarang"
           if (result) {
+            // PERBAIKAN: Beri jeda 300ms agar bootbox hilang dari DOM sebelum mengeksekusi
+            // Ini untuk mengatasi error "Blocked aria-hidden on an element"
+            setTimeout(function() {
+              $('body').focus(); 
+              $('#loader').show();
+              
+              var currentIndex = 0;
+              var successCount = 0;
+              var failCount = 0;
 
-            // 1. Reset dan Tampilkan Loader
-            $('#loader').show();
-            var currentIndex = 0;
-            var successCount = 0;
-            var failCount = 0;
+              function processNextFile() {
+                var percent = Math.round((currentIndex / totalFiles) * 100);
+                $('#progress-text').text("Memproses " + currentIndex + " dari " + totalFiles + " file...");
+                $('#progress-bar').css('width', percent + '%').text(percent + '%').attr('aria-valuenow', percent);
+                $('#progress-success').text("Berhasil: " + successCount);
+                $('#progress-fail').text("Gagal: " + failCount);
 
-            // 2. Fungsi Antrean (Rekursif)
-            function processNextFile() {
-              // Update UI Progress Bar
-              var percent = Math.round((currentIndex / totalFiles) * 100);
-              $('#progress-text').text("Memproses " + currentIndex + " dari " + totalFiles + " file...");
-              $('#progress-bar').css('width', percent + '%').text(percent + '%').attr('aria-valuenow', percent);
-              $('#progress-success').text("Berhasil: " + successCount);
-              $('#progress-fail').text("Gagal: " + failCount);
+                if (currentIndex >= totalFiles) {
+                  $('#loader').hide();
 
-              // 3. Pengecekan Selesai
-              if (currentIndex >= totalFiles) {
-                $('#loader').hide();
+                  var pesanHasil = `
+                  <div class="text-center mb-4">
+                      <i class="fas fa-check-circle text-success mb-2" style="font-size: 50px;"></i>
+                      <h5 class="font-weight-bold">Proses Migrasi Selesai!</h5>
+                      <p class="text-muted text-sm">Berikut adalah rincian status upload file Anda:</p>
+                  </div>
+                  <ul class="list-group shadow-sm">
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                          <span><i class="fas fa-cloud-upload-alt text-success mr-2"></i> Berhasil Diupload</span>
+                          <span class="badge badge-success badge-pill px-3 py-2" style="font-size: 14px;">` + successCount + ` File</span>
+                      </li>
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                          <span><i class="fas fa-exclamation-triangle text-danger mr-2"></i> Gagal / Error</span>
+                          <span class="badge badge-danger badge-pill px-3 py-2" style="font-size: 14px;">` + failCount + ` File</span>
+                      </li>
+                  </ul>`;
 
-                // 1. Buat struktur HTML yang lebih rapi menggunakan class Bootstrap
-                var pesanHasil = `
-                <div class="text-center mb-4">
-                    <i class="fas fa-check-circle text-success mb-2" style="font-size: 50px;"></i>
-                    <h5 class="font-weight-bold">Proses Migrasi Selesai!</h5>
-                    <p class="text-muted text-sm">Berikut adalah rincian status upload file Anda:</p>
-                </div>
-                <ul class="list-group shadow-sm">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-cloud-upload-alt text-success mr-2"></i> Berhasil Diupload</span>
-                        <span class="badge badge-success badge-pill px-3 py-2" style="font-size: 14px;">` + successCount + ` File</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-exclamation-triangle text-danger mr-2"></i> Gagal / Error</span>
-                        <span class="badge badge-danger badge-pill px-3 py-2" style="font-size: 14px;">` + failCount + ` File</span>
-                    </li>
-                </ul>`;
-
-                // 2. Tampilkan pesan menggunakan Bootbox
-                bootbox.alert({
-                  message: pesanHasil,
-                  centerVertical: true,
-                  closeButton: false, // Hilangkan tombol [x] di pojok atas agar desain lebih bersih
-                  buttons: {
-                    ok: {
-                      label: '<i class="fas fa-check"></i> Tutup & Refresh Tabel',
-                      className: 'btn-primary btn-block' // Buat tombol memenuhi lebar modal
+                  bootbox.alert({
+                    message: pesanHasil,
+                    centerVertical: true,
+                    closeButton: false,
+                    buttons: {
+                      ok: {
+                        label: '<i class="fas fa-check"></i> Tutup & Refresh Tabel',
+                        className: 'btn-primary btn-block'
+                      }
+                    },
+                    callback: function() {
+                      // PERBAIKAN: Beri jeda lagi agar bootbox hilang sempurna sebelum mereload DataTables
+                      setTimeout(function() {
+                        $('body').focus();
+                        t.draw(false); // False = refresh tapi tetap di halaman pagination saat ini
+                        $("#check-all").prop("checked", false);
+                      }, 300);
                     }
+                  });
+                  return;
+                }
+
+                var currentElement = $($checkedItems[currentIndex]);
+                var dataKirim = {
+                  idjurnal: currentElement.val(),
+                  idperusahaan: currentElement.data('idperusahaan'),
+                  tgljurnal: currentElement.data('tgljurnal')
+                };
+
+                $.ajax({
+                  url: "<?php echo site_url('migrasi-file-utama/proses-upload') ?>",
+                  type: "POST",
+                  data: dataKirim,
+                  dataType: "JSON",
+                  success: function(response) {
+                    if (response.status) {
+                      successCount++;
+                    } else {
+                      failCount++;
+                    }
+                    currentIndex++;
+                    processNextFile(); // PERBAIKAN: Uncomment baris ini agar lanjut ke file berikutnya
                   },
-                  callback: function() {
-                    t.draw(); // Refresh Datatables setelah modal ditutup
-                    $("#check-all").prop("checked", false); // Hilangkan ceklis utama
+                  error: function(xhr) {
+                    console.log("Error pada file ID " + dataKirim.idjurnal + ":", xhr.responseText); // PERBAIKAN: ubah dataKirim.id jadi dataKirim.idjurnal
+                    failCount++;
+                    currentIndex++;
+                    processNextFile(); // PERBAIKAN: Uncomment baris ini agar lanjut jika terjadi error
                   }
                 });
-
-                return;
               }
 
-              // 4. Ambil 1 data dari antrean saat ini
-              var currentElement = $($checkedItems[currentIndex]);
-              var dataKirim = {
-                id: currentElement.val(),
-                idperusahaan: currentElement.data('idperusahaan'),
-                tgljurnal: currentElement.data('tgljurnal')
-              };
+              // Mulai antrean
+              processNextFile();
 
-              // 5. Eksekusi AJAX untuk 1 file
-              $.ajax({
-                url: "<?php echo site_url('migrasi/proses-upload') ?>", // Pastikan nama fungsi sesuai di Controller
-                type: "POST",
-                data: dataKirim,
-                dataType: "JSON",
-                success: function(response) {
-                  if (response.status) {
-                    successCount++;
-                  } else {
-                    failCount++;
-                  }
-                  currentIndex++;
-                  processNextFile(); // Panggil fungsi ini lagi untuk file berikutnya
-                },
-                error: function(xhr) {
-                  console.log("Error pada file ID " + dataKirim.id + ":", xhr.responseText);
-                  failCount++;
-                  currentIndex++;
-                  processNextFile(); // Tetap lanjut ke file berikutnya meski terjadi error
-                }
-              });
-            }
-
-            // 6. Mulai eksekusi urutan pertama
-            processNextFile();
-
-          } // Akhir dari pengecekan result bootbox
+            }, 300); // Akhir dari setTimeout
+          } else {
+            $('body').focus(); // Jika batal diklik, lepaskan fokus
+          }
         }
       });
     });

@@ -88,9 +88,6 @@ class PerusahaanController extends BaseController
 							'.$delete.'
 						</div>
 					</div>';
-
-				// $row[] = '<a href="' . site_url('Perusahaan/edit/' . ($rowdata->idperusahaan)) . '" class="btn btn-sm btn-warning btn-circle"><i class="fa fa-edit"></i></a> | 
-				//         		<a href="' . site_url('Perusahaan/delete/' . ($rowdata->idperusahaan)) . '" class="btn btn-sm btn-danger btn-circle" id="hapus"><i class="fa fa-trash"></i></a>';
 				$data[] = $row;
 			}
 		}
