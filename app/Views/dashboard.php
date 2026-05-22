@@ -456,7 +456,7 @@
 
     $.ajax({
         type: 'POST',
-        url: '<?php echo (site_url('Dashboard/get_grafik_penjualan')) ?>',
+        url: '<?php echo (site_url('dashboard/get_grafik_penjualan')) ?>',
         data: formData,
         dataType: 'json',
         encode: true
@@ -509,7 +509,7 @@
 
     $.ajax({
         type: 'POST',
-        url: '<?php echo (site_url('Dashboard/get_grafik_biaya')) ?>',
+        url: '<?php echo (site_url('dashboard/get_grafik_biaya')) ?>',
         data: formData,
         dataType: 'json',
         encode: true

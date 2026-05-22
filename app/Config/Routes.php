@@ -22,8 +22,11 @@ $routes->get('ubah-password/(:any)', 'LoginController::ubahPassword/$1', ['filte
 
 $routes->get('logout', 'LoginController::logout');
 
-
-$routes->get('dashboard', 'DashboardController::index', ['filter' => 'authFilter']);
+$routes->group('dashboard', ['filter' => 'authFilter'], function ($routes) {
+    $routes->get('', 'DashboardController::index');
+    $routes->post('get_grafik_penjualan', 'DashboardController::get_grafik_penjualan');
+    $routes->post('get_grafik_biaya', 'DashboardController::get_grafik_biaya');
+});
 
 //perusahaan
 $routes->group('perusahaan', ['filter' => 'authFilter'], function ($routes) {
