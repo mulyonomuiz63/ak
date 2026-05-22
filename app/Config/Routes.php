@@ -125,10 +125,10 @@ $routes->group('laporan', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('lapposisikeuangan-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapPosisiKeuanganController::lapPosisiKeuanganExcel/$1/$2/$3/$4');
 
     //laporan laba rugi
-    $routes->get('laplabarugi', 'Laporan\LapLabarugiController::index');
-    $routes->post('laplabarugi', 'Laporan\LapLabarugiController::index');
-    $routes->get('laplabarugi-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabarugiController::lapLabaRugiCetak/$1/$2/$3/$4');
-    $routes->get('laplabarugi-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabarugiController::lapLabaRugiugiExcel/$1/$2/$3/$4');
+    $routes->get('laplabarugi', 'Laporan\LapLabaRugiController::index');
+    $routes->post('laplabarugi', 'Laporan\LapLabaRugiController::index');
+    $routes->get('laplabarugi-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabaRugiController::lapLabaRugiCetak/$1/$2/$3/$4');
+    $routes->get('laplabarugi-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapLabaRugiController::lapLabaRugiugiExcel/$1/$2/$3/$4');
 
     //laporan ekuitas
     $routes->get('lapperubahanekuitas', 'Laporan\LapPerubahanEkuitasController::index');
