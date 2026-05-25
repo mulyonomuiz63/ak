@@ -9,10 +9,9 @@
       <div class="card-header d-sm-flex align-items-center justify-content-between py-3 ">
         <h6 class="m-0 font-weight-bold text-info pr-2">Data Perusahaan</h6>
         <div>
-          <!-- Tambahan Tombol Export CSV -->
-          <button type="button" class="btn btn-sm btn-primary tooltips mr-1" id="btn-export-modal" data-toggle="tooltip" data-placement="left" title="Export data ke CSV"><i class="fas fa-file-csv"></i> Export CSV</button>
-
           <?php if (session()->get('idpengguna') == '8888888888'): ?>
+            <!-- Tambahan Tombol Export CSV -->
+            <button type="button" class="btn btn-sm btn-primary tooltips mr-1" id="btn-export-modal" data-toggle="tooltip" data-placement="left" title="Export data ke CSV"><i class="fas fa-file-csv"></i> Export CSV</button>
             <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data perusahaan"><i class="fa fa-trash"></i></button>
             <a href="<?php echo ('perusahaan/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah data perusahaan"><i class="fas fa-plus fa-lg"></i></a>
           <?php endif; ?>
