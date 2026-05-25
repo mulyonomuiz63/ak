@@ -311,6 +311,7 @@ class LapPerubahanEkuitasController extends BaseController
         $pdf->writeHTML($table, true, false, false, false, '');
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Perubahan Ekuitas ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;

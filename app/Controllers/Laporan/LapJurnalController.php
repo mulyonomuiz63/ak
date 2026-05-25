@@ -159,6 +159,7 @@ class LapJurnalController extends BaseController
 
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
@@ -189,6 +190,7 @@ class LapJurnalController extends BaseController
         // [4. SETUP HEADER HTTP UNTUK DOWNLOAD CSV]
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");

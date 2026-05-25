@@ -276,7 +276,8 @@ class LapLabaRugiController extends BaseController
         $pdf->writeHTML($htmlChunk, true, false, false, false, '');
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
-        $namaFile = 'Laporan Laba Rugi '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
+        $namaFile = 'Laporan Laba Rugi'.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
     }
@@ -314,7 +315,8 @@ class LapLabaRugiController extends BaseController
         // [UBAH KE CSV]
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
-        $namaFile = 'Laporan Laba Rugi '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
+        $namaFile = 'Laporan Laba Rugi'.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");
         header("Cache-Control: max-age=0");

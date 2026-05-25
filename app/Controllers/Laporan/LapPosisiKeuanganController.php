@@ -267,7 +267,8 @@ class LapPosisiKeuanganController extends BaseController
 
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
-        $namaFile = 'Laporan Posisi Keuangan '.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
+        $namaFile = 'Laporan Posisi Keuangan'.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
     }
@@ -304,7 +305,8 @@ class LapPosisiKeuanganController extends BaseController
         // [UBAH KE FORMAT CSV STREAMING]
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
-        $namaFile = 'Laporan Posisi Keuangan ' . $namaCetak . ' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
+        $namaFile = 'Laporan Posisi Keuangan' . $namaCetak . ' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");
         header("Cache-Control: max-age=0");
@@ -315,7 +317,7 @@ class LapPosisiKeuanganController extends BaseController
         // Kop Laporan
         fputcsv($output, [$namaperusahaan]);
         fputcsv($output, ['LAPORAN POSISI KEUANGAN']);
-
+ 
         if ($tglawal == $tglakhir) {
             $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
         } else {

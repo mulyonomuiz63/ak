@@ -475,6 +475,7 @@ class LapRasioController extends BaseController
         $pdf->writeHTML($table, true, false, false, false, '');
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Rasio Keuangan ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
@@ -595,6 +596,7 @@ class LapRasioController extends BaseController
         // --- Render Excel ---
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Rasio Keuangan ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");

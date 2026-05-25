@@ -236,6 +236,7 @@ class LapBukuBesarController extends BaseController
 
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' '.$nmakun.' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
@@ -414,6 +415,7 @@ class LapBukuBesarController extends BaseController
 
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
         $pdf->Output($namaFile, 'I');
         exit;
@@ -453,6 +455,7 @@ class LapBukuBesarController extends BaseController
         // Setup Header untuk Download CSV
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' '.$nmakun.' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");
@@ -567,6 +570,7 @@ class LapBukuBesarController extends BaseController
         // [UBAH KE CSV]: Set Header HTTP
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
+        $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
         header("Content-Type: application/vnd.ms-excel");
