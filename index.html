@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Dalam Pemeliharaan Berkala</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.25rem; 
+            margin: 0;
+        }
+
+        .maintenance-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08);
+            width: 100%;
+            max-width: 640px; 
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 576px) {
+            .maintenance-card {
+                padding: 2rem 1.5rem !important;
+            }
+            .time-box {
+                text-align: center;
+            }
+        }
+        @media (min-width: 577px) {
+            .maintenance-card {
+                padding: 3.5rem 3rem !important;
+            }
+        }
+
+        .svg-container {
+            max-width: 200px;
+            margin: 0 auto 2rem auto;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .anim-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes spin-clockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-counter {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        .gear-main {
+            transform-origin: 100px 100px;
+            animation: spin-clockwise 8s linear infinite;
+        }
+        .gear-sub {
+            transform-origin: 145px 135px;
+            animation: spin-counter 5s linear infinite;
+        }
+
+        .fade-up {
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-badge {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 0.025em;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+            animation: pulse 1.6s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+
+        .schedule-zone {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+        }
+
+        .countdown-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem;
+            min-width: 70px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .countdown-num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1.2;
+        }
+
+        .countdown-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-custom-primary {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .btn-custom-primary:hover {
+            background-color: var(--primary-hover);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .btn-custom-secondary {
+            background-color: transparent;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .btn-custom-secondary:hover {
+            background-color: #f1f5f9;
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="maintenance-card text-center fade-up">
+        
+        <div class="mb-4">
+            <span class="status-badge shadow-sm">
+                <span class="pulse-dot"></span> Pemeliharaan Terjadwal
+            </span>
+        </div>
+
+        <div class="svg-container anim-float">
+            <svg viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <rect x="40" y="140" width="120" height="25" rx="6" fill="#e2e8f0" />
+                <rect x="50" y="148" width="12" height="8" rx="2" fill="#94a3b8" />
+                <circle cx="130" cy="152" r="3" fill="#34d399" />
+                <circle cx="142" cy="152" r="3" fill="#38bdf8" />
+                
+                <g class="gear-main">
+                    <circle cx="100" cy="100" r="35" fill="none" stroke="#4f46e5" stroke-width="12" stroke-dasharray="14 8" />
+                    <circle cx="100" cy="100" r="22" fill="#ffffff" stroke="#4f46e5" stroke-width="5" />
+                    <circle cx="100" cy="100" r="8" fill="#4f46e5" />
+                </g>
+                
+                <g class="gear-sub">
+                    <circle cx="145" cy="135" r="20" fill="none" stroke="#6366f1" stroke-width="8" stroke-dasharray="10 6" />
+                    <circle cx="145" cy="135" r="12" fill="#ffffff" stroke="#6366f1" stroke-width="3" />
+                </g>
+                
+                <path d="M 45,65 L 65,45 A 15,15 0 0,1 85,75 L 55,105 A 5,5 0 0,1 48,105 Z" fill="#cbd5e1" transform="rotate(-15 60 70)" />
+            </svg>
+        </div>
+
+        <h1 class="fw-bold text-dark mb-3 h3 fade-up delay-1" style="letter-spacing: -0.02em;">
+            Peningkatan Infrastruktur Sistem
+        </h1>
+        <p class="text-muted mb-4 mx-auto fade-up delay-1" style="max-width: 500px; font-size: 0.95rem; line-height: 1.6;">
+            Kami sedang melakukan pemeliharaan rutin guna meningkatkan kecepatan, keamanan, dan stabilitas server. Akses ke platform dinonaktifkan sementara waktu.
+        </p>
+
+        <div class="mb-4 fade-up delay-2">
+            <div class="d-flex justify-content-center gap-2" id="countdown-wrapper">
+                <div class="countdown-item">
+                    <div class="countdown-num" id="cd-hours">00</div>
+                    <div class="countdown-label">Jam</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-num" id="cd-minutes">00</div>
+                    <div class="countdown-label">Menit</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-num" id="cd-seconds">00</div>
+                    <div class="countdown-label">Detik</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="schedule-zone p-3 mb-4 text-start fade-up delay-2">
+            <div class="row g-3 align-items-center">
+                <div class="col-12 col-sm-6 time-box border-end border-sm-none" style="border-color: #e2e8f0 !important;">
+                    <span class="d-block text-uppercase fw-semibold text-muted small mb-1">Dimulai</span>
+                    <span class="fw-medium text-dark small">
+                        <i class="bi bi-calendar3 me-1 text-primary"></i> <span id="text-waktu-mulai"></span>
+                    </span>
+                </div>
+                <div class="col-12 col-sm-6 time-box">
+                    <span class="d-block text-uppercase fw-semibold text-muted small mb-1">Estimasi Selesai</span>
+                    <span class="fw-medium text-dark small">
+                        <i class="bi bi-check-circle me-1 text-success"></i> <span id="text-waktu-selesai"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-4 fade-up delay-3">
+            <button onclick="window.location.reload();" class="btn btn-custom-primary shadow-sm">
+                <i class="bi bi-arrow-clockwise me-2"></i>Segarkan Halaman
+            </button>
+            <a href="mailto:support@akuntanmu.com" class="btn btn-custom-secondary">
+                <i class="bi bi-envelope me-2"></i>Hubungi Tim IT Support
+            </a>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // =========================================================================
+        // 🛠️ PENGATURAN WAKTU PEMELIHARAAN (HANYA UBAH 2 BARIS INI)
+        // Format penulisan wajib: "YYYY-MM-DDTHH:mm:ss"
+        // =========================================================================
+        const WAKTU_MULAI = "2026-05-29T15:00:00";
+        const WAKTU_SELESAI = "2026-05-30T01:00:00";
+        // =========================================================================
+
+        // 1. Fungsi Penerjemah Waktu ke Bahasa Indonesia
+        function formatTeksIndo(dateString) {
+            const date = new Date(dateString);
+            const namaBulan = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            
+            const tanggal = date.getDate();
+            const bulan = namaBulan[date.getMonth()];
+            const tahun = date.getFullYear();
+            const jam = String(date.getHours()).padStart(2, '0');
+            const menit = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${tanggal} ${bulan} ${tahun}, ${jam}:${menit} WIB`;
+        }
+
+        // 2. Cetak Waktu ke Tampilan Kartu HTML
+        document.getElementById("text-waktu-mulai").innerText = formatTeksIndo(WAKTU_MULAI);
+        document.getElementById("text-waktu-selesai").innerText = formatTeksIndo(WAKTU_SELESAI);
+
+        // 3. Tambahkan Label Status Dinamis di Atas Timer (Otomatis via JS)
+        const wrapper = document.getElementById("countdown-wrapper");
+        wrapper.insertAdjacentHTML('beforebegin', '<div id="timer-status" class="fw-bold text-primary mb-2 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;"></div>');
+        const timerStatusLabel = document.getElementById("timer-status");
+
+        // 4. Logika Hitung Mundur Pintar (Mulai & Selesai)
+        const targetMulai = new Date(WAKTU_MULAI).getTime();
+        const targetSelesai = new Date(WAKTU_SELESAI).getTime();
+
+        const countdownTimer = setInterval(function() {
+            const now = new Date().getTime();
+            let distance = 0;
+
+            // CEK KONDISI WAKTU SAAT INI
+            if (now < targetMulai) {
+                // KONDISI 1: Belum Mulai (Hitung mundur ke waktu MULAI)
+                distance = targetMulai - now;
+                timerStatusLabel.innerText = "Pemeliharaan Akan Dimulai Dalam:";
+                timerStatusLabel.className = "fw-bold text-warning mb-2 text-uppercase"; // Ubah warna jadi kuning/warning
+                
+            } else if (now >= targetMulai && now < targetSelesai) {
+                // KONDISI 2: Sedang Berjalan (Hitung mundur ke waktu SELESAI)
+                distance = targetSelesai - now;
+                timerStatusLabel.innerText = "Estimasi Selesai Dalam:";
+                timerStatusLabel.className = "fw-bold text-primary mb-2 text-uppercase"; // Warna biru/primary
+                
+            } else {
+                // KONDISI 3: Sudah Selesai
+                clearInterval(countdownTimer);
+                timerStatusLabel.style.display = "none"; // Sembunyikan label
+                wrapper.innerHTML = "<span class='badge bg-success px-4 py-2 fs-6 rounded-3 shadow-sm'>Sistem telah diperbarui dan siap digunakan!</span>";
+                return; // Hentikan fungsi agar angka di bawah tidak dieksekusi lagi
+            }
+
+            // Kalkulasi Hari, Jam, Menit, Detik dari variabel 'distance' yang aktif
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Cetak ke layar
+            document.getElementById("cd-hours").innerHTML = hours < 10 ? "0" + hours : hours;
+            document.getElementById("cd-minutes").innerHTML = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById("cd-seconds").innerHTML = seconds < 10 ? "0" + seconds : seconds;
+            
+        }, 1000);
+    </script>
+</body>
+</html>
