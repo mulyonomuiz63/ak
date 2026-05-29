@@ -1,6 +1,4 @@
 <?= $this->extend('template/admin') ?>
-
-<?= $this->section('css') ?>
 <style>
   .dataTable tbody tr td {
     padding: 8px 10px !important;
@@ -19,7 +17,6 @@
     padding-top: 200px;
   }
 </style>
-<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="loading-overlay" id="loader" style="display: none;">
