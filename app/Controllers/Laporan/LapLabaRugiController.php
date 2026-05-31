@@ -287,10 +287,9 @@ class LapLabaRugiController extends BaseController
     {
         $menuaktif = 'laplabarugi';
 
-        // [OPTIMASI]: Bebaskan memori
+        // [1] BYPASS MEMORY: Bebaskan memori dan waktu eksekusi untuk data skala besar
         ini_set('memory_limit', '-1');
         set_time_limit(0);
-
 
         if (session()->get('idpengguna') == '8888888888') {
             $idperusahaan = $idperusahaan;
@@ -306,27 +305,45 @@ class LapLabaRugiController extends BaseController
         
         if ($akunlevel3 == '1') {
             $namaCetak = " Ringkas";
-        }else{
+        } else {
             $namaCetak = '';
         }
 
         $rsData = $this->laporan_model->get_laplabarugi($tglawal, $tglakhir, $idperusahaan);
 
-        // [UBAH KE CSV]
+        // [2] SETUP HEADER HTTP: Menggunakan .xls berbasis HTML Stream
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
         $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
-        $namaFile = 'Laporan Laba Rugi'.$namaCetak.' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        $namaFile = 'Laporan Laba Rugi' . $namaCetak . ' ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
-        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Type: application/vnd.ms-excel; charset=utf-8");
         header("Cache-Control: max-age=0");
 
-        $output = fopen('php://output', 'w');
-        fputs($output, "\xEF\xBB\xBF");
-
-        // Kop CSV
-        fputcsv($output, [$namaperusahaan]);
-        fputcsv($output, ['LAPORAN LABA RUGI']);
+        // [3] STRUKTUR CSS: Mengatur Lebar Kolom (Width) & Posisi Judul di Tengah
+        echo "<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\">";
+        echo "<head>";
+        echo "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>";
+        echo "<style>";
+        echo "table { border-collapse: collapse; font-family: Arial, sans-serif; }";
+        echo "th, td { border: 1px solid #000000; padding: 6px; vertical-align: top; }";
+        
+        // KOP LAPORAN DI TENGAH (Membagi rata berdasarkan colspan='3')
+        echo ".kop-laporan th { border: none; background: none; text-align: center; }";
+        
+        echo ".header-tabel th { background-color: #f2f2f2; font-weight: bold; text-align: center; }";
+        
+        // RESPONSIVE WIDTH: Mengunci ukuran kolom agar lapang dan tidak berdempetan
+        echo ".col-kode { width: 140px; text-align: center; }";
+        echo ".col-akun { width: 420px; text-align: left; }"; 
+        echo ".col-uang { width: 170px; text-align: right; }";
+        
+        // Style untuk baris penegas / total (bold)
+        echo ".row-bold { font-weight: bold; background-color: #f5f5f5; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
 
         if ($tglawal == $tglakhir) {
             $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
@@ -334,11 +351,19 @@ class LapLabaRugiController extends BaseController
             $Periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
         }
 
-        fputcsv($output, ['Periode ' . $Periode]);
-        fputcsv($output, []); // Baris kosong
-
-        // Header Kolom CSV (Sesuai dengan 3 kolom di kode asli)
-        fputcsv($output, ['KODE AKUN', 'NAMA AKUN', 'NILAI (Dalam Rp.)']);
+        // Cetak Kop Utama (Otomatis ke tengah karena CSS .kop-laporan th)
+        echo "<table>";
+        echo "<tr class='kop-laporan'><th colspan='3' style='font-size: 16px; font-weight:bold;'>{$namaperusahaan}</th></tr>";
+        echo "<tr class='kop-laporan'><th colspan='3' style='font-size: 14px; font-weight:bold;'>LAPORAN LABA RUGI{$namaCetak}</th></tr>";
+        echo "<tr class='kop-laporan'><th colspan='3' style='font-size: 12px;'>Periode {$Periode}</th></tr>";
+        echo "<tr><td colspan='3' style='border:none;'></td></tr>"; // Baris kosong pemisah
+        
+        // Header Utama Tabel
+        echo "<tr class='header-tabel'>";
+        echo "<th class='col-kode'>KODE AKUN</th>";
+        echo "<th class='col-akun'>NAMA AKUN</th>";
+        echo "<th class='col-uang'>NILAI (Dalam Rp.)</th>";
+        echo "</tr>";
 
         $total1 = 0;
         $kdakun_old = '';
@@ -352,20 +377,25 @@ class LapLabaRugiController extends BaseController
 
         // Tangkapan baris Pajak
         $bebanpajakpenghasilan = 0;
-        $pajakRowCsv = [];
+        $pajakRowHtml = ""; 
 
-        // [OPTIMASI]: Looping Unbuffered
+        // [4] LOOP UNBUFFERED ROW: Cetak data utama secara hemat memori
         while ($data = $rsData->getUnbufferedRow()) {
             $total1 += $data->jumlah;
             $spasi = '';
 
-            // TANGKAP PAJAK
+            // TANGKAP PAJAK (Logika Asli Tetap)
             if ($data->kdakun == "730000" || $data->kdakun == "73000") {
                 $bebanpajakpenghasilan = $data->jumlah;
             }
 
+            // Sisipan Baris Sub-total Kelompok Utama (Logika Perhitungan Asli Tetap)
             if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) && $kdakun_old != '' && substr($kdakun_old, 0, 1) != '7') {
-                fputcsv($output, ['', $totaldesc, $totalrupiah]);
+                echo "<tr class='row-bold'>";
+                echo "<td></td>";
+                echo "<td>{$totaldesc}</td>";
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalrupiah}</td>";
+                echo "</tr>";
                 
                 if ($totaldesc == "TOTAL PENDAPATAN") {
                     $total_pendapatan = $totalrupiah;
@@ -374,7 +404,12 @@ class LapLabaRugiController extends BaseController
                 if ($totaldesc == "TOTAL HARGA POKOK PENJUALAN") {
                     $total_harga_pokok_penjualan = $totalrupiah;
                     $totallabarugikotor = $total_pendapatan - $total_harga_pokok_penjualan;
-                    fputcsv($output, ['', 'TOTAL LABA RUGI KOTOR', $totallabarugikotor]);
+                    
+                    echo "<tr class='row-bold' style='background-color: #eaf2ff;'>";
+                    echo "<td></td>";
+                    echo "<td>TOTAL LABA RUGI KOTOR</td>";
+                    echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totallabarugikotor}</td>";
+                    echo "</tr>";
                 }
                 $totalrupiah = 0;
             }
@@ -383,21 +418,21 @@ class LapLabaRugiController extends BaseController
                 $totalrupiah = 0;
             }
 
-            // Spasi nyata untuk Excel (pengganti &nbsp;)
+            // Konversi spasi indentasi level menggunakan Entitas HTML agar terbaca sempurna di Excel
             switch ($data->level) {
                 case '1':
                     $spasi = '';
                     $totaldesc = 'TOTAL ' . strtoupper($data->nmakun);
                     break;
                 case '2':
-                    $spasi = str_repeat(' ', 4);
+                    $spasi = str_repeat('&nbsp;', 4);
                     $totaldesc2 = 'TOTAL ' . strtoupper($data->nmakun);
                     break;
                 case '3':
-                    $spasi = str_repeat(' ', 8);
+                    $spasi = str_repeat('&nbsp;', 8);
                     break;
                 case '4':
-                    $spasi = str_repeat(' ', 12);
+                    $spasi = str_repeat('&nbsp;', 12);
                     $totalrupiah += $data->jumlah;
                     break;
                 default:
@@ -405,15 +440,17 @@ class LapLabaRugiController extends BaseController
                     break;
             }
 
-            // TANGKAP ARRAY PAJAK UNTUK DICETAK DI AKHIR
+            // TANGKAP STRUKTUR HTML PAJAK UNTUK DICETAK DI AKHIR (Logika Asli Tetap)
             if ($data->kdakun == "730000" || $data->kdakun == "73000") {
-                $pajakRowCsv = [
-                    $data->kdakun,
-                    $spasi . $data->nmakun,
-                    $data->jumlah
-                ];
+                $nama_pajak_aman = htmlspecialchars($data->nmakun, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $pajakRowHtml = "<tr>";
+                $pajakRowHtml .= "<td class='col-kode'>{$data->kdakun}</td>";
+                $pajakRowHtml .= "<td class='col-akun'>{$spasi}{$nama_pajak_aman}</td>";
+                $pajakRowHtml .= "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->jumlah}</td>";
+                $pajakRowHtml .= "</tr>";
             }
 
+            // Akumulasi Finansial (Logika Asli Tetap)
             if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') && $data->level == '4') {
                 $totalpendapatan += $data->jumlah;
             } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
@@ -422,43 +459,87 @@ class LapLabaRugiController extends BaseController
                 $totalpengeluaran += 0;
             }
 
-            if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) and $kdakun_old != '') {
-                fputcsv($output, ['', '', '']); // Baris pemisah kosong
+            if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) && $kdakun_old != '') {
+                echo "<tr><td colspan='3' style='border:none;'></td></tr>"; // Baris pemisah kosong asli
             }
 
-            // Cetak Baris Akun ke CSV
+            // Cetak Baris Akun Individu ke File Excel Berdasarkan Tingkat Ringkasan Level (Logika Asli)
+            $nama_akun_aman = htmlspecialchars($data->nmakun, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $style_induk = ($data->level == '1') ? "style='font-weight: bold; background-color: #fcfcfc;'" : "";
+
             if ($akunlevel3 == 1) {
                 if ($data->level != '4') {
                     $nilai = ($data->kdakun != '70000' && $data->level != '1') ? $data->jumlah : '';
-                    fputcsv($output, [$data->kdakun, $spasi . $data->nmakun, $nilai]);
+                    
+                    echo "<tr {$style_induk}>";
+                    echo "<td class='col-kode'>{$data->kdakun}</td>";
+                    echo "<td class='col-akun'>{$spasi}{$nama_akun_aman}</td>";
+                    if ($nilai !== '') {
+                        echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nilai}</td>";
+                    } else {
+                        echo "<td></td>";
+                    }
+                    echo "</tr>";
                 }
             } else {
                 if ($data->kdakun != "730000" && $data->kdakun != "73000") {
                     $nilai = ($data->kdakun != '70000' && $data->level == 4) ? $data->jumlah : '';
-                    fputcsv($output, [$data->kdakun, $spasi . $data->nmakun, $nilai]);
+                    
+                    echo "<tr {$style_induk}>";
+                    echo "<td class='col-kode'>{$data->kdakun}</td>";
+                    echo "<td class='col-akun'>{$spasi}{$nama_akun_aman}</td>";
+                    if ($nilai !== '') {
+                        echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nilai}</td>";
+                    } else {
+                        echo "<td></td>";
+                    }
+                    echo "</tr>";
                 }
             }
 
             $kdakun_old = $data->kdakun;
+
+            // Pengosongan RAM server bertahap (sangat krusial untuk jutaan data)
+            if (ob_get_level() > 0) ob_flush();
+            flush();
         }
 
-        // Tulis sisa akhir laporan
+        // [5] Sisa Baris Akhir Penutup Kelompok Akun (Logika Asli)
         if ($totaldesc2 != "TOTAL BEBAN LAINNYA") {
-            fputcsv($output, ['', $totaldesc2, $totalrupiah]);
+            echo "<tr class='row-bold'>";
+            echo "<td></td>";
+            echo "<td>{$totaldesc2}</td>";
+            echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalrupiah}</td>";
+            echo "</tr>";
         }
 
+        // Hitung Hasil Akhir Finansial (Laba Rugi Sebelum & Setelah Pajak)
         $totallabasebelumpajak = $totalpendapatan - $totalpengeluaran;
-        fputcsv($output, ['', 'LABA (RUGI) SEBELUM PAJAK PENGHASILAN', $totallabasebelumpajak]);
         
-        // Keluarkan baris pajak yang ditangkap tadi
-        if (!empty($pajakRowCsv)) {
-            fputcsv($output, $pajakRowCsv);
+        echo "<tr><td colspan='3' style='border:none;'></td></tr>"; // Baris Jeda Kosong
+        echo "<tr class='row-bold' style='background-color: #e0f0d9;'>";
+        echo "<td></td>";
+        echo "<td>LABA (RUGI) SEBELUM PAJAK PENGHASILAN</td>";
+        echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totallabasebelumpajak}</td>";
+        echo "</tr>";
+        
+        // Keluarkan baris pajak yang ditangkap di dalam loop (jika ada)
+        if (!empty($pajakRowHtml)) {
+            echo $pajakRowHtml;
         }
 
         $totallabasetelahpajak = ($totalpendapatan - $totalpengeluaran) - $bebanpajakpenghasilan;
-        fputcsv($output, ['', 'LABA (RUGI) SETELAH PAJAK PENGHASILAN', $totallabasetelahpajak]);
+        
+        echo "<tr class='row-bold' style='background-color: #d0ebd0;'>";
+        echo "<td></td>";
+        echo "<td>LABA (RUGI) SETELAH PAJAK PENGHASILAN</td>";
+        echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totallabasetelahpajak}</td>";
+        echo "</tr>";
 
-        fclose($output);
+        // [6] PENUTUP DOKUMEN HTML
+        echo "</table>";
+        echo "</body>";
+        echo "</html>";
         exit;
     }
 }

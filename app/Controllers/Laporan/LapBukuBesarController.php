@@ -423,7 +423,6 @@ class LapBukuBesarController extends BaseController
 
 	public function lapBukuBesarExcel($tglawal, $tglakhir, $keyakun, $idperusahaan, $nmakun)
     {
-        // Bebaskan limit memori dan waktu eksekusi
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
@@ -436,12 +435,7 @@ class LapBukuBesarController extends BaseController
 
         $rsPerusahaan = $this->perusahaan_model->get_by_id(encrypt($idperusahaan))->getRow();
         $tglawals = date('Y-m-d', strtotime($rsPerusahaan->tglmulaiusaha));
-
-        if (!empty($idperusahaan)) {
-            $namaperusahaan = $rsPerusahaan->namaperusahaan;
-        } else {
-            $namaperusahaan = '';
-        }
+        $namaperusahaan = (!empty($idperusahaan)) ? $rsPerusahaan->namaperusahaan : '';
 
         if ($tglawal == $tglakhir) {
             $periode = $this->laporan_model->tglindonesialengkap($tglawal);
@@ -452,58 +446,70 @@ class LapBukuBesarController extends BaseController
         $builder = $this->db->table('v_akun');
         $akun = $builder->getWhere(array('idperusahaan' => $idperusahaan, 'keyakun' => $keyakun));
 
-        // Setup Header untuk Download CSV
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
         $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
-        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' '.$nmakun.' ' . $bulantahun . '.xls';
+        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $nmakun . ' ' . $bulantahun . '.xls';
+        
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
-        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Type: application/vnd.ms-excel; charset=utf-8");
         header("Cache-Control: max-age=0");
         
-        $output = fopen('php://output', 'w');
-        fputs($output, "\xEF\xBB\xBF"); // BOM untuk Excel
+        echo "<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\">";
+        echo "<head>";
+        echo "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>";
+        echo "<style>";
+        echo "table { border-collapse: collapse; font-family: Arial, sans-serif; margin-bottom: 20px; }";
+        echo "th, td { border: 1px solid #000000; padding: 5px; vertical-align: top; }";
+        echo ".kop-laporan th { border: none; background: none; text-align: center; }"; 
+        echo ".header-tabel th { background-color: #f2f2f2; font-weight: bold; text-align: center; }";
+        echo ".col-tgl { width: 100px; text-align: center; }";
+        echo ".col-nojurnal { width: 160px; text-align: center; }";
+        echo ".col-ref { width: 120px; text-align: left; }";
+        echo ".col-ket { width: 350px; text-align: left; }";
+        echo ".col-uang { width: 130px; text-align: right; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
 
         foreach ($akun->getResult() as $r) {
+            echo "<table>";
+            echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 16px; font-weight:bold;'>{$namaperusahaan}</th></tr>";
+            echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 14px; font-weight:bold;'>LAPORAN BUKU BESAR</th></tr>";
+            echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 12px;'>Periode {$periode}</th></tr>";
+            echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 12px; text-align: left;'>Akun: {$r->kdakun} - {$r->nmakun}</th></tr>";
+            echo "<tr><td colspan='7' style='border:none;'></td></tr>";
             
-            // Tulis Kop Laporan
-            fputcsv($output, [$namaperusahaan]);
-            fputcsv($output, ['LAPORAN BUKU BESAR']);
-            fputcsv($output, ['Periode ' . $periode]);
-            fputcsv($output, []); // Baris kosong
-            
-            fputcsv($output, ['Akun: ' . $r->kdakun . ' - ' . $r->nmakun]);
-            fputcsv($output, ['Tanggal', 'No Jurnal', 'Referensi', 'Keterangan', 'Debet', 'Kredit', 'Saldo']);
+            echo "<tr class='header-tabel'>";
+            echo "<th class='col-tgl'>Tanggal</th>";
+            echo "<th class='col-nojurnal'>No Jurnal</th>";
+            echo "<th class='col-ref'>Referensi</th>";
+            echo "<th class='col-ket'>Keterangan</th>";
+            echo "<th class='col-uang'>Debet</th>";
+            echo "<th class='col-uang'>Kredit</th>";
+            echo "<th class='col-uang'>Saldo</th>";
+            echo "</tr>";
 
-            $total1 = 0;
-            $total2 = 0;
-            $nsaldo = 0;
-
+            $total1 = 0; $total2 = 0; $nsaldo = 0;
             $saldonormal = $this->akun_model->get_by_id(encrypt($keyakun), encrypt($idperusahaan))->getRow()->saldonormal;
             $rsData = $this->laporan_model->get_bukubesar($tglawal, $tglakhir, $kdakun, encrypt($idperusahaan), 'asc');
-            
             $isFirstRow = true;
 
-            // [PERBAIKAN]: Gunakan getUnbufferedRow() dan proses Saldo Awal di dalam
             while ($data = $rsData->getUnbufferedRow()) {
-                
-                // Cek Saldo Awal HANYA pada putaran pertama (Mencegah fungsi getRow() merusak data)
                 if ($isFirstRow) {
                     $tgl_minus_satu = date('Y-m-d', strtotime('-1 days', strtotime($data->tgljurnal)));
-
                     if ($saldonormal == 'D') {
                         $query = "select sum(debet)-sum(kredit) as saldoakhir from v_jurnaldetail where idperusahaan='" . $idperusahaan . "' and kdakun='" . $kdakun . "' and tgljurnal between '" . $tglawals . "' and '" . $tgl_minus_satu . "'";
                     } else {
                         $query = "select sum(kredit)-sum(debet) as saldoakhir from v_jurnaldetail where idperusahaan='" . $idperusahaan . "' and kdakun='" . $kdakun . "' and tgljurnal between '" . $tglawals . "' and '" . $tgl_minus_satu . "'";
                     }
-
                     $saldoakhir = $this->db->query($query)->getRow()->saldoakhir;
                     $nsaldo = ($saldoakhir == '') ? 0 : $saldoakhir;
                     $isFirstRow = false;
                 }
 
-                $total1 = $total1 + $data->debet;
-                $total2 = $total2 + $data->kredit;
+                $total1 += $data->debet;
+                $total2 += $data->kredit;
 
                 if ($saldonormal == 'D') {
                     $nsaldo -= $data->kredit - $data->debet;
@@ -513,40 +519,43 @@ class LapBukuBesarController extends BaseController
                 
                 $referensi_aman = htmlspecialchars($data->referensi, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $keterangan_aman = htmlspecialchars($data->keterangan, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                
-                $tgl_jurnal = '="' . date('d-m-Y', strtotime($data->tgljurnal)) . '"';
+                $tampil_tgl = date('d-m-Y', strtotime($data->tgljurnal));
 
-                // Tulis langsung ke file
-                fputcsv($output, [
-                    $tgl_jurnal, // Tanggal rata kiri
-                    $data->idjurnal,
-                    $referensi_aman,
-                    $keterangan_aman,
-                    $data->debet,
-                    $data->kredit,
-                    ($nsaldo >= 0 ? $nsaldo : $nsaldo * -1)
-                ]);
+                echo "<tr>";
+                echo "<td class='col-tgl'>{$tampil_tgl}</td>";
+                echo "<td class='col-nojurnal'>{$data->idjurnal}</td>";
+                echo "<td class='col-ref'>{$referensi_aman}</td>";
+                echo "<td class='col-ket'>{$keterangan_aman}</td>";
+                // [PERBAIKAN]: Menggunakan format tanda kurung untuk negatif \(\#\,\#\#0\)
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->debet}</td>";
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->kredit}</td>";
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nsaldo}</td>"; // Biarkan nilai aslinya (jangan di * -1)
+                echo "</tr>";
+
+                if (ob_get_level() > 0) ob_flush();
+                flush();
             }
             
-            // Baris Total Akhir
-            fputcsv($output, [
-                '', '', '', 'TOTAL', 
-                ($total1 >= 0 ? $total1 : $total1 * -1), 
-                ($total2 >= 0 ? $total2 : $total2 * -1), 
-                ''
-            ]);
-            fputcsv($output, []); // Baris kosong penutup akun
+            echo "<tr>";
+            echo "<td colspan='4' style='text-align: right; font-weight: bold;'>TOTAL</td>";
+            // [PERBAIKAN]: Hilangkan pengkondisian * -1 agar format akuntansi bekerja sempurna
+            echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total1}</td>";
+            echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total2}</td>";
+            echo "<td></td>"; 
+            echo "</tr>";
+            echo "</table><br>"; 
         }
 
-        fclose($output);
+        echo "</body>";
+        echo "</html>";
         exit;
     }
 
 	public function lapBukuBesarExcelSemua($tglawal, $tglakhir, $idperusahaan)
     {
-        // [OPTIMASI]: Bebaskan limit memori dan waktu eksekusi
         ini_set('memory_limit', '-1');
         set_time_limit(0);
+        
         if (session()->get('idpengguna') == '8888888888') {
             $idperusahaan = $this->uri->getSegment(5);
         } else {
@@ -555,7 +564,6 @@ class LapBukuBesarController extends BaseController
 
         $rsPerusahaan = $this->perusahaan_model->get_by_id(encrypt($idperusahaan))->getRow();
         $tglawals = date('Y-m-d', strtotime($rsPerusahaan->tglmulaiusaha));
-
         $namaperusahaan = !empty($idperusahaan) ? $rsPerusahaan->namaperusahaan : '';
 
         if ($tglawal == $tglakhir) {
@@ -567,48 +575,62 @@ class LapBukuBesarController extends BaseController
         $builder = $this->db->table('v_akun');
         $akun = $builder->getWhere(array('idperusahaan' => $idperusahaan, 'level' => 4));
 
-        // [UBAH KE CSV]: Set Header HTTP
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
         $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
-        $namaFile = 'Laporan Buku Besar ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        $namaFile = 'Laporan Buku Besar Semua Akun ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
-        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Type: application/vnd.ms-excel; charset=utf-8");
         header("Cache-Control: max-age=0");
         
-        $output = fopen('php://output', 'w');
-        fputs($output, "\xEF\xBB\xBF"); // Tambahkan BOM agar Excel membaca UTF-8
+        echo "<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\">";
+        echo "<head>";
+        echo "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>";
+        echo "<style>";
+        echo "table { border-collapse: collapse; font-family: Arial, sans-serif; margin-bottom: 30px; }";
+        echo "th, td { border: 1px solid #000000; padding: 5px; vertical-align: top; }";
+        echo ".kop-laporan th { border: none; background: none; text-align: center; }";
+        echo ".header-tabel th { background-color: #f2f2f2; font-weight: bold; text-align: center; }";
+        echo ".col-tgl { width: 100px; text-align: center; }";
+        echo ".col-nojurnal { width: 160px; text-align: center; }";
+        echo ".col-ref { width: 120px; text-align: left; }";
+        echo ".col-ket { width: 350px; text-align: left; }"; 
+        echo ".col-uang { width: 130px; text-align: right; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
 
-        // Tulis Kop Utama
-        fputcsv($output, [$namaperusahaan]);
-        fputcsv($output, ['LAPORAN BUKU BESAR']);
-        fputcsv($output, ['Periode ' . $periode]);
-        fputcsv($output, []); // Baris kosong
+        echo "<table>";
+        echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 16px; font-weight:bold;'>{$namaperusahaan}</th></tr>";
+        echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 14px; font-weight:bold;'>LAPORAN BUKU BESAR ALL ACCOUNT</th></tr>";
+        echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 12px;'>Periode {$periode}</th></tr>";
+        echo "</table>";
 
         foreach ($akun->getResult() as $r) {
-            // Tulis Judul per Akun
-            fputcsv($output, ['Akun: ' . $r->kdakun . ' - ' . $r->nmakun]);
-            fputcsv($output, ['Tanggal', 'No Jurnal', 'Referensi', 'Keterangan', 'Debet', 'Kredit', 'Saldo']);
+            echo "<table>";
+            echo "<tr class='kop-laporan'><th colspan='7' style='font-size: 13px; font-weight:bold; text-align:left; background-color:#e6e6e6; border:1px solid #000000; padding:6px;'>Akun: {$r->kdakun} - {$r->nmakun}</th></tr>";
+            
+            echo "<tr class='header-tabel'>";
+            echo "<th class='col-tgl'>Tanggal</th>";
+            echo "<th class='col-nojurnal'>No Jurnal</th>";
+            echo "<th class='col-ref'>Referensi</th>";
+            echo "<th class='col-ket'>Keterangan</th>";
+            echo "<th class='col-uang'>Debet</th>";
+            echo "<th class='col-uang'>Kredit</th>";
+            echo "<th class='col-uang'>Saldo</th>";
+            echo "</tr>";
 
-            $total1 = 0;
-            $total2 = 0;
-            $nsaldo = 0;
-            $isFirstRow = true;
-
+            $total1 = 0; $total2 = 0; $nsaldo = 0; $isFirstRow = true;
             $saldonormal = $this->akun_model->get_by_id(encrypt($r->keyakun), encrypt($idperusahaan))->getRow()->saldonormal;
             
-            // Ambil data buku besar (Pastikan model me-return object query, bukan result array)
             $rsData = $this->laporan_model->get_bukubesar($tglawal, $tglakhir, $r->kdakun, encrypt($idperusahaan), 'asc');
             $rsDataSaldo = $this->laporan_model->get_bukubesar_saldoawal($tglawal, $tglakhir, $r->kdakun, $idperusahaan, 'asc');
 
-            // [OPTIMASI]: Loop Unbuffered
             while ($data = $rsData->getUnbufferedRow()) {
-                
-                // [KUNCI]: Hitung Saldo Awal hanya pada baris pertama agar tidak merusak stream data
                 if ($isFirstRow) {
                     if ($rsDataSaldo->getRow() != null) {
                         $tgl_minus_satu = date('Y-m-d', strtotime('-1 days', strtotime($data->tgljurnal)));
-
                         if ($saldonormal == 'D') {
                             $query = "select sum(debet)-sum(kredit) as saldoakhir from v_jurnaldetail where idperusahaan='" . $idperusahaan . "' and kdakun='" . $r->kdakun . "' and tgljurnal between '" . $tglawals . "' and '" . $tgl_minus_satu . "'";
                         } else {
@@ -623,7 +645,6 @@ class LapBukuBesarController extends BaseController
                     $isFirstRow = false;
                 }
 
-                // Kalkulasi Saldo
                 $total1 += $data->debet;
                 $total2 += $data->kredit;
 
@@ -633,35 +654,37 @@ class LapBukuBesarController extends BaseController
                     $nsaldo -= $data->debet - $data->kredit;
                 }
 
-                // [FORMAT TANGGAL]: Trik ="..." agar di Excel otomatis Rata Kiri
-                $tgl_jurnal = '="' . date('d-m-Y', strtotime($data->tgljurnal)) . '"';
-                
+                $tampil_tgl = date('d-m-Y', strtotime($data->tgljurnal));
                 $referensi_aman = htmlspecialchars($data->referensi, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $keterangan_aman = htmlspecialchars($data->keterangan, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                // Tulis Baris Data ke CSV
-                fputcsv($output, [
-                    $tgl_jurnal,
-                    $data->idjurnal,
-                    $referensi_aman,
-                    $keterangan_aman,
-                    $data->debet,
-                    $data->kredit,
-                    ($nsaldo >= 0 ? $nsaldo : $nsaldo * -1)
-                ]);
+                echo "<tr>";
+                echo "<td class='col-tgl'>{$tampil_tgl}</td>";
+                echo "<td class='col-nojurnal'>{$data->idjurnal}</td>";
+                echo "<td class='col-ref'>{$referensi_aman}</td>";
+                echo "<td class='col-ket'>{$keterangan_aman}</td>";
+                // [PERBAIKAN]: Tanda kurung di-set di mso-number-format dan tampilkan variabel asli $nsaldo
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->debet}</td>";
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->kredit}</td>";
+                echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nsaldo}</td>";
+                echo "</tr>";
+
+                if (ob_get_level() > 0) ob_flush();
+                flush();
             }
             
-            // Tulis Baris Total Akun
-            fputcsv($output, [
-                '', '', '', 'TOTAL', 
-                ($total1 >= 0 ? $total1 : $total1 * -1), 
-                ($total2 >= 0 ? $total2 : $total2 * -1), 
-                ''
-            ]);
-            fputcsv($output, []); // Jarak antar akun
+            echo "<tr>";
+            echo "<td colspan='4' style='text-align: right; font-weight: bold;'>TOTAL</td>";
+            // [PERBAIKAN]: Mengembalikan ke nilai asli tanpa perkalian * -1
+            echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total1}</td>";
+            echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total2}</td>";
+            echo "<td></td>"; 
+            echo "</tr>";
+            echo "</table>"; 
         }
 
-        fclose($output);
+        echo "</body>";
+        echo "</html>";
         exit;
     }
 

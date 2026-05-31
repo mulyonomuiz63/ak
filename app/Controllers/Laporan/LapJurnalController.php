@@ -168,17 +168,12 @@ class LapJurnalController extends BaseController
 	public function lapJurnalCetakExcel($tglawal, $tglakhir, $idperusahaan)
     {
         // [1. BYPASS MEMORY] 
-        // Sangat krusial untuk jutaan data: hilangkan batas waktu dan batas memori
         ini_set('memory_limit', '-1'); 
         set_time_limit(0);             
 
         // [2. AMBIL DATA PERUSAHAAN]
         $rsDataPerusahaan = $this->perusahaan_model->get_by_id(encrypt($idperusahaan))->getRow();
-        if (!empty($idperusahaan)) {
-            $namaperusahaan = $rsDataPerusahaan->namaperusahaan;
-        } else {
-            $namaperusahaan = '';
-        }
+        $namaperusahaan = !empty($idperusahaan) ? $rsDataPerusahaan->namaperusahaan : '';
 
         // [3. PERIODE]
         if ($tglawal == $tglakhir) {
@@ -187,34 +182,50 @@ class LapJurnalController extends BaseController
             $Periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
         }
 
-        // [4. SETUP HEADER HTTP UNTUK DOWNLOAD CSV]
+        // [4. SETUP HEADER HTTP UNTUK EXCEL (HTML BASED)]
         $bulantahun     = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
         $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.xls';
+        
         header("Content-Disposition: attachment; filename=\"" . $namaFile . "\"");
-        header("Content-Type: application/vnd.ms-excel");
+        header("Content-Type: application/vnd.ms-excel; charset=utf-8");
         header("Cache-Control: max-age=0");
 
-        // [5. BUKA JALUR STREAM LANGSUNG KE BROWSER]
-        // "php://output" akan langsung mengirim data yang di-echo ke file yang di-download user, 
-        // sehingga RAM server Anda tetap kosong (hemat memori).
-        $output = fopen('php://output', 'w');
+        // [5. TULIS STRUKTUR HTML & CSS (Untuk Styling Lebar Kolom dll)]
+        echo "<html xmlns:x=\"urn:schemas-microsoft-com:office:excel\">";
+        echo "<head>";
+        echo "<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>";
+        echo "<style>";
+        echo "table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }";
+        echo "th, td { border: 1px solid #000000; padding: 5px; }";
+        echo "th { background-color: #D9D9D9; font-weight: bold; text-align: center; }";
+        // Mengatur persentase lebar (responsive) atau lebar pasti
+        echo ".col-no { width: 5%; text-align: center; }";
+        echo ".col-tgl { width: 12%; text-align: center; }";
+        echo ".col-nojurnal { width: 18%; text-align: center; }";
+        echo ".col-akun { width: 35%; text-align: left; }";
+        echo ".col-uang { width: 15%; text-align: right; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
 
-        // Tambahkan BOM (Byte Order Mark) agar aplikasi seperti MS Excel otomatis membaca UTF-8 dengan benar
-        fputs($output, "\xEF\xBB\xBF");
-
-        // [6. TULIS KOP LAPORAN KE CSV]
-        // Di CSV tidak ada format tebal (bold) atau tengah (center), jadi kita tulis sebagai baris pertama
-        fputcsv($output, [$namaperusahaan]);
-        fputcsv($output, ['LAPORAN JURNAL UMUM']);
-        fputcsv($output, ['Periode ' . $Periode]);
-        fputcsv($output, []); // Baris kosong pemisah
+        // [6. TULIS KOP LAPORAN]
+        echo "<table>";
+        echo "<tr><th colspan='6' style='border:none; background:none; font-size: 16px;'>{$namaperusahaan}</th></tr>";
+        echo "<tr><th colspan='6' style='border:none; background:none; font-size: 14px;'>LAPORAN JURNAL UMUM</th></tr>";
+        echo "<tr><th colspan='6' style='border:none; background:none; font-size: 12px;'>Periode {$Periode}</th></tr>";
+        echo "<tr><td colspan='6' style='border:none;'></td></tr>"; // Baris Kosong Pemisah
 
         // [7. TULIS HEADER TABEL]
-        // Gunakan delimiter titik koma (;) jika target user Anda menggunakan Excel format Indonesia, 
-        // atau biarkan default koma (,) untuk format global. Di sini menggunakan default fputcsv (,).
-        fputcsv($output, ['No', 'Tanggal', 'No Jurnal', 'Nama Akun', 'Debet', 'Kredit']);
+        echo "<tr>";
+        echo "<th class='col-no'>No</th>";
+        echo "<th class='col-tgl'>Tanggal</th>";
+        echo "<th class='col-nojurnal'>No Jurnal</th>";
+        echo "<th class='col-akun'>Nama Akun</th>";
+        echo "<th class='col-uang'>Debet</th>";
+        echo "<th class='col-uang'>Kredit</th>";
+        echo "</tr>";
 
         // [8. AMBIL DATA DARI DATABASE]
         $rsData = $this->laporan_model->get_jurnal($tglawal, $tglakhir, $idperusahaan, 'asc');
@@ -224,45 +235,48 @@ class LapJurnalController extends BaseController
         $idjurnal_lama = '';
         $no = 1;
 
-        // [9. LOOPING DATA MENGGUNAKAN UNBUFFERED ROW]
-        // SAMA SEPERTI PDF: Wajib gunakan getUnbufferedRow() agar data dipanggil 1 per 1, bukan ditarik sekaligus.
+        // [9. LOOPING DATA & FLUSH UNTUK HEMAT RAM]
         while ($data = $rsData->getUnbufferedRow()) {
-            $total1 = $total1 + $data->debet;
-            $total2 = $total2 + $data->kredit;
+            $total1 += $data->debet;
+            $total2 += $data->kredit;
 
-            // Logika untuk mengosongkan kolom jika ID Jurnalnya sama dengan baris sebelumnya
             $tampil_no = ($data->idjurnal == $idjurnal_lama) ? "" : $no++;
             $tampil_tgl = ($data->idjurnal == $idjurnal_lama) ? "" : date('d-m-Y', strtotime($data->tgljurnal));
             $tampil_nojurnal = ($data->idjurnal == $idjurnal_lama) ? "" : $data->idjurnal;
 
-            // Indentasi spasi untuk akun kredit (di Excel spasi akan terbaca)
-            $nama_akun = ($data->debet == 0 ? "     " : "") . $data->nmakun;
+            // Indentasi spasi HTML (&nbsp;) untuk akun kredit
+            $nama_akun = ($data->debet == 0 ? "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" : "") . htmlspecialchars($data->nmakun);
 
-            // Tulis baris ini langsung ke file download
-            fputcsv($output, [
-                $tampil_no,
-                $tampil_tgl,
-                $tampil_nojurnal,
-                $nama_akun,
-                // PENTING: Untuk Excel/CSV, jangan gunakan number_format() di sini.
-                // Biarkan nilainya berupa angka murni (misal: 100000) agar user bisa melakukan 
-                // operasi rumus SUM() di Excel. Jika pakai number_format, Excel akan menganggapnya Teks.
-                $data->debet, 
-                $data->kredit
-            ]);
+            echo "<tr>";
+            echo "<td class='col-no'>{$tampil_no}</td>";
+            echo "<td class='col-tgl'>{$tampil_tgl}</td>";
+            echo "<td class='col-nojurnal'>{$tampil_nojurnal}</td>";
+            echo "<td class='col-akun'>{$nama_akun}</td>";
+            
+            // PENTING: mso-number-format "\#\,\#\#0" akan memaksa Excel 
+            // menampilkan separator ribuan, TAPI nilainya tetap angka murni (bisa di SUM)
+            echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->debet}</td>";
+            echo "<td class='col-uang' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->kredit}</td>";
+            echo "</tr>";
 
             $idjurnal_lama = $data->idjurnal;
+
+            // Membuang output ke browser secara bertahap agar RAM server tidak penuh
+            if (ob_get_level() > 0) ob_flush();
+            flush();
         }
 
         // [10. TULIS TOTAL]
-        fputcsv($output, [
-            '', '', '', 'TOTAL', 
-            $total1, 
-            $total2
-        ]);
+        echo "<tr>";
+        echo "<td colspan='4' style='text-align: right; font-weight: bold;'>TOTAL</td>";
+        echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total1}</td>";
+        echo "<td class='col-uang' style='font-weight: bold; mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$total2}</td>";
+        echo "</tr>";
 
-        // [11. TUTUP STREAM]
-        fclose($output);
+        // [11. TUTUP TAG HTML]
+        echo "</table>";
+        echo "</body>";
+        echo "</html>";
         exit;
     }
 
