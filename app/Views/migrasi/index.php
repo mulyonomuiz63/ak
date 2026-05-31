@@ -1,5 +1,5 @@
 <?= $this->extend('template/admin') ?>
-
+<?= $this->section('css') ?>
 <style>
   .dataTable tbody tr td {
     padding: 8px 10px !important;
@@ -19,6 +19,7 @@
   }
 </style>
 
+<?= $this->endSection() ?>
 <?= $this->section('content') ?>
 <div class="loading-overlay" id="loader" style="display: none;">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
@@ -132,7 +133,7 @@
       "processing": true,
       "serverSide": true,
       "order": [],
-      "pageLength": 50,
+      "pageLength": 10000,
       "ajax": {
         "url": "<?php echo site_url('migrasi/datatablesource') ?>",
         "type": "POST",
