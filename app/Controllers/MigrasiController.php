@@ -67,10 +67,10 @@ class MigrasiController extends BaseController
         $searchValue = $request->getPost('search')['value'];
         if (!empty($searchValue)) {
             $builder->groupStart()
-                    ->like('v_jurnal.idjurnal', $searchValue)
-                    ->orLike('jurnalfile.file', $searchValue)
-                    ->orLike('jurnalfile.nama_file', $searchValue)
-                    ->groupEnd();
+                ->like('v_jurnal.idjurnal', $searchValue)
+                ->orLike('jurnalfile.file', $searchValue)
+                ->orLike('jurnalfile.nama_file', $searchValue)
+                ->groupEnd();
         }
         $totalFiltered = $builder->countAllResults(false);
         $limit = $request->getPost('length'); // Mengambil angka 10 dari pageLength JS
@@ -83,8 +83,16 @@ class MigrasiController extends BaseController
         $data = [];
 
         foreach ($RsData->getResult() as $rowdata) {
-            $path = FCPATH . 'uploads/jurnal/thumbnails/' . $rowdata->file;
-            $size = file_exists($path) ? round(filesize($path) / 1024, 2) . ' KB' : '<span class="text-danger">File Hilang</span>';
+            $path_jurnal = FCPATH . 'uploads/jurnal/thumbnails/' . $rowdata->file;
+            $path_arsip  = FCPATH . 'uploads/arsip/thumbnails/' . $rowdata->file;
+
+            if (file_exists($path_jurnal)) {
+                $size = round(filesize($path_jurnal) / 1024, 2) . ' KB';
+            } elseif (file_exists($path_arsip)) {
+                $size = round(filesize($path_arsip) / 1024, 2) . ' KB';
+            } else {
+                $size = '<span class="text-danger">File Hilang</span>';
+            }
 
             // 1. Logika Pengecekan Google Drive (Link Viewer & Status)
             if (!empty($rowdata->kode_file)) {
@@ -105,7 +113,7 @@ class MigrasiController extends BaseController
             $row = [];
 
             // [0] Checkbox
-            $row[] = file_exists($path)
+            $row[] = file_exists($path_jurnal) || file_exists($path_arsip)
                 ? '<input type="checkbox" class="check-item" name="id[]" data-idperusahaan="' . $rowdata->idperusahaan . '" data-tgljurnal="' . $rowdata->tgljurnal . '" value="' . $rowdata->id . '">'
                 : '<input type="checkbox" disabled title="File fisik tidak ditemukan di server">';
 
@@ -181,33 +189,50 @@ class MigrasiController extends BaseController
             return $this->response->setJSON(['status' => false, 'msg' => 'File tidak ditemukan di database.']);
         }
 
-        $filePath = FCPATH . 'uploads/jurnal/thumbnails/' . $fileData['file'];
+        $path_jurnal = FCPATH . 'uploads/jurnal/thumbnails/' . $fileData['file'];
+        $path_arsip  = FCPATH . 'uploads/arsip/thumbnails/' . $fileData['file'];
 
-        if (file_exists($filePath)) {
+        // 1. Tentukan path mana yang valid (ada filenya)
+        $validPath = false;
+        if (file_exists($path_jurnal)) {
+            $validPath = $path_jurnal;
+        } elseif (file_exists($path_arsip)) {
+            $validPath = $path_arsip;
+        }
+
+        // 2. Jika file ditemukan di salah satu folder, lanjutkan proses GDrive
+        if ($validPath) {
             try {
+                // Hapus file lama di GDrive jika kode_file sudah ada
                 if (!empty($fileData['kode_file'])) {
                     try {
                         // Panggil fungsi delete drive Anda
                         $this->_deleteFromGoogleDrive($fileData['kode_file']);
                     } catch (\Exception $e) {
+                        // Abaikan atau log error jika gagal hapus file lama
                     }
                 }
-                // Upload 1 file ini ke GDrive
-                $gdriveId = $this->_uploadToGoogleDrive($filePath, $fileData['file'], $idperusahaan, $tahunBulan);
+
+                // Upload file dari path yang valid ke GDrive
+                $gdriveId = $this->_uploadToGoogleDrive($validPath, $fileData['file'], $idperusahaan, $tahunBulan);
 
                 if ($gdriveId) {
                     // Update ke database
                     $this->db->table('jurnalfile')
                         ->where('id', $id)
                         ->update(['kode_file' => $gdriveId]);
+
                     return $this->response->setJSON(['status' => true, 'msg' => 'Sukses']);
+                } else {
+                    return $this->response->setJSON(['status' => false, 'msg' => 'Gagal mengupload file ke Google Drive']);
                 }
             } catch (\Exception $e) {
                 return $this->response->setJSON(['status' => false, 'msg' => $e->getMessage()]);
             }
+        } else {
+            // 3. Jika file tidak ada di kedua folder, kembalikan response error
+            return $this->response->setJSON(['status' => false, 'msg' => 'File tidak ditemukan di folder Jurnal maupun Arsip.']);
         }
-
-        return $this->response->setJSON(['status' => false, 'msg' => 'File fisik sudah tidak ada di server.']);
     }
 
     /**

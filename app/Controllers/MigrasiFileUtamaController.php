@@ -95,10 +95,17 @@ class MigrasiFileUtamaController extends BaseController
                 $size = '<span class="text-muted">Tidak Ada File</span>';
                 $path = null; // Tidak ada file fisik untuk dicek
             } else {
-                $path = FCPATH . 'uploads/jurnal/' . $rowdata->filelampiran;
-
                 // is_file() memastikan bahwa path tersebut adalah file sungguhan, bukan folder
-                $size = is_file($path) ? round(filesize($path) / 1024, 2) . ' KB' : '<span class="text-danger">File Hilang</span>';
+                $path_jurnal = FCPATH . 'uploads/jurnal/thumbnails/' . $rowdata->filelampiran;
+                $path_arsip  = FCPATH . 'uploads/arsip/thumbnails/' . $rowdata->filelampiran;
+
+                if (file_exists($path_jurnal)) {
+                    $size = round(filesize($path_jurnal) / 1024, 2) . ' KB';
+                } elseif (file_exists($path_arsip)) {
+                    $size = round(filesize($path_arsip) / 1024, 2) . ' KB';
+                } else {
+                    $size = '<span class="text-danger">File Hilang</span>';
+                }
             }
 
             // 1. Logika Pengecekan Google Drive (Link Viewer & Status)
@@ -119,9 +126,9 @@ class MigrasiFileUtamaController extends BaseController
 
             if (!empty($rowdata->kode_file)) {
                 $row[] = '<input type="checkbox" disabled title="File sudah dimigrasi ke Google Drive">';
-            }elseif (empty($rowdata->filelampiran) || !is_file($path)) {
+            } elseif (empty($rowdata->filelampiran) || !is_file($path_jurnal) && !is_file($path_arsip)) {
                 $row[] = '<input type="checkbox" disabled title="File fisik tidak ditemukan di server lokal">';
-            }else {
+            } else {
                 $row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" data-idperusahaan="' . $rowdata->idperusahaan . '" data-tgljurnal="' . $rowdata->tgljurnal . '" value="' . $rowdata->idjurnal . '">';
             }
 
@@ -197,20 +204,31 @@ class MigrasiFileUtamaController extends BaseController
             return $this->response->setJSON(['status' => false, 'msg' => 'File tidak ditemukan di database.']);
         }
 
-        $filePath = FCPATH . 'uploads/jurnal/' . $fileData['filelampiran']; // Path file di server lokal
+        $path_jurnal = FCPATH . 'uploads/jurnal/' . $fileData['filelampiran'];
+        $path_arsip  = FCPATH . 'uploads/arsip/' . $fileData['filelampiran'];
 
-        if (file_exists($filePath)) {
+        // 1. Tentukan path mana yang valid (ada filenya)
+        $validPath = false;
+        if (file_exists($path_jurnal)) {
+            $validPath = $path_jurnal;
+        } elseif (file_exists($path_arsip)) {
+            $validPath = $path_arsip;
+        }
+
+        // 2. Jika file ditemukan di salah satu folder, lanjutkan proses GDrive dan DB
+        if ($validPath) {
             try {
-                // 1. Hapus file lama jika ada (tidak perlu rollback jika ini gagal)
+                // Hapus file lama jika ada (tidak perlu rollback jika ini gagal)
                 if (!empty($fileData['kode_file'])) {
                     try {
                         $this->_deleteFromGoogleDrive($fileData['kode_file']);
                     } catch (\Exception $e) {
+                        // Abaikan jika gagal hapus file lama
                     }
                 }
 
-                // 2. Upload file baru ke GDrive
-                $gdriveId = $this->_uploadToGoogleDrive($filePath, $fileData['filelampiran'], $idperusahaan, $tahunBulan);
+                // Upload file baru dari path yang valid ke GDrive
+                $gdriveId = $this->_uploadToGoogleDrive($validPath, $fileData['filelampiran'], $idperusahaan, $tahunBulan);
 
                 if ($gdriveId) {
                     // Mulai Transaksi Database
@@ -223,7 +241,6 @@ class MigrasiFileUtamaController extends BaseController
                             ->update(['kode_file' => $gdriveId]);
 
                         // Simpan ke tabel pendukung
-
                         $this->jurnal_model->simpanfile([
                             'idjurnal'  => $id,
                             'nama_file' => 'Lampiran Utama',
@@ -246,13 +263,16 @@ class MigrasiFileUtamaController extends BaseController
 
                         throw new \Exception("Database error: " . $e->getMessage());
                     }
+                } else {
+                    return $this->response->setJSON(['status' => false, 'msg' => 'Gagal mengupload file ke Google Drive.']);
                 }
             } catch (\Exception $e) {
                 return $this->response->setJSON(['status' => false, 'msg' => $e->getMessage()]);
             }
         }
 
-        return $this->response->setJSON(['status' => false, 'msg' => 'File fisik sudah tidak ada di server.']);
+        // 3. Kondisi jika file tidak ditemukan di kedua folder lokal
+        return $this->response->setJSON(['status' => false, 'msg' => 'File fisik tidak ditemukan di folder Jurnal maupun Arsip.']);
     }
 
     /**
