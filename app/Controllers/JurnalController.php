@@ -967,7 +967,7 @@ class JurnalController extends BaseController
 
 
         // =========================================================================
-        // LAMPIRAN (Hanya Border Luar, Tidak Ada Border Dalam)
+        // LAMPIRAN (Perbaikan Pengecekan Ekstensi PDF)
         // =========================================================================
         if ($lampiran == '' || $lampiran == null) {
             $jurnalfile = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
@@ -985,11 +985,11 @@ class JurnalController extends BaseController
                         $pdf->AddPage();
                     }
 
-                    // TABEL PEMBUNGKUS (Hanya td ini yang punya border untuk bingkai luar)
+                    // TABEL PEMBUNGKUS
                     $tabelLampiran = '<table cellpadding="0">';
                     $tabelLampiran .= '<tr nobr="true"><td style="border:1px solid gray;">'; 
 
-                    // TABEL ISI (border="0" agar bagian dalam bersih tanpa garis)
+                    // TABEL ISI
                     $tabelLampiran .= '<table border="0" cellpadding="10">';
 
                     $rows = array_chunk($chunk, 2); 
@@ -999,21 +999,34 @@ class JurnalController extends BaseController
                         
                         foreach ($row as $item) {
                             $kode_gdrive = isset($item->kode_file) ? $item->kode_file : '';
+                            $nama_file = isset($item->file) ? strtolower($item->file) : ''; 
+                            $is_pdf = (pathinfo($nama_file, PATHINFO_EXTENSION) === 'pdf');
+
                             if ($kode_gdrive != '') {
                                 $gdrive_url = 'https://drive.google.com/uc?export=download&id=' . $kode_gdrive;
-                                $img_data = @file_get_contents($gdrive_url);
-                                if ($img_data !== false) {
-                                    $base64 = base64_encode($img_data);
-                                    $tabelLampiran .= '<td width="50%" style="text-align:center;"><br><img src="@' . $base64 . '" width="260"><br></td>';
+                                
+                                if ($is_pdf) {
+                                    // Render Tautan Jika PDF
+                                    $tabelLampiran .= '<td width="50%" style="text-align:center; vertical-align:middle;">
+                                                        <br><br><b>[Lampiran Format PDF]</b><br>
+                                                        <a href="' . $gdrive_url . '" style="text-decoration:none; color:blue;">Klik di sini untuk melihat PDF</a><br><br>
+                                                       </td>';
                                 } else {
-                                    $tabelLampiran .= '<td width="50%" style="text-align:center;color:red;"><br><span style="font-size:10px;">[Gagal Memuat]</span><br></td>';
+                                    // Render Base64 Jika Gambar
+                                    $img_data = @file_get_contents($gdrive_url);
+                                    if ($img_data !== false) {
+                                        $base64 = base64_encode($img_data);
+                                        $tabelLampiran .= '<td width="50%" style="text-align:center;"><br><img src="@' . $base64 . '" width="260"><br></td>';
+                                    } else {
+                                        $tabelLampiran .= '<td width="50%" style="text-align:center;color:red;"><br><span style="font-size:10px;">[Gagal Memuat]</span><br></td>';
+                                    }
                                 }
                             } else {
                                 $tabelLampiran .= '<td width="50%"></td>';
                             }
                         }
 
-                        // Isi sel kosong jika jumlah gambar ganjil agar proporsi tidak hancur
+                        // Isi sel kosong jika jumlah gambar ganjil
                         if (count($row) == 1) {
                             $tabelLampiran .= '<td width="50%"></td>';
                         }
@@ -1032,18 +1045,26 @@ class JurnalController extends BaseController
             $headerLampiran .= '<table><tr><td style="height:20px;border:1px solid gray;text-align:center;font-weight:bold;">Lampiran Dokumen / Bukti Transfer</td></tr></table><br>';
             $pdf->writeHTML($headerLampiran, true, false, false, false, '');
 
-            // Menggunakan struktur yang sama untuk file tunggal agar konsisten (border hanya di bingkai luar)
             $tabelLampiran = '<table cellpadding="0"><tr nobr="true"><td style="border:1px solid gray;">';
             $tabelLampiran .= '<table border="0" cellpadding="10"><tr><td style="text-align:center;">';
             
             if ($kode_file_lampiran != '') {
+                $is_pdf_single = (pathinfo(strtolower($lampiran), PATHINFO_EXTENSION) === 'pdf');
                 $gdrive_url_single = 'https://drive.google.com/uc?export=download&id=' . $kode_file_lampiran;
-                $img_data_single = @file_get_contents($gdrive_url_single);
-                if ($img_data_single !== false) {
-                    $base64_single = base64_encode($img_data_single);
-                    $tabelLampiran .= '<br><img src="@' . $base64_single . '" width="400"><br>';
+
+                if ($is_pdf_single) {
+                    // Render Tautan Jika PDF
+                    $tabelLampiran .= '<br><br><b>[Lampiran Format PDF]</b><br>
+                                       <a href="' . $gdrive_url_single . '" style="text-decoration:none; color:blue;">Klik di sini untuk melihat dokumen PDF</a><br><br>';
                 } else {
-                    $tabelLampiran .= '<br><span style="font-size:10px;">[Gagal Memuat]</span><br>';
+                    // Render Base64 Jika Gambar
+                    $img_data_single = @file_get_contents($gdrive_url_single);
+                    if ($img_data_single !== false) {
+                        $base64_single = base64_encode($img_data_single);
+                        $tabelLampiran .= '<br><img src="@' . $base64_single . '" width="400"><br>';
+                    } else {
+                        $tabelLampiran .= '<br><span style="font-size:10px; color:red;">[Gagal Memuat File]</span><br>';
+                    }
                 }
             }
             $tabelLampiran .= '</td></tr></table></td></tr></table>';
@@ -1058,7 +1079,6 @@ class JurnalController extends BaseController
         $pdf->Output('Laporan Jurnal.pdf', 'I');
         exit;
     }
-
 
 
 	function viewfile($id, $fil)
