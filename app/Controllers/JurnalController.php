@@ -967,7 +967,7 @@ class JurnalController extends BaseController
 
 
         // =========================================================================
-        // LAMPIRAN (Perbaikan Pengecekan Ekstensi PDF)
+        // LAMPIRAN
         // =========================================================================
         if ($lampiran == '' || $lampiran == null) {
             $jurnalfile = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
@@ -999,29 +999,22 @@ class JurnalController extends BaseController
                         
                         foreach ($row as $item) {
                             $kode_gdrive = isset($item->kode_file) ? $item->kode_file : '';
-                            $nama_file = isset($item->file) ? strtolower($item->file) : ''; 
+                            // PENGECEKAN PDF DITAMBAHKAN DI SINI
+                            $nama_file = isset($item->file) ? strtolower($item->file) : '';
                             $is_pdf = (pathinfo($nama_file, PATHINFO_EXTENSION) === 'pdf');
 
-                            if ($kode_gdrive != '') {
+                            // JIKA KODE GDRIVE ADA DAN BUKAN PDF, MAKA TAMPILKAN
+                            if ($kode_gdrive != '' && !$is_pdf) {
                                 $gdrive_url = 'https://drive.google.com/uc?export=download&id=' . $kode_gdrive;
-                                
-                                if ($is_pdf) {
-                                    // Render Tautan Jika PDF
-                                    $tabelLampiran .= '<td width="50%" style="text-align:center; vertical-align:middle;">
-                                                        <br><br><b>[Lampiran Format PDF]</b><br>
-                                                        <a href="' . $gdrive_url . '" style="text-decoration:none; color:blue;">Klik di sini untuk melihat PDF</a><br><br>
-                                                       </td>';
+                                $img_data = @file_get_contents($gdrive_url);
+                                if ($img_data !== false) {
+                                    $base64 = base64_encode($img_data);
+                                    $tabelLampiran .= '<td width="50%" style="text-align:center;"><br><img src="@' . $base64 . '" width="260"><br></td>';
                                 } else {
-                                    // Render Base64 Jika Gambar
-                                    $img_data = @file_get_contents($gdrive_url);
-                                    if ($img_data !== false) {
-                                        $base64 = base64_encode($img_data);
-                                        $tabelLampiran .= '<td width="50%" style="text-align:center;"><br><img src="@' . $base64 . '" width="260"><br></td>';
-                                    } else {
-                                        $tabelLampiran .= '<td width="50%" style="text-align:center;color:red;"><br><span style="font-size:10px;">[Gagal Memuat]</span><br></td>';
-                                    }
+                                    $tabelLampiran .= '<td width="50%" style="text-align:center;color:red;"><br><span style="font-size:10px;">[Gagal Memuat]</span><br></td>';
                                 }
                             } else {
+                                // JIKA KOSONG ATAU MERUPAKAN PDF, KOSONGKAN KOLOMNYA AGAR TIDAK ERROR
                                 $tabelLampiran .= '<td width="50%"></td>';
                             }
                         }
@@ -1048,23 +1041,18 @@ class JurnalController extends BaseController
             $tabelLampiran = '<table cellpadding="0"><tr nobr="true"><td style="border:1px solid gray;">';
             $tabelLampiran .= '<table border="0" cellpadding="10"><tr><td style="text-align:center;">';
             
-            if ($kode_file_lampiran != '') {
-                $is_pdf_single = (pathinfo(strtolower($lampiran), PATHINFO_EXTENSION) === 'pdf');
-                $gdrive_url_single = 'https://drive.google.com/uc?export=download&id=' . $kode_file_lampiran;
+            // PENGECEKAN PDF DITAMBAHKAN DI SINI UNTUK FILE TUNGGAL
+            $is_pdf_single = (pathinfo(strtolower($lampiran), PATHINFO_EXTENSION) === 'pdf');
 
-                if ($is_pdf_single) {
-                    // Render Tautan Jika PDF
-                    $tabelLampiran .= '<br><br><b>[Lampiran Format PDF]</b><br>
-                                       <a href="' . $gdrive_url_single . '" style="text-decoration:none; color:blue;">Klik di sini untuk melihat dokumen PDF</a><br><br>';
+            // HANYA RENDER JIKA BUKAN PDF
+            if ($kode_file_lampiran != '' && !$is_pdf_single) {
+                $gdrive_url_single = 'https://drive.google.com/uc?export=download&id=' . $kode_file_lampiran;
+                $img_data_single = @file_get_contents($gdrive_url_single);
+                if ($img_data_single !== false) {
+                    $base64_single = base64_encode($img_data_single);
+                    $tabelLampiran .= '<br><img src="@' . $base64_single . '" width="400"><br>';
                 } else {
-                    // Render Base64 Jika Gambar
-                    $img_data_single = @file_get_contents($gdrive_url_single);
-                    if ($img_data_single !== false) {
-                        $base64_single = base64_encode($img_data_single);
-                        $tabelLampiran .= '<br><img src="@' . $base64_single . '" width="400"><br>';
-                    } else {
-                        $tabelLampiran .= '<br><span style="font-size:10px; color:red;">[Gagal Memuat File]</span><br>';
-                    }
+                    $tabelLampiran .= '<br><span style="font-size:10px;">[Gagal Memuat]</span><br>';
                 }
             }
             $tabelLampiran .= '</td></tr></table></td></tr></table>';
