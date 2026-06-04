@@ -121,11 +121,11 @@ class ExportDataController extends BaseController
                 } elseif ($table == 'pengguna') {
                     $csvData = ["'" .$row['idpengguna'], "'" .$row['idperusahaan'], $row['namapengguna'], $row['username'], $row['password']];
                 } elseif ($table == 'akun') {
-                    $csvData = [$row['keyakun'], "'" .$row['idperusahaan'], $row['kdakun'], $row['nmakun'], $row['level'], $row['saldonormal'], $row['status']];
-                } elseif ($table == 'jurnal') {
-                    $csvData = [$row['idjurnal'], "'" .$row['idpengguna'], $row['tgljurnal'], $row['keterangan'], $row['jumlah'], $row['tglinsert'], $row['tglupdate'], $row['referensi']];
+                    $csvData = ["'" .$row['keyakun'], "'" .$row['idperusahaan'], $row['kdakun'], $row['nmakun'], $row['level'], $row['saldonormal'], $row['status']];
+                } elseif ($table == 'jurnal') { 
+                    $csvData = [$row['idjurnal'], "'" .$row['idpengguna'], $row['tgljurnal'], $row['keterangan'],"'" . $row['jumlah'], $row['tglinsert'], $row['tglupdate'], $row['referensi']];
                 } elseif ($table == 'jurnaldetail') {
-                    $csvData = [$row['keyakun'], $row['idjurnal'], $row['debet'], $row['kredit'], $row['nourut']];
+                    $csvData = ["'" .$row['keyakun'], $row['idjurnal'], $row['debet'], $row['kredit'], $row['nourut']];
                 } elseif ($table == 'jurnalfile') {
                     $csvData = ["'" .$row['id'], $row['idjurnal'], $row['nama_file'], $row['kode_file'], $row['created_at']];
                 }
