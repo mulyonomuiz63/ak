@@ -100,7 +100,7 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
 
 
     //supervisor
-    $routes->get('simpanApprove', 'JurnalController::simpanApprove');
+    $routes->post('simpanApprove', 'JurnalController::simpanApprove');
 });
 
 //laporan
