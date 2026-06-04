@@ -129,6 +129,10 @@
       "processing": true,
       "serverSide": true,
       "order": [],
+      "lengthMenu": [
+            [10, 25, 50, 100, 1000],          // Value yang dikirim ke server (Controller)
+            [10, 25, 50, 100, 1000]           // Label angka yang tampil di dropdown layar
+        ],
       "ajax": {
         "url": "<?php echo site_url('perusahaan/datatablesource') ?>",
         "type": "POST"
