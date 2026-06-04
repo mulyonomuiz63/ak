@@ -117,7 +117,7 @@ class ExportDataController extends BaseController
             foreach ($result as $row) {
                 $csvData = [];
                 if ($table == 'perusahaan') {
-                    $csvData = ["'" .$row['idperusahaan'], $row['namaperusahaan'], $row['alamat'], $row['tglmulaiusaha'], $row['email'], $row['foto'], $row['notelp'], $row['statusaktif']];
+                    $csvData = ["'" .$row['idperusahaan'], $row['namaperusahaan'], $row['alamat'], $row['tglmulaiusaha'], $row['email'], $row['foto'], "'" . $row['notelp'], $row['statusaktif']];
                 } elseif ($table == 'pengguna') {
                     $csvData = ["'" .$row['idpengguna'], "'" .$row['idperusahaan'], $row['namapengguna'], $row['username'], $row['password']];
                 } elseif ($table == 'akun') {
