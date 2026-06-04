@@ -819,151 +819,99 @@ class JurnalController extends BaseController
 
 
 	public function lihat($idjurnal)
-	{
-		$rsDataJurnal = $this->jurnal_model->get_by_id($idjurnal)->getRow();
+    {
+        // Tambahkan batas waktu eksekusi
+        ini_set('max_execution_time', 300); 
 
-		$idperusahaan = encrypt($rsDataJurnal->idperusahaan);
-		$idpengguna = encrypt($rsDataJurnal->idpengguna);
+        $rsDataJurnal = $this->jurnal_model->get_by_id($idjurnal)->getRow();
 
-		$namaperusahaan = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->namaperusahaan;
-		$alamat = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->alamat;
-		$hp = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->notelp;
-		$email = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->email_pengguna;
+        $idperusahaan = encrypt($rsDataJurnal->idperusahaan);
+        $idpengguna = encrypt($rsDataJurnal->idpengguna);
 
-		$pics = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
-		$pic_ttds = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
+        $namaperusahaan = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->namaperusahaan;
+        $alamat = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->alamat;
+        $hp = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->notelp;
+        $email = $this->perusahaan_model->get_by_id($idperusahaan)->getRow()->email_pengguna;
 
-		if ($pics != null) {
-			$pic = $pics->namapengguna;
-		} else {
-			$pic = '';
-		}
+        $pics = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
+        $pic_ttds = $this->pengguna_model->get_by_id_id_pic($rsDataJurnal->id_pic)->getRow();
 
-		if ($pics != null) {
-			$pic_ttd = $pic_ttds->pic_ttd;
-		} else {
-			$pic_ttd = '';
-		}
+        $pic = ($pics != null) ? $pics->namapengguna : '';
+        $pic_ttd = ($pics != null) ? $pic_ttds->pic_ttd : '';
 
-		$namapengguna = $this->pengguna_model->get_by_id($idpengguna)->getRow()->namapengguna;
-		$file_ttd = $this->pengguna_model->get_by_id($idpengguna)->getRow()->file_ttd;
+        $namapengguna = $this->pengguna_model->get_by_id($idpengguna)->getRow()->namapengguna;
+        $file_ttd = $this->pengguna_model->get_by_id($idpengguna)->getRow()->file_ttd;
 
-		// [PERBAIKAN]: Bungkus dengan div align="center", beri <br> untuk jarak atas/bawah agar secara vertikal ke tengah, 
-		// serta sesuaikan ukuran height agar pas dan tidak merusak batas tabel.
-		// Tentukan path fisik gambarnya
-		$path_ttd_pembuat = FCPATH . 'uploads/ttd/' . $file_ttd;
-		$path_ttd_pemeriksa = FCPATH . 'uploads/ttd/' . $pic_ttd;
+        // Path fisik TTD di server
+        $path_ttd_pembuat = FCPATH . 'uploads/ttd/' . $file_ttd;
+        $path_ttd_pemeriksa = FCPATH . 'uploads/ttd/' . $pic_ttd;
 
-		// [BARU] Panggil fungsi Auto Crop untuk membersihkan ruang kosong
-		if ($file_ttd != '') {
-			$this->autoCropImage($path_ttd_pembuat);
-		}
-		if ($pic_ttd != '') {
-			$this->autoCropImage($path_ttd_pemeriksa);
-		}
-		// Variabel gambar yang sudah bersih dan presisi
-		$file_pembuat = '<img src="' . $path_ttd_pembuat . '" height="60" />';
-		$file_pemeriksa = '<img src="' . $path_ttd_pemeriksa . '" height="60" />';
+        $file_pembuat = (file_exists($path_ttd_pembuat) && $file_ttd != '') ? '<img src="' . $path_ttd_pembuat . '" width="90" />' : '';
+        $file_pemeriksa = (file_exists($path_ttd_pemeriksa) && $pic_ttd != '') ? '<img src="' . $path_ttd_pemeriksa . '" width="90" />' : '';
 
-		$rsData = $this->jurnal_model->get_jurnal_cetak($idjurnal);
+        $rsData = $this->jurnal_model->get_jurnal_cetak($idjurnal);
+        $builder = $this->db->table('jurnal');
+        
+        $dataJurnal = $builder->getWhere(array('md5(idjurnal)' => decrypt($idjurnal)))->getRow();
+        $lampiran = $dataJurnal->filelampiran; 
+        $kode_file_lampiran = isset($dataJurnal->kode_file) ? $dataJurnal->kode_file : '';
 
-		$builder = $this->db->table('jurnal');
+        $pdf = new \TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
+        $pdf->SetMargins(20, 20, 10);
+        $pdf->AddPage();
+        $pdf->SetCreator("akuntanmu.com");
+        $pdf->SetAuthor(trim($namaperusahaan));
+        $pdf->SetTitle('Nomor Jurnal ' . $rsDataJurnal->idjurnal);
 
-		$lampiran = $builder->getWhere(array('md5(idjurnal)' => decrypt($idjurnal)))->getRow()->filelampiran;
+        $hp_tamp = ($hp != '' && $hp != '-' && $hp != null) ? "No. Telp :  $hp, " : '';
+        $email_tamp = ($email != '' && $email != '-' && $email != null) ? "E-mail :  $email " : '';
 
-		$pdf = new \TCPDF('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-
-		$pdf->setPrintHeader(false);
-
-		$pdf->SetMargins(20, 20, 10);
-
-		$pdf->AddPage();
-		$pdf->SetCreator("akuntanmu.com");
-		$pdf->SetAuthor(trim($namaperusahaan));
-		$pdf->SetTitle('Nomor Jurnal ' . $rsDataJurnal->idjurnal);
-		$pdf->SetSubject('Nomor Jurnal ' . $rsDataJurnal->idjurnal);
-		$pdf->SetKeywords('Akuntanmu, Jurnal');
-
-		$hp_tamp = '';
-		$email_tamp = '';
-
-		if ($hp != '' && $hp != '-' && $hp != null) {
-			$hp_tamp = "No. Telp :  $hp, ";
-		}
-
-		if ($email != '' && $email != '-' && $email != null) {
-			$email_tamp = "E-mail :  $email ";
-		}
-
-		$title = '
+        $title = '
             <table width="100%">
                 <tr>
                     <th width="100%" align="center" style="text-align:center; font-size:16px; color:#2f3031; font-weight:bold; padding-top:10px;">' . trim($namaperusahaan) . '</th>
                 </tr>';
 
-		if ($alamat != '' && $alamat != '-' && $alamat != null) {
-			$title .= '
+        if ($alamat != '' && $alamat != '-' && $alamat != null) {
+            $title .= '
                 <tr>
-                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">
-                        ' . $alamat . '
-                    </th>
+                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">' . $alamat . '</th>
                 </tr>
                 <tr>
-                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">
-                        ' . $hp_tamp . ' ' . $email_tamp . '
-                    </th>
+                    <th width="100%" height="15px" align="center" valign="center" style="font-size:10px; color:#2f3031;">' . $hp_tamp . ' ' . $email_tamp . '</th>
                 </tr>';
-		}
+        }
 
-		$title .= '
-                <tr >
-                    <th width="100%"  align="center" style="text-align:center; font-size:12px; color:#2f3031; font-weight:bold; ">JURNAL UMUM</th>
+        $title .= '
+                <tr>
+                    <th width="100%" align="center" style="text-align:center; font-size:12px; color:#2f3031; font-weight:bold; ">JURNAL UMUM</th>
                 </tr>
             </table>
             <hr>
         ';
 
-		$pdf->SetFont('times', '', 16);
-		$pdf->writeHTML($title, true, false, false, false, '');
-		$pdf->SetTopMargin(15);
+        $pdf->SetFont('times', '', 16);
+        $pdf->writeHTML($title, true, false, false, false, '');
+        $pdf->SetTopMargin(15);
 
-		$table = '<table>';
-		$table .= '<tr>';
-		$table .= '<th>';
-		$table .= '<table cellpadding="5">';
-		$table .= '<tr>';
-		$table .= '<th width="40%" height="20px"  style="font-size:12px">No. Jurnal</th>';
-		$table .= '<th width="60%" style="font-size:12px">: ' . $rsDataJurnal->idjurnal  . '</th>';
-		$table .= '</tr>';
-		$table .= '<tr>';
-		$table .= '<th height="20px" style="font-size:12px">Referensi</th>';
-		$table .= '<th style="font-size:12px">: ' . ($rsData->getRow()->referensi == '' ? '-' : $rsData->getRow()->referensi) . '</th>';
-		$table .= '</tr>';
-		$table .= '<tr>';
-		$table .= '<th height="20px" style="font-size:12px">Tanggal</th>';
-		$table .= '<th style="font-size:12px">: ' . date('d-m-Y', strtotime($rsData->getRow()->tgljurnal)) . '</th>';
-		$table .= '</tr>';
-		$table .= '</table>';
-		$table .= '</th>';
+        // =========================================================================
+        // DATA JURNAL UMUM
+        // =========================================================================
+        $table = '<table><tr><th><table cellpadding="5"><tr>';
+        $table .= '<th width="40%" height="20px" style="font-size:12px">No. Jurnal</th>';
+        $table .= '<th width="60%" style="font-size:12px">: ' . $rsDataJurnal->idjurnal  . '</th></tr><tr>';
+        $table .= '<th height="20px" style="font-size:12px">Referensi</th>';
+        $table .= '<th style="font-size:12px">: ' . ($rsData->getRow()->referensi == '' ? '-' : $rsData->getRow()->referensi) . '</th></tr><tr>';
+        $table .= '<th height="20px" style="font-size:12px">Tanggal</th>';
+        $table .= '<th style="font-size:12px">: ' . date('d-m-Y', strtotime($rsData->getRow()->tgljurnal)) . '</th></tr></table></th>';
 
-		$table .= '<th>';
-		$table .= '<table cellpadding="5">';
-		$table .= '<tr>';
-		$table .= '<th height="20px" style="font-size:12px">Keterangan Transaksi:</th>';
-		$table .= '</tr>';
-		$table .= '<tr>';
+        $table .= '<th><table cellpadding="5"><tr><th height="20px" style="font-size:12px">Keterangan Transaksi:</th></tr><tr>';
+        $keterangan_aman = htmlspecialchars($rsData->getRow()->keterangan, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $table .= '<td style="font-size:12px;border:1px solid gray;height:60px;" >' . $keterangan_aman . '</td>';
+        $table .= '</tr></table></th></tr></table>';
 
-		$keterangan_aman = htmlspecialchars($rsData->getRow()->keterangan, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-		$table .= '<td style="font-size:12px;border:1px solid gray;height:60px;" >' . $keterangan_aman . '</td>';
-
-		$table .= '</tr>';
-		$table .= '</table>';
-		$table .= '</th>';
-		$table .= '</tr>';
-		$table .= '</table>';
-
-		$table .= '<br><br><table border="0.5" style="border:1px solid gray;" cellpadding="4">';
-		$table .= ' 
+        $table .= '<br><br><table border="0.5" style="border:1px solid gray;" cellpadding="4"> 
                     <thead>
                         <tr>
                             <th width="50%" style="font-size:12px; font-weight:bold; text-align:center;border:1px solid gray;">Akun</th>
@@ -974,123 +922,142 @@ class JurnalController extends BaseController
                     </thead>
                     <tbody>';
 
-		$writer = new \Endroid\QrCode\Writer\PngWriter();
-		$qrCode = \Endroid\QrCode\QrCode::create(site_url('validasi-jurnal/' . $idjurnal));
-
-		$logo = \Endroid\QrCode\Logo\Logo::create(FCPATH . 'uploads/icon/iconqr.png')->setResizeToWidth(100);
-
-		$result = $writer->write($qrCode, $logo, null);
-		$qrCodes = $result->getDataUri();
-		$total1 = 0;
-		$total2 = 0;
-		foreach ($rsData->getResult() as $data) {
-			$total1 = $total1 + $data->debet;
-			$total2 = $total2 + $data->kredit;
-
-			$table .= '
+        $writer = new \Endroid\QrCode\Writer\PngWriter();
+        $qrCode = \Endroid\QrCode\QrCode::create(site_url('validasi-jurnal/' . $idjurnal));
+        $logo = \Endroid\QrCode\Logo\Logo::create(FCPATH . 'uploads/icon/iconqr.png')->setResizeToWidth(100);
+        $result = $writer->write($qrCode, $logo, null);
+        $qrCodes = $result->getDataUri();
+        
+        $total1 = 0;
+        $total2 = 0;
+        foreach ($rsData->getResult() as $data) {
+            $total1 += $data->debet;
+            $total2 += $data->kredit;
+            $table .= '
                         <tr>
                             <td width="50%" style="font-size:12px; text-align:left;border:1px solid gray;">' . ($data->debet == 0 ? str_repeat("&nbsp;", 5) : "") . $data->nmakun . '</td>
                             <td width="14%" style="font-size:12px; text-align:center;border:1px solid gray;">' . $data->kdakun . '</td>
                             <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;">' . ($data->debet == 0 ? "" : number_format($data->debet)) . '</td>
                             <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;">' . ($data->kredit == 0 ? "" : number_format($data->kredit)) . '</td>          
                         </tr>';
-		}
+        }
 
-		$table .= '
+        $table .= '
                         <tr>
                             <td width="64%" style="font-size:12px; text-align:right;border:1px solid gray;" colspan="2"><B>TOTAL       </B></td>
                             <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;"><B>' . number_format($total1, 0, "", '.') . '</B></td>
                             <td width="18%" style="font-size:12px; text-align:right;border:1px solid gray;"><B>' . number_format($total2, 0, "", '.') . '</B></td>
-                        </tr>';
-		$table .= ' </tbody>
-                    </table>';
+                        </tr> </tbody></table>';
 
-		$table .= '<br><br><table cellpadding="5">';
-		$table .= '<tr>';
-		$table .= '<td width="50%"></td>';
-		$table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Dibuat Oleh:</td>';
-		$table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Disetujui Oleh:</td>';
-		$table .= '</tr>';
+        $table .= '<br><br><table cellpadding="5"><tr><td width="50%"></td>';
+        $table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Dibuat Oleh:</td>';
+        $table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Disetujui Oleh:</td></tr>';
 
-		$table .= '<tr>';
-		// QR Code (Tambahkan juga width di sini)
-		$table .= '<td width="50%" style="text-align:center;"><br><br><img src="' . $qrCodes . '" width="70" height="70" /><br><br></td>';
+        $table .= '<tr><td width="50%" style="text-align:center;"><br><br><img src="' . $qrCodes . '" width="70" height="70" /><br><br></td>';
+        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:80px;"><br><br>' . $file_pembuat . '<br><br></td>';
+        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:80px;"><br><br>' . ($rsData->getRow()->approve == 1 ? $file_pemeriksa : '') . '<br><br></td></tr>';
 
-		// TTD Pembuat
-		$table .= '<td width="25%" style="border:1px solid gray; text-align:center;"><br><br>' . $file_pembuat . '<br><br></td>';
-		// TTD Pemeriksa
-		$table .= '<td width="25%" style="border:1px solid gray; text-align:center;"><br><br>' . ($rsData->getRow()->approve == 1 ? $file_pemeriksa : '') . '<br><br></td>';
-		$table .= '</tr>';
+        $table .= '<tr><td width="50%"></td>';
+        $table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $namapengguna . '</td>';
+        $table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $pic . '</td></tr></table>';
 
-		$table .= '<tr>';
-		$table .= '<td width="50%"></td>';
-		$table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $namapengguna . '</td>';
-		$table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $pic . '</td>';
-		$table .= '</tr>';
-		$table .= '</table>';
+        $pdf->SetTopMargin(35);
+        $pdf->SetFont('times', '', 10);
+        $pdf->writeHTML($table, true, false, false, false, '');
 
-		$table .= '<br>';
-		$table .= '<br>';
 
-		if ($lampiran == '' || $lampiran == null) {
-			$jurnalfile = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
+        // =========================================================================
+        // LAMPIRAN (Hanya Border Luar, Tidak Ada Border Dalam)
+        // =========================================================================
+        if ($lampiran == '' || $lampiran == null) {
+            $jurnalfile = $this->jurnal_model->getJurnalFile($idjurnal)->getResult();
 
-			if (!empty($jurnalfile)) {
-				$table .= '<table>';
-				$table .= '<tr>';
-				$table .= '<td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td>';
-				$table .= '</tr>';
-				$table .= '</table>';
-				$table .= '<table><tr><td></td></tr></table>';
+            if (!empty($jurnalfile)) {
+                $headerLampiran = '<table><tr><td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td></tr></table>';
+                $headerLampiran .= '<table><tr><td style="height:20px;border:1px solid gray;text-align:center;font-weight:bold;">Lampiran Dokumen / Bukti Transfer</td></tr></table><br>';
+                $pdf->writeHTML($headerLampiran, true, false, false, false, '');
 
-				$table .= '<table>';
-				$table .= '<tr>';
-				$table .= '<td style="height:20px;border:1px solid gray;text-align:center"><b>Lampiran Dokumen / Bukti Transfer</b></td>';
-				$table .= '</tr>';
-				$table .= '</table>';
-			}
+                $chunks = array_chunk($jurnalfile, 4);
 
-			$table .= '<table cellpadding="5" >';
-			foreach ($jurnalfile as $rowsFile) {
-				if (strtolower(substr($rowsFile->file, -3)) != 'pdf') {
-					$table .= '<tr nobr="true">';
-					$table .= '<td style="border:1px solid gray;text-align:center">';
-					$table .=  '<img src="' . FCPATH . 'uploads/jurnal/thumbnails/' . $rowsFile->file . '" height="350">';
-					$table .= '<object id="exPDF" type="application/pdf" data="' . base_url('uploads/jurnal/tugas.pdf')  . '" width="100%" height="500"/>';
-					$table .= '</td>';
-					$table .= '</tr>';
-				}
-			}
-			$table .= '</table>';
-		} else {
-			$table .= '<table>';
-			$table .= '<tr>';
-			$table .= '<td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td>';
-			$table .= '</tr>';
-			$table .= '</table>';
-			$table .= '<table><tr><td></td></tr></table>';
-			$table .= '<table>';
-			$table .= '<tr>';
-			$table .= '<td style="height:20px;border:1px solid gray;text-align:center"><b>Lampiran Dokumen / Bukti Transfer</b></td>';
-			$table .= '</tr>';
-			$table .= '</table>';
+                foreach ($chunks as $index => $chunk) {
+                    
+                    if ($index > 0) {
+                        $pdf->AddPage();
+                    }
 
-			$table .= '<table cellpadding="5">';
-			$table .= '<tr>';
-			$table .= '<td style="text-align:center">';
-			$table .= $lampiran == '' ? '' :  '<img src="' . FCPATH . 'uploads/jurnal/' . $lampiran  . '" height="350">';
-			$table .= '</td>';
-			$table .= '</tr>';
-			$table .= '</table>';
-		}
+                    // TABEL PEMBUNGKUS (Hanya td ini yang punya border untuk bingkai luar)
+                    $tabelLampiran = '<table cellpadding="0">';
+                    $tabelLampiran .= '<tr nobr="true"><td style="border:1px solid gray;">'; 
 
-		$pdf->SetTopMargin(35);
-		$pdf->SetFont('times', '', 10);
-		$pdf->writeHTML($table, true, false, false, false, '');
+                    // TABEL ISI (border="0" agar bagian dalam bersih tanpa garis)
+                    $tabelLampiran .= '<table border="0" cellpadding="10">';
 
-		$pdf->Output('Laporan Jurnal.pdf', 'I');
-		exit;
-	}
+                    $rows = array_chunk($chunk, 2); 
+                    
+                    foreach ($rows as $row) {
+                        $tabelLampiran .= '<tr>';
+                        
+                        foreach ($row as $item) {
+                            $kode_gdrive = isset($item->kode_file) ? $item->kode_file : '';
+                            if ($kode_gdrive != '') {
+                                $gdrive_url = 'https://drive.google.com/uc?export=download&id=' . $kode_gdrive;
+                                $img_data = @file_get_contents($gdrive_url);
+                                if ($img_data !== false) {
+                                    $base64 = base64_encode($img_data);
+                                    $tabelLampiran .= '<td width="50%" style="text-align:center;"><br><img src="@' . $base64 . '" width="260"><br></td>';
+                                } else {
+                                    $tabelLampiran .= '<td width="50%" style="text-align:center;color:red;"><br><span style="font-size:10px;">[Gagal Memuat]</span><br></td>';
+                                }
+                            } else {
+                                $tabelLampiran .= '<td width="50%"></td>';
+                            }
+                        }
+
+                        // Isi sel kosong jika jumlah gambar ganjil agar proporsi tidak hancur
+                        if (count($row) == 1) {
+                            $tabelLampiran .= '<td width="50%"></td>';
+                        }
+                        $tabelLampiran .= '</tr>';
+                    }
+                    
+                    $tabelLampiran .= '</table>'; // Tutup tabel dalam
+                    $tabelLampiran .= '</td></tr></table><br>'; // Tutup tabel luar
+
+                    $pdf->writeHTML($tabelLampiran, true, false, false, false, '');
+                }
+            }
+        } else {
+            // Skema file tunggal
+            $headerLampiran = '<table><tr><td><img src="' . FCPATH . 'uploads/jurnal/potong.png" ></td></tr></table>';
+            $headerLampiran .= '<table><tr><td style="height:20px;border:1px solid gray;text-align:center;font-weight:bold;">Lampiran Dokumen / Bukti Transfer</td></tr></table><br>';
+            $pdf->writeHTML($headerLampiran, true, false, false, false, '');
+
+            // Menggunakan struktur yang sama untuk file tunggal agar konsisten (border hanya di bingkai luar)
+            $tabelLampiran = '<table cellpadding="0"><tr nobr="true"><td style="border:1px solid gray;">';
+            $tabelLampiran .= '<table border="0" cellpadding="10"><tr><td style="text-align:center;">';
+            
+            if ($kode_file_lampiran != '') {
+                $gdrive_url_single = 'https://drive.google.com/uc?export=download&id=' . $kode_file_lampiran;
+                $img_data_single = @file_get_contents($gdrive_url_single);
+                if ($img_data_single !== false) {
+                    $base64_single = base64_encode($img_data_single);
+                    $tabelLampiran .= '<br><img src="@' . $base64_single . '" width="400"><br>';
+                } else {
+                    $tabelLampiran .= '<br><span style="font-size:10px;">[Gagal Memuat]</span><br>';
+                }
+            }
+            $tabelLampiran .= '</td></tr></table></td></tr></table>';
+            
+            $pdf->writeHTML($tabelLampiran, true, false, false, false, '');
+        }
+
+        if (ob_get_length()) {
+            ob_clean();
+        }
+
+        $pdf->Output('Laporan Jurnal.pdf', 'I');
+        exit;
+    }
 
 
 
