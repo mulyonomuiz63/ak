@@ -846,8 +846,8 @@ class JurnalController extends BaseController
         $path_ttd_pembuat = FCPATH . 'uploads/ttd/' . $file_ttd;
         $path_ttd_pemeriksa = FCPATH . 'uploads/ttd/' . $pic_ttd;
 
-        $file_pembuat = (file_exists($path_ttd_pembuat) && $file_ttd != '') ? '<img src="' . $path_ttd_pembuat . '" height="80" />' : '';
-        $file_pemeriksa = (file_exists($path_ttd_pemeriksa) && $pic_ttd != '') ? '<img src="' . $path_ttd_pemeriksa . '" height="80" />' : '';
+        $file_pembuat = (file_exists($path_ttd_pembuat) && $file_ttd != '') ? '<img src="' . $path_ttd_pembuat . '" height="70" />' : '';
+        $file_pemeriksa = (file_exists($path_ttd_pemeriksa) && $pic_ttd != '') ? '<img src="' . $path_ttd_pemeriksa . '" height="70" />' : '';
 
         $rsData = $this->jurnal_model->get_jurnal_cetak($idjurnal);
         $builder = $this->db->table('jurnal');
