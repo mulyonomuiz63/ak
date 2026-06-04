@@ -954,9 +954,9 @@ class JurnalController extends BaseController
         $table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Dibuat Oleh:</td>';
         $table .= '<td width="25%" align="center" style="font-size:12px;border:1px solid gray;text-align:center">Disetujui Oleh:</td></tr>';
 
-        $table .= '<tr><td width="50%" style="text-align:center;"><br><br><img src="' . $qrCodes . '" width="70" height="70" /><br><br></td>';
-        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:90px;"><br><br>' . $file_pembuat . '<br><br></td>';
-        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:80px;"><br><br>' . ($rsData->getRow()->approve == 1 ? $file_pemeriksa : '') . '<br><br></td></tr>';
+        $table .= '<tr><td width="50%" style="text-align:center;"><br><br><img src="' . $qrCodes . '" width="70" height="70" /></td>';
+        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:80px;"><br><br>' . $file_pembuat . '</td>';
+        $table .= '<td width="25%" style="border:1px solid gray; text-align:center; vertical-align:middle; height:80px;"><br><br>' . ($rsData->getRow()->approve == 1 ? $file_pemeriksa : '') . '</td></tr>';
 
         $table .= '<tr><td width="50%"></td>';
         $table .= '<td width="25%" align="center" style="border:1px solid gray;text-align:center">' . $namapengguna . '</td>';
