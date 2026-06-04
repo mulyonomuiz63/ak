@@ -97,6 +97,10 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('delete-file-new/(:segment)/(:segment)/(:segment)', 'JurnalController::deleteFileNew/$1/$2/$3');
     $routes->get('delete-file/(:segment)/(:segment)', 'JurnalController::deleteFile/$1/$2');
     $routes->get('notif', 'JurnalController::notif');
+
+
+    //supervisor
+    $routes->get('simpanApprove', 'JurnalController::simpanApprove');
 });
 
 //laporan
