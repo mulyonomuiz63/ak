@@ -88,6 +88,7 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('tambah', 'JurnalController::tambah');
     $routes->get('tambah/(:segment)', 'JurnalController::tambah/$1');
     $routes->get('edit/(:segment)', 'JurnalController::edit/$1');
+    $routes->get('edit/(:segment)/(:segment)', 'JurnalController::edit/$1/$2');
     $routes->post('get-edit', 'JurnalController::getEdit');
     $routes->post('store', 'JurnalController::store');
     $routes->post('delete-all', 'JurnalController::deleteAll');
