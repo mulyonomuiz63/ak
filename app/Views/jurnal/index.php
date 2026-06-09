@@ -252,28 +252,25 @@ table.dataTable tbody tr.row-tidak-balance td .badge {
         // =========================================================
         // TAMBAHKAN FITUR INI UNTUK MEWARNAI BARIS SECARA PAKSA
         // =========================================================
-        "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
+        // "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
             
-            // Jika baris memiliki class TIDAK BALANCE (MERAH)
-            if ($(row).hasClass('row-tidak-balance')) {
-                $('td', row).each(function() {
-                    this.style.setProperty('background-color', '#f8d7da', 'important'); // Merah muda
-                    this.style.setProperty('color', '#721c24', 'important');            // Teks merah gelap
-                    this.style.setProperty('border-color', '#f5c6cb', 'important');
-                });
-            } 
+        //     // Jika baris memiliki class TIDAK BALANCE (MERAH)
+        //     if ($(row).hasClass('row-tidak-balance')) {
+        //         $('td', row).each(function() {
+        //             this.style.setProperty('border-color', '#f5c6cb', 'important');
+        //         });
+        //     } 
             
-            // Jika baris memiliki class BALANCE (HIJAU)
-            else if ($(row).hasClass('row-balance')) {
-                $('td', row).each(function() {
-                    this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
-                    this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
-                    this.style.setProperty('border-color', '#c3e6cb', 'important');
-                });
-            }
+        //     // Jika baris memiliki class BALANCE (HIJAU)
+        //     else if ($(row).hasClass('row-balance')) {
+        //         $('td', row).each(function() {
+        //             this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
+        //             this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
+        //             this.style.setProperty('border-color', '#c3e6cb', 'important');
+        //         });
+        //     }
             
-        }
-        // =========================================================
+        // }
 
       });
 
