@@ -155,6 +155,13 @@ $routes->group('migrasi', ['filter' => 'authFilter'], function ($routes) {
     $routes->post('autocomplatePerusahaan', 'MigrasiController::autocomplatePerusahaan');
 });
 
+$routes->group('migrasi-arsip', ['filter' => 'authFilter'], function ($routes) {
+    $routes->get('/', 'MigrasiArsipController::index');
+    $routes->post('datatablesource', 'MigrasiArsipController::datatablesource');
+    $routes->post('proses-upload', 'MigrasiArsipController::prosesUpload');
+    $routes->post('autocomplatePerusahaan', 'MigrasiArsipController::autocomplatePerusahaan');
+});
+
 $routes->group('migrasi-file-utama', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('/', 'MigrasiFileUtamaController::index');
     $routes->post('datatablesource', 'MigrasiFileUtamaController::datatablesource');
