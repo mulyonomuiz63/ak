@@ -510,4 +510,193 @@ table.dataTable tbody tr.row-tidak-balance td .badge {
     });
   });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Pastikan Anda sudah meload library SweetAlert2 di header/footer Anda
+
+$(document).ready(function() {
+
+    // Helper 1: Format angka ke Rupiah (Ribuan)
+    function formatRupiah(angka) {
+        if (!angka || angka == 0) return '0';
+        // Format menggunakan locale id-ID agar otomatis pakai pemisah titik
+        return parseFloat(angka).toLocaleString('id-ID');
+    }
+
+    // Helper 2: Mapping Enum ke Text biasa untuk tampilan
+    const textObjek = { '0': '-', '1': 'PPh Psl 21', '2': 'PPh Psl 23', '3': 'PPh Psl 4(2)' };
+    const textFiskal = { '0': 'Tidak', '1': 'Ya' };
+
+    // Helper 3: Konfigurasi Toast SweetAlert2
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+
+    // Fungsi untuk mengecek logika disable/enable inputan
+    function applyLogic(tr) {
+        let valObjek = tr.find('.inp-objek').val();
+        let inpObjekPajak = tr.find('.inp-objekpajak');
+        
+        if (valObjek === '0') {
+            inpObjekPajak.prop('readonly', true).val('0'); 
+        } else {
+            inpObjekPajak.prop('readonly', false);
+        }
+
+        let valFiskal = tr.find('.inp-fiskal').val();
+        let inpKorPos = tr.find('.inp-korpos');
+        let inpKorNeg = tr.find('.inp-korneg');
+
+        if (valFiskal === '0') {
+            inpKorPos.prop('readonly', true).val('0');
+            inpKorNeg.prop('readonly', true).val('0');
+        } else {
+            inpKorPos.prop('readonly', false);
+            inpKorNeg.prop('readonly', false);
+        }
+    }
+
+    // Aksi ketika tombol Edit diklik
+    $(document).on('click', '.btn-edit-inline', function() {
+        let tr = $(this).closest('tr');
+        
+        if (tr.hasClass('is-editing')) return; 
+        tr.addClass('is-editing');
+
+        let id = tr.data('id');
+        let objek = tr.data('objek');
+        let objekPajak = tr.data('objekpajak');
+        let fiskal = tr.data('fiskal');
+        let korPos = tr.data('korpos');
+        let korNeg = tr.data('korneg');
+        let ket = tr.data('ket');
+
+        tr.find('td:eq(0)').html(`<button type="button" class="btn btn-success btn-save-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-check"></i></button>`);
+
+        tr.find('.td-objek').html(`
+            <select class="form-control form-control-sm inp-objek" style="width: 80px;">
+                <option value="0" ${objek == '0' ? 'selected' : ''}>Pilih</option>
+                <option value="1" ${objek == '1' ? 'selected' : ''}>PPh Psl 21</option>
+                <option value="2" ${objek == '2' ? 'selected' : ''}>PPh Psl 23</option>
+                <option value="3" ${objek == '3' ? 'selected' : ''}>PPh Psl 4 ayat 2</option>
+            </select>
+        `);
+
+        tr.find('.td-fiskal').html(`
+            <select class="form-control form-control-sm inp-fiskal" style="width: 60px;">
+                <option value="0" ${fiskal == '0' ? 'selected' : ''}>Tidak</option>
+                <option value="1" ${fiskal == '1' ? 'selected' : ''}>Ya</option>
+            </select>
+        `);
+
+        tr.find('.td-objekpajak').html(`<input type="number" class="form-control form-control-sm text-right inp-objekpajak" value="${objekPajak}" style="width: 80px;">`);
+        tr.find('.td-korpos').html(`<input type="number" class="form-control form-control-sm text-right inp-korpos" value="${korPos}" style="width: 80px;">`);
+        tr.find('.td-korneg').html(`<input type="number" class="form-control form-control-sm text-right inp-korneg" value="${korNeg}" style="width: 80px;">`);
+        tr.find('.td-ket').html(`<input type="text" class="form-control form-control-sm inp-ket" value="${ket}" style="width: 100px;">`);
+
+        applyLogic(tr);
+    });
+
+    $(document).on('change', '.inp-objek, .inp-fiskal', function() {
+        let tr = $(this).closest('tr');
+        applyLogic(tr);
+    });
+
+    // Aksi ketika tombol Simpan diklik
+    $(document).on('click', '.btn-save-inline', function() {
+        let tr = $(this).closest('tr');
+        let iddetailjurnal = tr.data('id');
+
+        // Tangkap nilai-nilai baru dari inputan
+        let valObjek = tr.find('.inp-objek').val();
+        let valObjekPajak = tr.find('.inp-objekpajak').val() || 0;
+        let valFiskal = tr.find('.inp-fiskal').val();
+        let valKorPos = tr.find('.inp-korpos').val() || 0;
+        let valKorNeg = tr.find('.inp-korneg').val() || 0;
+        let valKet = tr.find('.inp-ket').val();
+
+        let dataToSave = {
+            iddetailjurnal: iddetailjurnal,
+            objek: valObjek,
+            objek_pajak: valObjekPajak,
+            fiskal: valFiskal,
+            koreksi_positif: valKorPos,
+            koreksi_negatif: valKorNeg,
+            keterangan: valKet
+        };
+
+        if (dataToSave.fiskal === '1') {
+            if (parseFloat(dataToSave.koreksi_positif) === 0 && parseFloat(dataToSave.koreksi_negatif) === 0) {
+                // Gunakan SweetAlert jika ada, kalau tidak fallback ke alert biasa
+                if(typeof Swal !== 'undefined') {
+                    Swal.fire('Perhatian', 'Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!', 'warning');
+                } else {
+                    alert('Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!');
+                }
+                return;
+            }
+        }
+
+        // Tampilkan indikator loading pada tombol
+        $(this).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: '<?= base_url("jurnal/simpan-fiskal") ?>', 
+            type: 'POST',
+            data: dataToSave,
+            dataType: 'json',
+            success: function(response) {
+                if(response.status) {
+                    
+                    // 1. Tampilkan Toast Sukses
+                    if(typeof Swal !== 'undefined') {
+                        Toast.fire({ icon: 'success', title: 'Data berhasil diperbarui' });
+                    } else {
+                        alert('Data berhasil disimpan!'); // Fallback jika Swal tidak ada
+                    }
+
+                    // 2. Update data-* atribut di baris <tr> agar kalau diedit lagi, datanya sudah yang terbaru
+                    tr.data('objek', valObjek);
+                    tr.data('objekpajak', valObjekPajak);
+                    tr.data('fiskal', valFiskal);
+                    tr.data('korpos', valKorPos);
+                    tr.data('korneg', valKorNeg);
+                    tr.data('ket', valKet);
+
+                    // 3. Kembalikan inputan menjadi teks biasa + format angka jadi Rupiah
+                    tr.find('.td-objek').html(textObjek[valObjek]);
+                    tr.find('.td-objekpajak').html(formatRupiah(valObjekPajak));
+                    tr.find('.td-fiskal').html(textFiskal[valFiskal]);
+                    tr.find('.td-korpos').html(formatRupiah(valKorPos));
+                    tr.find('.td-korneg').html(formatRupiah(valKorNeg));
+                    tr.find('.td-ket').text(valKet);
+
+                    // 4. Kembalikan tombol Simpan menjadi tombol Edit (Kuning, ukuran kecil)
+                    tr.find('td:eq(0)').html(`<button type="button" class="btn btn-warning btn-edit-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-edit"></i></button>`);
+                    
+                    // 5. Lepas status editing dari baris tersebut
+                    tr.removeClass('is-editing');
+
+                } else {
+                    if(typeof Swal !== 'undefined') Toast.fire({ icon: 'error', title: 'Gagal menyimpan data' });
+                    tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
+                }
+            },
+            error: function() {
+                if(typeof Swal !== 'undefined') Toast.fire({ icon: 'error', title: 'Terjadi kesalahan server' });
+                tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
+            }
+        });
+    });
+});
+</script>
 <?= $this->endSection() ?>

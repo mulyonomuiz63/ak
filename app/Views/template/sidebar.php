@@ -19,7 +19,7 @@ if ($uri == 'akun' || $uri == 'jurnal') {
 // [UPDATE CI4 TERBARU]: Menambahkan ->getUri() dan parameter default
 $uri_sub = \Config\Services::request()->getUri()->getSegment(2, '');
 
-if ($uri_sub == 'lapjurnal' || $uri_sub == 'lapbukubesar' || $uri_sub == 'lapposisikeuangan' || $uri_sub == 'laplabarugi' || $uri_sub == 'lapperubahanekuitas' || $uri_sub == 'laprasio') {
+if ($uri_sub == 'lapjurnal' || $uri_sub == 'lapbukubesar' || $uri_sub == 'lapposisikeuangan' || $uri_sub == 'laplabarugi' || $uri_sub == 'lapperubahanekuitas' || $uri_sub == 'laprasio' || $uri_sub == 'lapkoreksifiskal'  || $uri_sub == 'lapobjekpajak') {
   $menuLaporan = true;
 } else {
   $menuLaporan = false;
@@ -44,32 +44,32 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
 <!--<ul class="navbar-nav bg-gradient-info sidebar sidebar-dark accordion" id="accordionSidebar">-->
 <ul class="navbar-nav nav-image bg-gradient-info sidebar sidebar-dark accordion" id="accordionSidebar">
   <div id="scroll">
-  <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo (site_url()) ?>">
-    <div class="sidebar-brand-icon">
-      <!--<i class="fas fa-dice-d20"></i>-->
-      <?= img_lazy('images/logo-akuntanmu1.png',"loading", ['class' => 'logo-glow', 'width' => '50', 'height' => '50']) ?>
-    </div>
-    <div class="sidebar-brand-text mx-3">AKUNTANMU</div>
-  </a>
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo (site_url()) ?>">
+      <div class="sidebar-brand-icon">
+        <!--<i class="fas fa-dice-d20"></i>-->
+        <?= img_lazy('images/logo-akuntanmu1.png', "loading", ['class' => 'logo-glow', 'width' => '50', 'height' => '50']) ?>
+      </div>
+      <div class="sidebar-brand-text mx-3">AKUNTANMU</div>
+    </a>
 
-  <!-- Divider -->
-  <span class="font-size-perusahaan font-weight-bold text-white text-wrep mt-2 d-flex justify-content-center w-100 text-center"><?= session()->get('namaperusahaan') ?></span>
-  <hr class="sidebar-divider my-2 mb-4 ogo-glow">
+    <!-- Divider -->
+    <span class="font-size-perusahaan font-weight-bold text-white text-wrep mt-2 d-flex justify-content-center w-100 text-center"><?= session()->get('namaperusahaan') ?></span>
+    <hr class="sidebar-divider my-2 mb-4 ogo-glow">
 
-  <!-- Divider -->
-  
-  <!-- Nav Item - Dashboard -->
-  <li class="nav-item <?php echo ($uri == 'Dashboard') ? 'active' : '' ?>">
-    <a class="nav-link" href="<?php echo (site_url('dashboard')) ?>">
-      <i class="fas fa-chart-bar"></i>
-      <span class="font-size">Dashboard</span></a>
-  </li>
+    <!-- Divider -->
 
-  <!-- Divider -->
+    <!-- Nav Item - Dashboard -->
+    <li class="nav-item <?php echo ($uri == 'Dashboard') ? 'active' : '' ?>">
+      <a class="nav-link" href="<?php echo (site_url('dashboard')) ?>">
+        <i class="fas fa-chart-bar"></i>
+        <span class="font-size">Dashboard</span></a>
+    </li>
 
-  <!-- Heading -->
-  
+    <!-- Divider -->
+
+    <!-- Heading -->
+
     <?php if (session()->get('idpengguna') == '8888888888' || $level != '2') : ?>
       <li class="nav-item <?= $menuPerusahaan ? 'active' : ''; ?>">
         <a class="nav-link <?= $menuPerusahaan ? '' : 'collapsed'; ?>" href="#" data-toggle="collapse" data-target="#menuPerusahaan" aria-expanded="true" aria-controls="menuPerusahaan">
@@ -105,7 +105,7 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
                 <span class="ml-2">Iklan</span>
               </a>
             <?php } ?>
-            
+
             <?php if (session()->get('idpengguna') == '8888888888') { ?>
               <a class="collapse-item <?php echo activate_menu('event', $uri); ?>" href="<?php echo (site_url('event')) ?>">
                 <i class="fas fa-regular fa-image"></i>
@@ -141,41 +141,49 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
 
     <li class="nav-item <?= $menuLaporan ? 'active' : ''; ?>">
       <a class="nav-link <?= $menuLaporan ? '' : 'collapsed'; ?>" href="#" data-toggle="collapse" data-target="#laporanMenu" aria-expanded="true" aria-controls="laporanMenu">
-        <i class="fas fa-tv"></i>
-        <span class="font-size">Laporan</span>
+        <i class="fas fa-fw fa-file-invoice"></i>
+        <span class="font-size ml-1">Laporan</span>
       </a>
-      <div id="laporanMenu" class="collapse <?= $menuLaporan ? 'show' : ''; ?> mt-2" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
+      <div id="laporanMenu" class="collapse <?= $menuLaporan ? 'show' : ''; ?> mt-1" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded shadow-sm">
           <a class="collapse-item <?php echo activate_menu('lapjurnal', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapjurnal')) ?>">
-            <i class="far fa-clipboard"></i>
-            <span class="ml-2">Jurnal</span>
+            <i class="fas fa-fw fa-clipboard-list text-info"></i>
+            <span class="ml-1">Jurnal</span>
           </a>
 
           <a class="collapse-item <?php echo activate_menu('lapbukubesar', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapbukubesar')) ?>">
-            <i class="far fa-file-alt"></i>
-            <span class="ml-2">Buku Besar</span>
+            <i class="fas fa-fw fa-book-open text-info"></i>
+            <span class="ml-1">Buku Besar</span>
           </a>
 
           <a class="collapse-item <?php echo activate_menu('lapposisikeuangan', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapposisikeuangan')) ?>">
-            <i class="far fa-file"></i>
-            <span class="ml-2">Posisi Keuangan</span>
+            <i class="fas fa-fw fa-building text-info"></i>
+            <span class="ml-1">Posisi Keuangan</span>
           </a>
-
 
           <a class="collapse-item <?php echo activate_menu('laplabarugi', $uri_sub); ?>" href="<?php echo (site_url('laporan/laplabarugi')) ?>">
-            <i class="far fa-file"></i>
-            <span class="ml-2">Laba Rugi</span>
+            <i class="fas fa-fw fa-chart-pie text-info"></i>
+            <span class="ml-1">Laba Rugi</span>
           </a>
 
-
           <a class="collapse-item <?php echo activate_menu('lapperubahanekuitas', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapperubahanekuitas')) ?>">
-            <i class="far fa-file"></i>
-            <span class="ml-2">Perubahan Ekuitas</span>
+            <i class="fas fa-fw fa-sync-alt text-info"></i>
+            <span class="ml-1">Perubahan Ekuitas</span>
           </a>
 
           <a class="collapse-item <?php echo activate_menu('laprasio', $uri_sub); ?>" href="<?php echo (site_url('laporan/laprasio')) ?>">
-            <i class="bi bi-graph-up-arrow"></i>
-            <span class="ml-2">Rasio Keuangan</span>
+            <i class="fas fa-fw fa-chart-line text-info"></i>
+            <span class="ml-1">Rasio Keuangan</span>
+          </a>
+
+          <a class="collapse-item <?php echo activate_menu('lapkoreksifiskal', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapkoreksifiskal')) ?>">
+            <i class="fas fa-fw fa-balance-scale text-info"></i>
+            <span class="ml-1">Koreksi Fiskal</span>
+          </a>
+
+          <a class="collapse-item <?php echo activate_menu('lapobjekpajak', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapobjekpajak')) ?>">
+            <i class="fas fa-fw fa-coins text-info"></i>
+            <span class="ml-1">Objek Pajak</span>
           </a>
         </div>
       </div>
@@ -249,11 +257,11 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
     <li class="nav-item">
       <a class="nav-link" href="#">
         <i class="fas fa-question-circle"></i>
-        <span class="badge-notif font-size tooltips"  data-toggle="tooltip" data-placement="top" title="Coming Soon">Petunjuk</span>
+        <span class="badge-notif font-size tooltips" data-toggle="tooltip" data-placement="top" title="Coming Soon">Petunjuk</span>
         <!--<span class="ml-2 badge-notif" data-badge="Coming Soon">Petunjuk</span>-->
       </a>
     </li>
-    
+
     <!--Petunjuk-->
     <li class="nav-item">
       <a class="nav-link" href="<?php echo (site_url('logout')) ?>" data-toggle="#" data-target="#" aria-expanded="true" aria-controls="#">

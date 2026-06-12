@@ -102,6 +102,9 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
 
     //supervisor
     $routes->post('simpanApprove', 'JurnalController::simpanApprove');
+
+    //untuk validasi fiskal
+    $routes->post('simpan-fiskal', 'JurnalController::simpanFiskal');
 });
 
 //laporan
@@ -146,6 +149,19 @@ $routes->group('laporan', ['filter' => 'authFilter'], function ($routes) {
     $routes->post('laprasio', 'Laporan\LapRasioController::index');
     $routes->get('laprasio-cetak/(:segment)/(:segment)', 'Laporan\LapRasioController::lapRasioCetak/$1/$2');
     $routes->get('laprasio-excel/(:segment)/(:segment)', 'Laporan\LapRasioController::lapRasioExcel/$1/$2');
+
+    //laporan koreksi fiskal
+    $routes->get('lapkoreksifiskal', 'Laporan\LapKoreksiFiskalController::index');
+    $routes->post('lapkoreksifiskal', 'Laporan\LapKoreksiFiskalController::index');
+    $routes->get('lapkoreksifiskal-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapKoreksiFiskalController::lapKoreksiFiskalCetak/$1/$2/$3/$4');
+    $routes->get('lapkoreksifiskal-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapKoreksiFiskalController::lapKoreksiFiskalExcel/$1/$2/$3/$4');
+    
+    //laporan objek pajak
+    $routes->get('lapobjekpajak', 'Laporan\LapObjekPajakController::index');
+    $routes->post('lapobjekpajak', 'Laporan\LapObjekPajakController::index');
+    $routes->get('lapobjekpajak-cetak/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapObjekPajakController::lapObjekPajakCetak/$1/$2/$3/$4');
+    $routes->get('lapobjekpajak-excel/(:segment)/(:segment)/(:segment)/(:segment)', 'Laporan\LapObjekPajakController::lapObjekPajakExcel/$1/$2/$3/$4');
+
 });
 
 $routes->group('migrasi', ['filter' => 'authFilter'], function ($routes) {

@@ -316,6 +316,209 @@ class Laporan_model extends Model
             return $this->db->query($query, [$idperusahaan, $idperusahaan, $tglawal, $tglakhir]);
     }
 
+    public function get_lapkoreksifiskal($tglawal, $tglakhir, $idperusahaan, $level = '')
+    {
+        $query = "
+            WITH akun_index AS (
+                SELECT 
+                    a.keyakun,
+                    a.kdakun,
+                    a.nmakun,
+                    a.level,
+                    a.saldonormal,
+                    a.idperusahaan,
+                    -- kdakun_index: gunakan full sesuai level (level4 = full kdakun)
+                    CASE 
+                        WHEN a.level = '1' THEN LEFT(a.kdakun, 1)
+                        WHEN a.level = '2' THEN LEFT(a.kdakun, 2)
+                        WHEN a.level = '3' THEN LEFT(a.kdakun, 3)
+                        WHEN a.level = '4' THEN a.kdakun
+                    END AS kdakun_index,
+                    -- kdakun_parent: untuk level4 parent = prefix 3 (level3 kode)
+                    CASE 
+                        WHEN a.level = '1' THEN ''
+                        WHEN a.level = '2' THEN LEFT(a.kdakun, 1)
+                        WHEN a.level = '3' THEN LEFT(a.kdakun, 2)
+                        WHEN a.level = '4' THEN LEFT(a.kdakun, 3)
+                    END AS kdakun_parent
+                FROM akun a
+                WHERE a.status='0'
+                  AND a.idperusahaan=?
+                  $level
+                  AND LEFT(a.kdakun,1) IN ('4','5','6', '7')
+            ),
+            
+            -- raw_trans: aggregate per full kdakun (so level4 totals available)
+            raw_trans AS (
+                SELECT
+                    p.idperusahaan,
+                    c.kdakun AS kdakun_full,            -- full kode akun (level4 leaf or other)
+                    LEFT(c.kdakun,1) AS lvl1,
+                    LEFT(c.kdakun,2) AS lvl2,
+                    LEFT(c.kdakun,3) AS lvl3,
+                    SUM(jd.debet) AS tdebet,
+                    SUM(jd.kredit) AS tkredit,
+                    SUM(jd.koreksi_positif) AS tkoreksi_positif,
+                    SUM(jd.koreksi_negatif) AS tkoreksi_negatif
+                FROM jurnaldetail jd
+                JOIN jurnal j ON j.idjurnal = jd.idjurnal
+                JOIN akun c ON c.keyakun = jd.keyakun
+                JOIN pengguna p ON p.idpengguna = j.idpengguna
+                WHERE c.status='0'
+                  AND p.idperusahaan=?
+                  AND j.tgljurnal BETWEEN ? AND ?
+                  AND jd.fiskal != '0' -- Filter tambahan untuk menampilkan yang fiskalnya selain 0
+                GROUP BY c.kdakun, p.idperusahaan
+            ),
+            
+            -- realisasi: sediakan semua level (lvl1..lvl4) sehingga dapat join tepat
+            realisasi AS (
+                SELECT
+                    idperusahaan,
+                    lvl1,
+                    lvl2,
+                    lvl3,
+                    kdakun_full AS lvl4,
+                    SUM(tdebet) AS total_debet,
+                    SUM(tkredit) AS total_kredit,
+                    SUM(tkoreksi_positif) AS total_koreksi_positif, -- TAMBAHAN
+                    SUM(tkoreksi_negatif) AS total_koreksi_negatif  -- TAMBAHAN
+                FROM raw_trans
+                GROUP BY idperusahaan, lvl1, lvl2, lvl3, kdakun_full
+            )
+            
+            SELECT 
+                ai.keyakun,
+                ai.kdakun,
+                ai.nmakun,
+                ai.level,
+                ai.saldonormal,
+                ai.idperusahaan,
+                ai.kdakun_index,
+                ai.kdakun_parent,
+                -- hitung sesuai saldonormal akun pada level itu
+                SUM(
+                    CASE ai.saldonormal
+                        WHEN 'D' THEN COALESCE(r.total_debet,0) - COALESCE(r.total_kredit,0)
+                        ELSE COALESCE(r.total_kredit,0) - COALESCE(r.total_debet,0)
+                    END
+                ) AS jumlah,
+                SUM(COALESCE(r.total_koreksi_positif, 0)) AS koreksi_positif, -- TAMBAHAN
+                SUM(COALESCE(r.total_koreksi_negatif, 0)) AS koreksi_negatif  -- TAMBAHAN
+            FROM akun_index ai
+            LEFT JOIN realisasi r 
+                   ON (ai.level = 1 AND r.lvl1 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 2 AND r.lvl2 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 3 AND r.lvl3 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 4 AND r.lvl4 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+            GROUP BY 
+                ai.keyakun, ai.kdakun, ai.nmakun, ai.level,
+                ai.kdakun_index, ai.kdakun_parent, ai.saldonormal, ai.idperusahaan
+            ORDER BY ai.kdakun ASC";
+            
+        return $this->db->query($query, [$idperusahaan, $idperusahaan, $tglawal, $tglakhir]);
+    }
+
+    public function get_lapobjekpajak($tglawal, $tglakhir, $idperusahaan, $level = '')
+    {
+        $query = "
+            WITH akun_index AS (
+                SELECT 
+                    a.keyakun,
+                    a.kdakun,
+                    a.nmakun,
+                    a.level,
+                    a.saldonormal,
+                    a.idperusahaan,
+                    -- kdakun_index: gunakan full sesuai level (level4 = full kdakun)
+                    CASE 
+                        WHEN a.level = '1' THEN LEFT(a.kdakun, 1)
+                        WHEN a.level = '2' THEN LEFT(a.kdakun, 2)
+                        WHEN a.level = '3' THEN LEFT(a.kdakun, 3)
+                        WHEN a.level = '4' THEN a.kdakun
+                    END AS kdakun_index,
+                    -- kdakun_parent: untuk level4 parent = prefix 3 (level3 kode)
+                    CASE 
+                        WHEN a.level = '1' THEN ''
+                        WHEN a.level = '2' THEN LEFT(a.kdakun, 1)
+                        WHEN a.level = '3' THEN LEFT(a.kdakun, 2)
+                        WHEN a.level = '4' THEN LEFT(a.kdakun, 3)
+                    END AS kdakun_parent
+                FROM akun a
+                WHERE a.status='0'
+                  AND a.idperusahaan=?
+                  $level
+                  AND LEFT(a.kdakun,1) IN ('4','5','6', '7')
+            ),
+            
+            -- raw_trans: aggregate per full kdakun (so level4 totals available)
+            raw_trans AS (
+                SELECT
+                    p.idperusahaan,
+                    c.kdakun AS kdakun_full,            -- full kode akun (level4 leaf or other)
+                    LEFT(c.kdakun,1) AS lvl1,
+                    LEFT(c.kdakun,2) AS lvl2,
+                    LEFT(c.kdakun,3) AS lvl3,
+                    SUM(jd.debet) AS tdebet,
+                    SUM(jd.kredit) AS tkredit,
+                    SUM(jd.objek_pajak) AS tobjek_pajak
+                FROM jurnaldetail jd
+                JOIN jurnal j ON j.idjurnal = jd.idjurnal
+                JOIN akun c ON c.keyakun = jd.keyakun 
+                JOIN pengguna p ON p.idpengguna = j.idpengguna
+                WHERE c.status='0'
+                  AND p.idperusahaan=?
+                  AND j.tgljurnal BETWEEN ? AND ?
+                  AND jd.objek != '0' -- Filter tambahan untuk menampilkan yang objeknya selain 0
+                GROUP BY c.kdakun, p.idperusahaan
+            ),
+            
+            -- realisasi: sediakan semua level (lvl1..lvl4) sehingga dapat join tepat
+            realisasi AS (
+                SELECT
+                    idperusahaan,
+                    lvl1,
+                    lvl2,
+                    lvl3,
+                    kdakun_full AS lvl4,
+                    SUM(tdebet) AS total_debet,
+                    SUM(tkredit) AS total_kredit,
+                    SUM(tobjek_pajak) AS total_objek_pajak  -- TAMBAHAN
+                FROM raw_trans
+                GROUP BY idperusahaan, lvl1, lvl2, lvl3, kdakun_full
+            )
+            
+            SELECT 
+                ai.keyakun,
+                ai.kdakun,
+                ai.nmakun,
+                ai.level,
+                ai.saldonormal,
+                ai.idperusahaan,
+                ai.kdakun_index,
+                ai.kdakun_parent,
+                -- hitung sesuai saldonormal akun pada level itu
+                SUM(
+                    CASE ai.saldonormal
+                        WHEN 'D' THEN COALESCE(r.total_debet,0) - COALESCE(r.total_kredit,0)
+                        ELSE COALESCE(r.total_kredit,0) - COALESCE(r.total_debet,0)
+                    END
+                ) AS jumlah,
+                SUM(COALESCE(r.total_objek_pajak, 0)) AS objek_pajak  -- TAMBAHAN
+            FROM akun_index ai
+            LEFT JOIN realisasi r 
+                   ON (ai.level = 1 AND r.lvl1 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 2 AND r.lvl2 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 3 AND r.lvl3 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+                   OR (ai.level = 4 AND r.lvl4 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
+            GROUP BY 
+                ai.keyakun, ai.kdakun, ai.nmakun, ai.level,
+                ai.kdakun_index, ai.kdakun_parent, ai.saldonormal, ai.idperusahaan
+            ORDER BY ai.kdakun ASC";
+            
+        return $this->db->query($query, [$idperusahaan, $idperusahaan, $tglawal, $tglakhir]);
+    }
+
 
     public function get_fetch($tglawal, $tglakhir, $idperusahaan, $limit, $start)
     {
