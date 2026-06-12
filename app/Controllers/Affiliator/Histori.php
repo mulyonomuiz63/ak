@@ -9,38 +9,7 @@ class Histori extends BaseController
 
     public $menuaktif = 'berlangganan';
 
-    public function __construct()
-    {
-        $idpengguna = session()->get('idpengguna');
-        if (empty($idpengguna)) {
-            $pesan = '<div class="alert alert-danger">Silahkan anda login</div>';
-            session()->setFlashdata('pesan', $pesan);
-            throw new \CodeIgniter\Router\Exceptions\RedirectException('login');
-        }
-        if (session()->get('level') == '2') {
-
-            if (session()->get('hitAlert') == 'free') {
-                $pesan = '<div class="alert alert-success" role="alert">
-                            <strong>Segera berlangganan!</strong> Anda sedang menggunakan paket Free yang semua fitur terbatas ☺️ Segera update akun anda ke berlangganan untuk bisa menggunakan fitur tanpa batas.
-                        </div>';
-                session()->setFlashdata('pesan', $pesan);
-                throw new \CodeIgniter\Router\Exceptions\RedirectException('Dashboard');
-            } elseif (session()->get('hitAlert') == 'tidak') {
-                $pesan = '<div class="alert alert-success" role="alert">
-                        <strong>Segera perpanjang paket langganan anda!</strong> Supaya dapat menggunakan firut-fitur akuntanmu kembali ☺
-                    </div>';
-                session()->setFlashdata('pesan', $pesan);
-                throw new \CodeIgniter\Router\Exceptions\RedirectException('Dashboard');
-            } else {
-                $pesan = '<div class="alert alert-success" role="alert">
-                        <strong>Gunakan akun dengan level admin!</strong> Untuk proses memperpanjang langganan atau mendaftakan akun ke berlangganan..
-                    </div>';
-                session()->setFlashdata('pesan', $pesan);
-                throw new \CodeIgniter\Router\Exceptions\RedirectException('Dashboard');
-            }
-        }
-    }
-
+    
     public function index()
     {
         $data['menuaktif'] = $this->menuaktif;
