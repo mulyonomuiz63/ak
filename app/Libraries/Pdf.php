@@ -6,48 +6,75 @@ use TCPDF;
 
 class Pdf extends TCPDF
 {
-    function __construct()
+    // Tambahkan properti untuk menampung data dinamis
+    protected $namaPerusahaan;
+    protected $judulLaporan;
+    protected $periode;
+
+    // Ambil data dinamis lewat constructor parameter (diberi nilai default kosong agar tidak error di laporan lain)
+    function __construct($orientation = 'P', $unit = 'mm', $format = 'A4', $unicode = true, $encoding = 'UTF-8', $diskcache = false, $namaPerusahaan = '', $judulLaporan = '', $periode = '')
     {
-        parent::__construct();
+        parent::__construct($orientation, $unit, $format, $unicode, $encoding, $diskcache);
+        
+        $this->namaPerusahaan = $namaPerusahaan;
+        $this->judulLaporan = $judulLaporan;
+        $this->periode = $periode;
     }
 
     public function Header()
     {
+        // Cek apakah ini halaman pertama
+        if ($this->getPage() == 1) {
+            
+            $this->SetY(12); 
+            $this->SetFont('times', '', 14);
 
-        $this->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+            $title = '
+                <table border="0" width="100%" cellpadding="0">
+                    <tr>
+                        <td style="text-align:center; text-transform:uppercase; font-size:17px; font-weight:bold;">' . $this->namaPerusahaan . '</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center; font-size:14px; font-weight:bold; padding-top:5px;">' . $this->judulLaporan . '</td>
+                    </tr>';
+            
+            if (!empty($this->periode)) {
+                // Tambahkan padding-bottom agar tulisan periode tidak menempel ke garis
+                $title .= '
+                    <tr>
+                        <td style="text-align:center; font-size:12px; padding-top:5px; padding-bottom:10px;">Periode ' . $this->periode . '</td>
+                    </tr>';
+            }
 
-        // set header and footer fonts
-        $this->setHeaderFont(array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
-        $this->setFooterFont(array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+            // [PERBAIKAN]: Ganti <hr> dengan baris tabel kosong yang memiliki border bawah
+            $title .= '
+                    <tr>
+                        <td style="border-bottom: 2px solid black; font-size: 1px;">&nbsp;</td>
+                    </tr>
+                </table>';
 
+            $this->writeHTML($title, true, false, false, false, '');
 
-        // set margins
-        //$this->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-        $this->SetMargins(PDF_MARGIN_LEFT, 10, PDF_MARGIN_RIGHT);
-        $this->SetHeaderMargin(PDF_MARGIN_HEADER);
-        $this->SetFooterMargin(PDF_MARGIN_FOOTER);
+            // Set Margin Atas agar tabel konten turun dan sejajar
+            // Pastikan angka 15 (kiri) dan 15 (kanan) sama persis dengan yang ada di Controller
+            $this->SetMargins(15, 35, 15);
 
-        // set image scale factor
-        $this->setImageScale(PDF_IMAGE_SCALE_RATIO);
+        } else {
+            // Margin untuk Halaman 2 dan seterusnya
+            $this->SetMargins(15, 15, 15);
+        }
     }
 
     // Page footer
     public function Footer()
     {
-        // [PERBAIKAN UTAMA]: Atur posisi Y dari bawah halaman.
-        // -15 berarti ditarik naik sejauh 15mm dari ujung paling bawah kertas.
-        // Jika masih kurang naik, Anda bisa ubah menjadi -20 atau -25.
         $this->SetY(-10);
-
-        // Disarankan ukuran font footer sedikit lebih kecil agar rapi
         $this->SetFont('times', '', 10);
 
-        $nomor =  $this->getAliasNumPage() . '/' . $this->getAliasNbPages();
-        $tgl = date('d/m/Y H:i:s' );
-        $nama = session()->get('namapengguna') ?? 'System'; // Mencegah error jika session kosong
+        $nomor = $this->getAliasNumPage() . '/' . $this->getAliasNbPages();
+        $tgl = date('d/m/Y H:i:s');
+        $nama = session()->get('namapengguna') ?? 'System';
 
-        // [PERBAIKAN HTML]: Hapus \\" yang salah, dan tambahkan width="100%" 
-        // agar tabelnya benar-benar membentang dari margin kiri ke margin kanan.
         $foot = '
         <table border="0" width="100%" cellpadding="0">
             <tr>
@@ -59,6 +86,3 @@ class Pdf extends TCPDF
         $this->writeHTML($foot, true, false, false, false, '');
     }
 }
-
-/* End of file Pdf.php */
-/* Location: ./application/libraries/Pdf.php */

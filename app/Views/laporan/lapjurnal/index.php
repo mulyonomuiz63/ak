@@ -133,13 +133,36 @@
     var url = "<?php echo site_url('laporan/lapjurnal-cetak/') ?>" + tglawal + "/" + tglakhir + "/" + idperusahaan;
     $(".isiKonten").html(`
         <div class="modal-header">
-            <h5 class="modal-title">Laporan Jurnal</h5>
+            <h5 class="modal-title">Jurnal Umum</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                x
+                <span aria-hidden="true">&times;</span>
             </button>
         </div>
-            <iframe src="${url}" width="100%" height="600vh"></iframe>
+        
+        <!-- Gunakan tinggi tetap misal 75vh agar modal tidak menembus layar -->
+        <div class="modal-body p-0" style="position: relative; height: 75vh; overflow: hidden;">
+            
+            <!-- Indikator Loading (Tampil di tengah) -->
+            <div id="loadingIframe" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <div class="mt-3 font-weight-bold text-muted">Sedang menarik banyak data...<br>Mohon tunggu sebentar.</div>
+            </div>
+
+            <!-- Iframe (Awalnya disembunyikan menggunakan opacity) -->
+            <iframe id="frameBukuBesar" src="${url}" width="100%" height="100%" style="border: none; opacity: 0; transition: opacity 0.5s; position: relative; z-index: 5;"></iframe>
+            
+        </div>
     `);
+    // 2. Deteksi kapan Iframe selesai memuat SELURUH data dari server
+    $("#frameBukuBesar").on("load", function() {
+      // Sembunyikan loading
+      $("#loadingIframe").fadeOut();
+
+      // Tampilkan iframe secara halus
+      $(this).css("opacity", "1");
+    });
   });
 
   $('#cetak_excel').click(function() {

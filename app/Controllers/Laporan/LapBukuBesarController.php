@@ -91,46 +91,29 @@ class LapBukuBesarController extends BaseController
 
         if (!empty($idperusahaan)) {
             $namaperusahaan = $rsPerusahaan->namaperusahaan;
-            $alamat = $rsPerusahaan->alamat;
-            $notelp = $rsPerusahaan->notelp;
         } else {
             $namaperusahaan = '';
-            $alamat = '';
-            $notelp = '';
         }
 
         $kdakun = $rsAkun->kdakun;
         $nmakun = $rsAkun->nmakun;
         
         $rsData = $this->laporan_model->get_bukubesar($tglawal, $tglakhir, $kdakun, encrypt($idperusahaan), 'asc');
+        if ($tglawal == $tglakhir) {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal);
+        } else {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
+        }
 
         // Gunakan library custom Anda
-        $pdf = new Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->setPrintHeader(false); // Memastikan garis header default hilang
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN BUKU BESAR', $periode);
+        $pdf->setPrintHeader(true); // Memastikan garis header default hilang
         $pdf->SetMargins(15, 20, 10);
         $pdf->AddPage();
 
-        // --- CETAK KOP LAPORAN (Langsung dirender untuk menghemat memori) ---
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-size:16px; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-size:16px; font-weight:bold; padding-top:10px;">LAPORAN BUKU BESAR</span>	
-		';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        if ($tglawal == $tglakhir) {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
-        } else {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
-        }
-
-        $title_periode = '<div style="text-align:center; padding-top:10px;"> Periode ' . ($Periode) . '</div>';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
 
         if (!empty($kdakun)) {
-            $title_akun = '<br><br><div style="text-align:left; font-weight:bold; padding-top:10px;">Akun: ' . $kdakun . ' - ' . $nmakun . '</div>';
+            $title_akun = '<div style="text-align:left; font-weight:bold; padding-top:10px;">Akun: ' . $kdakun . ' - ' . $nmakun . '</div>';
             $pdf->SetFont('times', '', 12);
             $pdf->writeHTML($title_akun, true, false, false, false, '');
         }
@@ -223,9 +206,9 @@ class LapBukuBesarController extends BaseController
         // --- CETAK TOTAL DIAKHIR & SISA BARIS ---
         $htmlChunk .= '
                         <tr style="background-color: #E5E4E2;">
-                            <td style="text-align:center;" colspan="4"><B>TOTAL       </B></td>
-                            <td style="text-align:right;"><B>' . ($total1 >= 0 ? number_format($total1, 0, ",", ".") : "(" . number_format($total1 * -1, 0, ",", ".") . ")") . '</B></td>
-                            <td style="text-align:right;"><B>' . ($total2 >= 0 ? number_format($total2, 0, ",", ".") : "(" . number_format($total2 * -1, 0, ",", ".") . ")") . '</B></td>
+                            <td style="text-align:right;font-size: 9pt" colspan="4"><B>TOTAL       </B></td>
+                            <td style="text-align:right; font-size: 9pt"><B>' . ($total1 >= 0 ? number_format($total1, 0, ",", ".") : "(" . number_format($total1 * -1, 0, ",", ".") . ")") . '</B></td>
+                            <td style="text-align:right; font-size: 9pt"><B>' . ($total2 >= 0 ? number_format($total2, 0, ",", ".") : "(" . number_format($total2 * -1, 0, ",", ".") . ")") . '</B></td>
                             <td style="text-align:right;"><B></B></td>
                         </tr>';
         $htmlChunk .= $tableFooter;
@@ -283,28 +266,18 @@ class LapBukuBesarController extends BaseController
         $namaperusahaan = $namaperusahaan;
 
         // Gunakan library PDF yang sudah kita rapikan sebelumnya
-        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->setPrintHeader(false);
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN BUKU BESAR', $periode);
+        $pdf->setPrintHeader(true);
+        $pdf->SetMargins(15, 20, 10);
         $pdf->AddPage();
 
-        // --- CETAK KOP UTAMA LAPORAN ---
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-size:17px; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-size:17px; font-weight:bold; padding-top:10px;">LAPORAN BUKU BESAR</span>	
-		';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        $title_periode = '<div style="text-align:center; padding-top:10px;"> Periode ' . ($periode) . '</div>';
-        $pdf->SetFont('times', '', 12);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
+        
 
         // --- LOOPING SETIAP AKUN ---
         foreach ($akun->getResult() as $r) {
             
             // Cetak Judul Akun terlebih dahulu agar langsung dieksekusi oleh PDF
-            $title_akun = '<br><div style="text-align:left; font-weight:bold; padding-top:10px;">Akun: ' . $r->kdakun . ' - ' . $r->nmakun . '</div>';
+            $title_akun = '<div style="text-align:left; font-weight:bold; padding-top:10px;">Akun: ' . $r->kdakun . ' - ' . $r->nmakun . '</div>';
             $pdf->writeHTML($title_akun, true, false, false, false, '');
 
             // [PERBAIKAN 2]: Pisahkan Header dan Footer Tabel untuk sistem Chunking
@@ -403,10 +376,10 @@ class LapBukuBesarController extends BaseController
             // Setelah semua data di akun ini selesai, cetak sisa tabel dan baris TOTAL
             $htmlChunk .= '
                         <tr style="background-color: #E5E4E2;">
-                            <td style="text-align:center;" colspan="4"><B>TOTAL       </B></td>
-                            <td style="text-align:right;"><B>' . ($total1 >= 0 ? number_format($total1, 0, ",", ".") : "(" . number_format($total1 * -1, 0, ",", ".") . ")") . '</B></td>
-                            <td style="text-align:right;"><B>' . ($total2 >= 0 ? number_format($total2, 0, ",", ".") : "(" . number_format($total2 * -1, 0, ",", ".") . ")") . '</B></td>
-                            <td style="text-align:right;"><B></B></td>
+                            <td style="text-align:right;font-size: 9pt" colspan="4"><B>TOTAL       </B></td>
+                            <td style="text-align:right;font-size: 9pt"><B>' . ($total1 >= 0 ? number_format($total1, 0, ",", ".") : "(" . number_format($total1 * -1, 0, ",", ".") . ")") . '</B></td>
+                            <td style="text-align:right;font-size: 9pt"><B>' . ($total2 >= 0 ? number_format($total2, 0, ",", ".") : "(" . number_format($total2 * -1, 0, ",", ".") . ")") . '</B></td>
+                            <td style="text-align:right;font-size: 9pt"><B></B></td>
                         </tr>';
             $htmlChunk .= $tableFooter . '<br><br>';
 			$pdf->SetFont('times', '', 10);

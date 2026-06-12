@@ -48,57 +48,46 @@ class LapJurnalController extends BaseController
 
 	public function lapJurnalCetak($tglawal, $tglakhir, $idperusahaan)
     {
-        // [PERBAIKAN 1]: Bypass batas waktu eksekusi dan memori untuk data masif
-        ini_set('memory_limit', '-1'); // Gunakan memori server tanpa batas
-        set_time_limit(0);             // Jangan hentikan proses meskipun memakan waktu berjam-jam
+        // Bypass batas waktu eksekusi dan memori untuk data masif
+        ini_set('memory_limit', '-1'); 
+        set_time_limit(0);             
 
         $rsDataPerusahaan = $this->perusahaan_model->get_by_id(encrypt($idperusahaan))->getRow();
         if (!empty($idperusahaan)) {
             $namaperusahaan = $rsDataPerusahaan->namaperusahaan;
-            $alamat = $rsDataPerusahaan->alamat;
-            $notelp = $rsDataPerusahaan->notelp;
         } else {
             $namaperusahaan = '';
-            $alamat = '';
-            $notelp = '';
+        }
+        
+        if ($tglawal == $tglakhir) {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal);
+        } else {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
         }
 
         $rsData = $this->laporan_model->get_jurnal($tglawal, $tglakhir, $idperusahaan, 'asc');
 
-        $pdf = new Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->SetMargins(20, 20, 10);
-        $pdf->setPrintHeader(false);
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN JURNAL UMUM', $periode);
+        
+        // Atur margin default sebelum AddPage (Kiri 15, Atas 35, Kanan 15)
+        $pdf->SetMargins(15, 35, 15);
+        $pdf->setPrintHeader(true);
         $pdf->AddPage();
 
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-size:16px; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-size:16px; font-weight:bold; padding-top:10px;">JURNAL UMUM</span>	
-		';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        if ($tglawal == $tglakhir) {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
-        } else {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
-        }
-
-        $title_periode = '<div style="text-align:center; font-size:14px; padding-top:10px;"> Periode ' . ($Periode) . '</div><br><br>';
+        // Mengatur Base Font untuk Konten Tabel
         $pdf->SetFont('times', '', 10);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
 
-        // [PERBAIKAN 2]: Pisahkan Header dan Footer Tabel agar bisa di-render secara bertahap (Chunking)
+        // [PERBAIKAN 1]: Hapus <br><br> dan Samakan persentase width dengan <tbody>
         $tableHeader = '
-            <table border="0" cellpadding="5">
+            <table border="0" cellpadding="2" cellspacing="0" width="100%">
                 <thead>
                     <tr style="background-color:#055F93; color:#ffffff;">
-                        <th width="5%" style="font-size:12px; font-weight:bold; text-align:center;">No</th>
-                        <th width="12%" style="font-size:12px; font-weight:bold; text-align:center;">Tanggal</th>
-                        <th width="15%" style="font-size:12px; font-weight:bold; text-align:center;">No Jurnal</th>
-                        <th width="40%" style="font-size:12px; font-weight:bold; text-align:center;">Nama Akun</th>
-                        <th width="14%" style="font-size:12px; font-weight:bold; text-align:center;">Debet</th>
-                        <th width="14%" style="font-size:12px; font-weight:bold; text-align:center;">Kredit</th>
+                        <th width="5%" style="font-weight:bold; text-align:center; font-size:11pt;">No</th>
+                        <th width="12%" style="font-weight:bold; text-align:center; font-size:11pt;">Tanggal</th>
+                        <th width="15%" style="font-weight:bold; text-align:center; font-size:11pt;">No Jurnal</th>
+                        <th width="40%" style="font-weight:bold; text-align:center; font-size:11pt;">Nama Akun</th>
+                        <th width="14%" style="font-weight:bold; text-align:center; font-size:11pt;">Debet</th>
+                        <th width="14%" style="font-weight:bold; text-align:center; font-size:11pt;">Kredit</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -110,57 +99,57 @@ class LapJurnalController extends BaseController
         $idjurnal_lama = '';
         $no = 1;
 
-        // Inisialisasi chunk render
         $html = $tableHeader;
         $rowCount = 0;
-        $chunkSize = 500; // Render ke PDF dan bersihkan RAM setiap 500 baris
+        $chunkSize = 500; 
 
-        // [PERBAIKAN 3]: Ganti getResult() menjadi getUnbufferedRow()
-        // Ini akan memanggil data 1 per 1 dari database, sehingga RAM sangat hemat!
         while ($data = $rsData->getUnbufferedRow()) {
             $total1 = $total1 + $data->debet;
             $total2 = $total2 + $data->kredit;
 
+            // Styling baris data murni tanpa border
+            $tdStyle = 'font-size: 10pt; line-height: 1.3;';
+
+            // [PERBAIKAN 2]: Pastikan persentase width di <td> sama persis dengan <th> di atas
             $html .= '
                     <tr nobr="true">
-                        <td width="5%"  style="text-align:center;">' . ($data->idjurnal == $idjurnal_lama ? "" : $no++) . '</td>
-                        <td width="12%" style="text-align:center;">' . ($data->idjurnal == $idjurnal_lama ? "" : date('d-m-Y', strtotime($data->tgljurnal))) . '</td>
-                        <td width="15%" style="text-align:center;">' . ($data->idjurnal == $idjurnal_lama ? "" : $data->idjurnal) . '</td>
-                        <td width="40%" style="text-align:left;">' . ($data->debet == 0 ? str_repeat("&nbsp;", 5) : "") . $data->nmakun . '</td>
-                        <td width="14%" style="text-align:right;">' . ($data->debet == 0 ? "" : number_format($data->debet, 0, ",", ".")) . '</td>
-                        <td width="14%" style="text-align:right;">' . ($data->kredit == 0 ? "" : number_format($data->kredit, 0, ",", ".")) . '</td>            
+                        <td width="5%"  style="text-align:center; ' . $tdStyle . '">' . ($data->idjurnal == $idjurnal_lama ? "" : $no++) . '</td>
+                        <td width="12%" style="text-align:center; ' . $tdStyle . '">' . ($data->idjurnal == $idjurnal_lama ? "" : date('d-m-Y', strtotime($data->tgljurnal))) . '</td>
+                        <td width="15%" style="text-align:center; ' . $tdStyle . '">' . ($data->idjurnal == $idjurnal_lama ? "" : $data->idjurnal) . '</td>
+                        <td width="40%" style="text-align:left; ' . $tdStyle . '">' . ($data->debet == 0 ? str_repeat("&nbsp;", 6) : "") . $data->nmakun . '</td>
+                        <td width="14%" style="text-align:right; ' . $tdStyle . '">' . ($data->debet == 0 ? "-" : number_format($data->debet, 0, ",", ".")) . '</td>
+                        <td width="14%" style="text-align:right; ' . $tdStyle . '">' . ($data->kredit == 0 ? "-" : number_format($data->kredit, 0, ",", ".")) . '</td>            
                     </tr>';
 
             $idjurnal_lama = $data->idjurnal;
             $rowCount++;
 
-            // [PERBAIKAN 4]: Cetak sebagian ke PDF lalu bersihkan variabel (Mencegah Crash TCPDF DOM)
             if ($rowCount % $chunkSize == 0) {
                 $html .= $tableFooter;
                 $pdf->writeHTML($html, true, false, false, false, '');
-                
-                // Mulai string tabel baru untuk batch selanjutnya
                 $html = $tableHeader; 
             }
         }
 
-        // [PERBAIKAN 5]: Perbaiki logika Colspan (Total Header ada 4 kolom sisa: 5+12+15+40 = 72%)
+        // Baris Total tanpa garis, hanya dibedakan dengan warna background tipis dan tulisan tebal
+        $tdTotalStyle = 'font-size: 10pt; padding: 8px 0;';
+        
         $html .= '
-                    <tr nobr="true" style="background-color: #E5E4E2;">
-                        <td width="72%" style="text-align:right;" colspan="4"><B>TOTAL       </B></td>
-                        <td width="14%" style="text-align:right;"><B>' . number_format($total1, 0, "", '.') . '</B></td>
-                        <td width="14%" style="text-align:right;"><B>' . number_format($total2, 0, "", '.') . '</B></td>
+                    <tr nobr="true" style="background-color: #f2f2f2;">
+                        <td width="72%" style="text-align:right; ' . $tdTotalStyle . '" colspan="4"><strong>TOTAL &nbsp;&nbsp;&nbsp;</strong></td>
+                        <td width="14%" style="text-align:right; ' . $tdTotalStyle . '"><strong>' . number_format($total1, 0, ",", ".") . '</strong></td>
+                        <td width="14%" style="text-align:right; ' . $tdTotalStyle . '"><strong>' . number_format($total2, 0, ",", ".") . '</strong></td>
                     </tr>';
         
         $html .= $tableFooter;
 
-        // Cetak sisa sisa baris yang belum mencapai 500 (atau kelipatannya)
         $pdf->writeHTML($html, true, false, false, false, '');
 
         $bulantahun = bulan_tahun($tglawal) . ' - ' . bulan_tahun($tglakhir);
         $namaPerusahaan = ucwords(strtolower($namaperusahaan));
         $namaPerusahaan = preg_replace(['/\bPt\b/', '/\bCv\b/'], ['PT', 'CV'], $namaPerusahaan);
         $namaFile = 'Laporan Jurnal ' . $namaPerusahaan . ' ' . $bulantahun . '.pdf';
+        
         $pdf->Output($namaFile, 'I');
         exit;
     }

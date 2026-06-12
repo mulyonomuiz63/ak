@@ -327,6 +327,12 @@ class LapRasioController extends BaseController
             }
         }
 
+        if ($tglawal == $tglakhir) {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal);
+        } else {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
+        }
+
         // Kalkulasi Rasio
         $totallabakotor = $totalpenjualan - $totalpokokpenjualan;
         $totallabasebelumpajak = $totallabakotor - $totalbebanusaha;
@@ -335,28 +341,9 @@ class LapRasioController extends BaseController
         $spasi = str_repeat('&nbsp;', 4);
 
         // --- Render PDF ---
-        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->SetMargins(20, 20, 10);
-        $pdf->setPrintHeader(false);
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN RASIO KEUANGAN', $periode);
+        $pdf->setPrintHeader(true);
         $pdf->AddPage();
-
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-weight:bold; padding-top:10px;">LAPORAN RASIO KEUANGAN</span>	
-		';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        if ($tglawal == $tglakhir) {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
-        } else {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal) . ' s/d ' . $this->laporan_model->tglindonesialengkap($tglakhir);
-        }
-
-        $title_periode = '<div style="text-align:center; padding-top:10px;"> Periode ' . ($Periode) . '</div><br>';
-        $pdf->SetFont('times', '', 14);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
 
         $table  = '<br><br><table border="0" cellpadding="3">
                     <thead>

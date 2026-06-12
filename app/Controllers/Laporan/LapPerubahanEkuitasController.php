@@ -98,34 +98,21 @@ class LapPerubahanEkuitasController extends BaseController
             }
         }
 
+        if ($tglawal == $tglakhir) {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal);
+        } else {
+            $periode = $this->laporan_model->tglindonesialengkap($tglakhir);
+        }
+
         $totallabaditahan = ($totalaset - $totalhutangdanmodal) - ($totalasetBerjalan - $totalhutangdanmodalBerjalan);
         $totallabarugiberjalan = $totalasetBerjalan - $totalhutangdanmodalBerjalan;
 
         // --- SETUP PDF ---
-        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->SetMargins(20, 20, 10);
-        $pdf->setPrintHeader(false);
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN PERUBAHAN EKUITAS', $periode);
+        $pdf->setPrintHeader(true);
         $pdf->AddPage();
 
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-weight:bold; padding-top:10px;">PERUBAHAN EKUITAS</span>	
-		';
-        $pdf->SetFont('times', '', 16);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        if ($tglawal == $tglakhir) {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
-        } else {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglakhir);
-        }
-
-        $title_periode = '<div style="text-align:center; padding-top:10px;"> Periode Berakhir s/d ' . ($Periode) . '</div><br><br>';
-        $pdf->SetFont('times', '', 12);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
-
-        $table  = '<br><br><br><br><table border="0" cellpadding="2">';
+        $table  = '<table border="0" cellpadding="2">';
         $table .= ' 
                     <thead>             
                     </thead>

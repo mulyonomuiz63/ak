@@ -105,33 +105,19 @@ class LapPosisiKeuanganController extends BaseController
             $level = "";
             $namaCetak = '';
         }
+
+        if ($tglawal == $tglakhir) {
+            $periode = $this->laporan_model->tglindonesialengkap($tglawal);
+        } else {
+            $periode = $this->laporan_model->tglindonesialengkap($tglakhir);
+        }
         
         $rsData = $this->laporan_model->get_lapposisikeuangan($tglawal, $tglakhir, $idperusahaan, $level);
         $rsDataBerjalan = $this->laporan_model->get_lapposisikeuangan($tglakhirberjalan, $tglakhir, $idperusahaan, $level);
         
-        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-        $pdf->SetMargins(20, 20, 10);
-        $pdf->setPrintHeader(false); // Opsional, hilangkan header default
+        $pdf = new \App\Libraries\Pdf('P', PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false, $namaperusahaan, 'LAPORAN POSISI KEUANGAN', $periode);
+        $pdf->setPrintHeader(true); // Opsional, hilangkan header default
         $pdf->AddPage();
-
-        // Cetak Header ke PDF
-        $title = '
-			<span style="text-align:center; text-transform:uppercase; font-weight:bold; padding-top:10px;">' . $namaperusahaan . '</span><br>	
-			<span style="text-align:center; font-weight:bold; padding-top:10px;">LAPORAN POSISI KEUANGAN</span>	
-		';
-        $pdf->SetFont('times', '', 16);
-        $pdf->writeHTML($title, true, false, false, false, '');
-        $pdf->SetTopMargin(15);
-
-        if ($tglawal == $tglakhir) {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglawal);
-        } else {
-            $Periode = $this->laporan_model->tglindonesialengkap($tglakhir);
-        }
-
-        $title_periode = '<div style="text-align:center; padding-top:10px;"> Periode Berakhir s/d ' . ($Periode) . '</div><br>';
-        $pdf->SetFont('times', '', 12);
-        $pdf->writeHTML($title_periode, true, false, false, false, '');
 
         $total1 = 0;
         $totalaset = 0;

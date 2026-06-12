@@ -355,7 +355,7 @@
     var url = "<?php echo site_url('laporan/lapperubahanekuitas-cetak/') ?>" + tglawal + "/" + tglakhir + "/" + idperusahaan;
     $(".isiKonten").html(`
         <div class="modal-header">
-            <h5 class="modal-title">Buku Besar</h5>
+            <h5 class="modal-title">Perubahan Ekuitas</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
