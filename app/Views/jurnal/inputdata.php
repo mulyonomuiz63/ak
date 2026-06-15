@@ -534,7 +534,13 @@ $levelSuper = session()->get('level_super');
         let keyakun = ui.item.keyakun;
         for (let i = 1; i <= $('#table tbody tr').length; i++) {
           if ($(`#keyakun${i}`).val() !== '' && keyakun === $(`#keyakun${i}`).val() && i !== counter) {
-            alert('Maaf, Akun ini sudah ada');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Perhatian',
+                text: 'Maaf, Akun ini sudah ada di baris ' + i + '. Silakan pilih akun lain yang belum terdaftar di tabel.  Jika ingin menggunakan akun yang sama, silakan hapus baris yang sudah ada terlebih dahulu.',
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#f6c23e' // Warna kuning khas Bootstrap warning
+            });
             $(`#keyakun${counter}`).val('');
             $(`#nmakun${counter}`).val('');
             return false;

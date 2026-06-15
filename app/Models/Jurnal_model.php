@@ -252,32 +252,6 @@ class Jurnal_model extends Model
         }
     }
 
-    // public function updateWhere($data, $arrDetail, $idjurnal)
-    // {
-
-    //     $this->db->transBegin();
-
-    //     $builder = $this->db->table('jurnal');
-    //     // $this->db->start_cache();
-    //     $builder->where('idjurnal', $idjurnal);
-    //     // $this->db->stop_cache();
-
-    //     $builder->update($data);
-
-    //     // $this->db->flush_cache();
-    //     $builder2 = $this->db->table('jurnaldetail');
-    //     $this->db->query('delete from jurnaldetail where idjurnal="' . $idjurnal . '"');
-    //     $builder2->insertBatch($arrDetail);
-
-    //     if ($this->db->transStatus() === FALSE) {
-    //         $this->db->transRollback();
-    //         return false;
-    //     } else {
-    //         $this->db->transCommit();
-    //         return true;
-    //     }
-    // }
-
     public function updateWhere($data, $arrUpdate, $arrInsert, $idjurnal)
     {
         $this->db->transBegin();
