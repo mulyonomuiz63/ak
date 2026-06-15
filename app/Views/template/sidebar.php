@@ -176,14 +176,16 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
             <span class="ml-1">Rasio Keuangan</span>
           </a>
 
-          <a class="collapse-item <?php echo activate_menu('lapkoreksifiskal', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapkoreksifiskal')) ?>">
-            <i class="fas fa-fw fa-balance-scale text-info"></i>
-            <span class="ml-1">Koreksi Fiskal</span>
-          </a>
+          
 
           <a class="collapse-item <?php echo activate_menu('lapobjekpajak', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapobjekpajak')) ?>">
             <i class="fas fa-fw fa-coins text-info"></i>
             <span class="ml-1">Objek Pajak</span>
+          </a>
+
+          <a class="collapse-item <?php echo activate_menu('lapkoreksifiskal', $uri_sub); ?>" href="<?php echo (site_url('laporan/lapkoreksifiskal')) ?>">
+            <i class="fas fa-fw fa-balance-scale text-info"></i>
+            <span class="ml-1">Korfis Fiskal</span>
           </a>
         </div>
       </div>

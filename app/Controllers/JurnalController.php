@@ -681,51 +681,72 @@ class JurnalController extends BaseController
 		// ====================================================
 		// 5. SUSUN ARRAY DETAIL AKUN (DEBET & KREDIT)
 		// ====================================================
-		$arrDetail = [];
-		$keyakun   = $request->getPost('keyakun');
-		$debet     = $request->getPost('debet');
-		$kredit    = $request->getPost('kredit');
-		$urut      = 1;
+		$arrUpdate = []; // Menampung detail lama yang di-edit
+        $arrInsert = []; // Menampung detail baru (baik saat Create Jurnal maupun Tambah Detail saat Edit)
 
-		if ($keyakun) {
-			foreach ($keyakun as $key => $value) {
-				if (!$value) continue;
-				$arrDetail[] = [
-					'idjurnal'  => $idjurnal,
-					'keyakun'   => $value,
-					'deskripsi' => "",
-					'debet'     => str_replace(',', '', $debet[$key]),
-					'kredit'    => str_replace(',', '', $kredit[$key]),
-					'nourut'    => $urut++,
-				];
-			}
-		}
+        // Ambil data post berupa array
+        $iddetailjurnal   = $request->getPost('iddetailjurnal'); // Pastikan di view form edit, input ini berupa array name="iddetailjurnal[]"
+        $keyakun   = $request->getPost('keyakun');
+        $debet     = $request->getPost('debet');
+        $kredit    = $request->getPost('kredit');
+        $urut      = 1;
 
-		// ====================================================
-		// 6. SIMPAN DATA UTAMA (CREATE ATAU UPDATE)
-		// ====================================================
-		$dataUtama = [
-			'tgljurnal'  => $tgljurnal,
-			'tag'        => '',
-			'keterangan' => $request->getPost('keterangan'),
-			'jumlah'     => $jumlah,
-			'tglupdate'  => date('Y-m-d H:i:s'),
-			'idpengguna' => $request->getPost('idpengguna'),
-			'referensi'  => $request->getPost('referensi'),
-		];
+        if ($keyakun) {
+            foreach ($keyakun as $key => $value) {
+                if (!$value) continue;
 
-		if (!$isUpdate) { // CREATE
-			$dataUtama['idjurnal']     = $idjurnal;
-			$dataUtama['tglinsert']    = $dataUtama['tglupdate'];
-			$dataUtama['filelampiran'] = null;
-			$simpan = $this->jurnal_model->simpan($dataUtama, $arrDetail, $idjurnal);
-		} else { // UPDATE
-			// Logika: Jika user tambah file baru ($fileif=1), file lama otomatis pindah ke tabel jurnalfile
-			// Oleh karena itu, kita kosongkan 'filelampiran' di tabel utama. Jika tidak, biarkan nilainya
-			$dataUtama['filelampiran'] = ($fileif == '1') ? null : $file2_lama;
-			$dataUtama['approve']      = '0';
-			$simpan = $this->jurnal_model->updateWhere($dataUtama, $arrDetail, $idjurnal);
-		}
+                // Cek apakah baris ini memiliki ID Detail (artinya data lama yang diedit)
+                $idDetailSpesifik = isset($iddetailjurnal[$key]) && $iddetailjurnal[$key] != '' ? $iddetailjurnal[$key] : null;
+
+                $rowData = [
+                    'idjurnal'  => $idjurnal,
+                    'keyakun'   => $value,
+                    'deskripsi' => "",
+                    'debet'     => str_replace(',', '', $debet[$key]),
+                    'kredit'    => str_replace(',', '', $kredit[$key]),
+                    'nourut'    => $urut++,
+                ];
+
+                // Jika ada ID detail, masukkan ke array Update
+                if (!empty($idDetailSpesifik)) {
+                    $rowData['iddetailjurnal'] = $idDetailSpesifik;
+                    $arrUpdate[] = $rowData;
+                } 
+                // Jika TIDAK ADA ID detail, masukkan ke array Insert (Baris Baru)
+                else {
+                    $arrInsert[] = $rowData;
+                }
+            }
+        }
+
+        // ====================================================
+        // 6. SIMPAN DATA UTAMA (CREATE ATAU UPDATE)
+        // ====================================================
+        $dataUtama = [
+            'tgljurnal'  => $tgljurnal,
+            'tag'        => '',
+            'keterangan' => $request->getPost('keterangan'),
+            'jumlah'     => $jumlah,
+            'tglupdate'  => date('Y-m-d H:i:s'),
+            'idpengguna' => $request->getPost('idpengguna'),
+            'referensi'  => $request->getPost('referensi'),
+        ];
+
+        if (!$isUpdate) { // CREATE
+            $dataUtama['idjurnal']     = $idjurnal;
+            $dataUtama['tglinsert']    = $dataUtama['tglupdate'];
+            $dataUtama['filelampiran'] = null;
+            
+            // Saat CREATE, semua detail pasti masuk ke $arrInsert
+            $simpan = $this->jurnal_model->simpan($dataUtama, $arrInsert, $idjurnal);
+            
+        } else { // UPDATE
+            $dataUtama['filelampiran'] = ($fileif == '1') ? null : $file2_lama;
+            $dataUtama['approve']      = '0';
+            
+            // Saat UPDATE, kita kirimkan KEDUA array (Update dan Insert) ke Model
+            $simpan = $this->jurnal_model->updateWhere($dataUtama, $arrUpdate, $arrInsert, $idjurnal);
+        }
 
 		// ====================================================
 		// 7. PENANGANAN RESPON KE USER

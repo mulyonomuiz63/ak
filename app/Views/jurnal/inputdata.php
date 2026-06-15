@@ -366,6 +366,7 @@ $levelSuper = session()->get('level_super');
         let counter = 1;
         $.each(result.RsDataDetail, function(key, value) {
           tambahrow();
+          $('#iddetailjurnal' + counter).val(value['iddetailjurnal']);
           $('#keyakun' + counter).val(value['keyakun']);
           $('#nmakun' + counter).val(value['nmakun']);
           $('#debet' + counter).val(numberWithCommas(value['debet']));
@@ -404,27 +405,48 @@ $levelSuper = session()->get('level_super');
         }
       }
     }).on('success.form.bv', function(e) {
-      let td = $('#totaldebet').val();
+     let td = $('#totaldebet').val();
       let tk = $('#totalkredit').val();
 
       if (td === '' || tk === '') {
-        alert('Total debet dan kredit tidak boleh kosong!');
         e.preventDefault();
         $('#simpan').prop('disabled', false);
+        
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian',
+            text: 'Total debet dan kredit tidak boleh kosong!',
+            confirmButtonText: 'Mengerti',
+            confirmButtonColor: '#f6c23e' // Warna kuning khas Bootstrap warning
+        });
         return false;
       }
 
       if ($('#table tbody tr').length === 0) {
-        alert('Tabel jurnal tidak boleh kosong!');
         e.preventDefault();
         $('#simpan').prop('disabled', false);
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Data Kosong',
+            text: 'Tabel jurnal tidak boleh kosong. Silakan tambah minimal satu baris akun.',
+            confirmButtonText: 'Tutup',
+            confirmButtonColor: '#e74a3b' // Warna merah khas Bootstrap danger
+        });
         return false;
       }
 
       if (td !== tk) {
-        alert('Total debet dan Total kredit harus sama!');
         e.preventDefault();
         $('#simpan').prop('disabled', false);
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Jurnal Tidak Balance',
+            text: 'Total Debet dan Total Kredit harus seimbang (Balance).',
+            confirmButtonText: 'Periksa Kembali',
+            confirmButtonColor: '#e74a3b'
+        });
         return false;
       }
     });
@@ -475,8 +497,9 @@ $levelSuper = session()->get('level_super');
     let html = `
             <tr>
                 <td>
-                    <input type="text" name="nmakun[]" id="nmakun${counter}" class="form-control form-control-sm akunautocomplate" ${isDisabledJs}>
-                    <input type="hidden" name="keyakun[]" id="keyakun${counter}">
+                  <input type="text" name="nmakun[]" id="nmakun${counter}" class="form-control form-control-sm akunautocomplate" ${isDisabledJs}>
+                  <input type="hidden" name="keyakun[]" id="keyakun${counter}">
+                  <input type="hidden" name="iddetailjurnal[]" id="iddetailjurnal${counter}">
                 </td>
                 <td><input type="text" name="debet[]" id="debet${counter}" class="form-control form-control-sm text-right" onchange="hitungtotal()" ${isDisabledJs}></td>
                 <td><input type="text" name="kredit[]" id="kredit${counter}" class="form-control form-control-sm text-right" onchange="hitungtotal()" ${isDisabledJs}></td>
