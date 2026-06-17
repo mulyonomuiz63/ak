@@ -35,7 +35,7 @@ class Jurnal_model extends Model
         $i = 0;
 
         if (session()->get("idpengguna") == "8888888888") {
-            $idperusahaan = $_POST['idperusahaan'];
+            $idperusahaan = isset($_POST['idperusahaan']) ? $_POST['idperusahaan'] : "";
             if ($idperusahaan != "") {
                 $this->builder->where('idperusahaan', $idperusahaan);
             }
@@ -78,7 +78,23 @@ class Jurnal_model extends Model
             }
         }
 
-        $cari = $_POST['cari'];
+        // =========================================================================================
+        // TAMBAHAN BARU: FILTER FISKAL-OBJEK (Akun depan 4, 5, 6, 7)
+        // =========================================================================================
+        if ($_POST['fiskal_objek'] === 'objek') {
+            // Subquery untuk memfilter idjurnal yang memiliki detail kdakun berawalan 4, 5, 6, atau 7
+            $subquery_fiskal = $this->tabelview . ".idjurnal IN (
+                SELECT DISTINCT jurnaldetail.idjurnal 
+                FROM jurnaldetail join akun on jurnaldetail.keyakun = akun.keyakun 
+                WHERE LEFT(akun.kdakun, 1) IN ('4', '5', '6', '7')
+            )";
+            
+            // Parameter 'null, false' wajib agar tanda kurung subquery tidak dirusak backtick oleh CI4
+            $this->builder->where($subquery_fiskal, null, false);
+        }
+        // =========================================================================================
+
+        $cari = isset($_POST['cari']) ? $_POST['cari'] : "";
         if ($cari != "") {
             $tgl = date('Y-m-d', strtotime($cari));
 
@@ -109,13 +125,9 @@ class Jurnal_model extends Model
             $this->builder->orderBy($this->column_order[$_POST['order']['0']['column']], $_POST['order']['0']['dir']);
         } else if (isset($this->order)) {
 
-            // =========================================================================================
-            // PERUBAHAN DI SINI: MENGURUTKAN JURNAL TIDAK BALANCE KE PALING ATAS
-            // Logic: Jika Debet == Kredit beri nilai 1. Jika tidak, beri nilai 0. Urutkan dari 0 (ASC)
-            // =========================================================================================
+            // MENGURUTKAN JURNAL TIDAK BALANCE KE PALING ATAS
             $subquery_balance = '(SELECT CASE WHEN COALESCE(SUM(debet), 0) = COALESCE(SUM(kredit), 0) THEN 1 ELSE 0 END FROM jurnaldetail WHERE jurnaldetail.idjurnal = ' . $this->tabelview . '.idjurnal)';
 
-            // Parameter ke-3 (false) sangat penting agar CI4 tidak menambahkan tanda backtick (`) yang merusak query
             $this->builder->orderBy($subquery_balance, 'ASC', false);
 
             // Urutan selanjutnya baru berdasarkan tanggal terbaru

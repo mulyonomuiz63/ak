@@ -1,151 +1,153 @@
 <?= $this->extend('template/admin') ?>
 <style>
   /* Memaksa semua kolom (td) pada baris yang error menjadi merah muda */
-table.dataTable tbody tr.row-tidak-balance td {
-    background-color: red !important; /* Warna merah muda pucat */
-}
+  table.dataTable tbody tr.row-tidak-balance td {
+    background-color: red !important;
+    /* Warna merah muda pucat */
+  }
 
-/* Membedakan warna sedikit saat kursor melewati baris tersebut (Hover) */
-table.dataTable tbody tr.row-tidak-balance:hover td {
-    background-color: red !important; 
-}
+  /* Membedakan warna sedikit saat kursor melewati baris tersebut (Hover) */
+  table.dataTable tbody tr.row-tidak-balance:hover td {
+    background-color: red !important;
+  }
 
-/* Agar teks status badge tetap terlihat rapi */
-table.dataTable tbody tr.row-tidak-balance td .badge {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+  /* Agar teks status badge tetap terlihat rapi */
+  table.dataTable tbody tr.row-tidak-balance td .badge {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
 </style>
 <?= $this->section('content') ?>
 <!-- Begin Page Content -->
+<?php
+// 1. Persiapan Variabel & Data untuk meringkas logika HTML
+$isAdmin      = session()->get('idpengguna') == '8888888888';
+$isSupervisor = session()->get('level_nama') == 'Supervisor';
+$allowEdit    = session()->get('databaseHitJurnal') <= session()->get('hitJurnal');
+
+$list_bulan = [
+  1 => 'Januari',
+  2 => 'Februari',
+  3 => 'Maret',
+  4 => 'April',
+  5 => 'Mei',
+  6 => 'Juni',
+  7 => 'Juli',
+  8 => 'Agustus',
+  9 => 'September',
+  10 => 'Oktober',
+  11 => 'November',
+  12 => 'Desember'
+];
+?>
+
 <div class="container-fluid">
-
-  <!-- Page Heading -->
   <div class="card shadow mb-4">
-    <form action="<?php echo site_url('jurnal/delete-all') ?>" id="form-delete" method="post" enctype="multipart/form-data">
-      <div class="card-header d-sm-flex align-items-center justify-content-between py-3">
-        <div class="row">
-          <?php if (session()->get('idpengguna') != '8888888888') { ?>
-            <!--<h6 class="m-0 font-weight-bold text-info">Data Jurnal</h6>-->
-            <div class="col-4">
-              <select class="form-control" name="bulan" id="bulan">
-                <option value="">Semua Bulan</option>
-                <option value="1" <?= $jurnal_bulan->bulan == '1' ? 'selected' : '' ?>>Januari</option>
-                <option value="2" <?= $jurnal_bulan->bulan == '2' ? 'selected' : '' ?>>Februari</option>
-                <option value="3" <?= $jurnal_bulan->bulan == '3' ? 'selected' : '' ?>>Maret</option>
-                <option value="4" <?= $jurnal_bulan->bulan == '4' ? 'selected' : '' ?>>April</option>
-                <option value="5" <?= $jurnal_bulan->bulan == '5' ? 'selected' : '' ?>>Mei</option>
-                <option value="6" <?= $jurnal_bulan->bulan == '6' ? 'selected' : '' ?>>Juni</option>
-                <option value="7" <?= $jurnal_bulan->bulan == '7' ? 'selected' : '' ?>>Juli</option>
-                <option value="8" <?= $jurnal_bulan->bulan == '8' ? 'selected' : '' ?>>Agustus</option>
-                <option value="9" <?= $jurnal_bulan->bulan == '9' ? 'selected' : '' ?>>September</option>
-                <option value="10" <?= $jurnal_bulan->bulan == '10' ? 'selected' : '' ?>>Oktober</option>
-                <option value="11" <?= $jurnal_bulan->bulan == '11' ? 'selected' : '' ?>>November</option>
-                <option value="12" <?= $jurnal_bulan->bulan == '12' ? 'selected' : '' ?>>Desember</option>
-              </select>
-            </div>
-            <div class="col-3">
-              <select class="form-control" name="tahun" id="tahun">
-                <?php foreach ($jurnal as $rows): ?>
-                  <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
-                <?php endforeach; ?>
-                <option value="null">Kosong</option>
-              </select>
-            </div>
+    <form action="<?= site_url('jurnal/delete-all') ?>" id="form-delete" method="post" enctype="multipart/form-data">
 
-            <div class="col-5">
-              <select class="form-control" name="status_approve" id="status_approve">
-                <option class="bg-warning text-light" value="0" <?= session('status_approve') == '0' ? 'selected' : '' ?>>Menunggu</option>
-                <option class="bg-success text-light" value="1" <?= session('status_approve') == '1' ? 'selected' : '' ?>>Disetujui</option>
-                <option class="bg-danger text-light" value="all" <?= session('status_approve') == 'all' ? 'selected' : '' ?>>Perbaikan</option>
-                <!--<option class="bg-danger text-light" value="2" <?= session('status_approve') == '2' ? 'selected' : '' ?>>Perbaikan</option>-->
-              </select>
+      <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
+
+          <div class="col-md-10">
+            <div class="row">
+
+              <?php if ($isAdmin): ?>
+                <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                  <input type="hidden" id="idperusahaan" name="idperusahaan">
+                  <input type="text" id="tampilperusahaan" class="form-control" placeholder="Cari nama perusahaan..">
+                </div>
+              <?php endif; ?>
+
+              <div class="<?= $isAdmin ? 'col-md-2' : 'col-md-3' ?> col-sm-6 mb-2 mb-md-0">
+                <select class="form-control" name="bulan" id="bulan">
+                  <option value="">Semua Bulan</option>
+                  <?php foreach ($list_bulan as $val => $nama): ?>
+                    <option value="<?= $val ?>" <?= $jurnal_bulan->bulan == $val ? 'selected' : '' ?>><?= $nama ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div class="<?= $isAdmin ? 'col-md-2' : 'col-md-3' ?> col-sm-6 mb-2 mb-md-0">
+                <select class="form-control" name="tahun" id="tahun">
+                  <?php foreach ($jurnal as $rows): ?>
+                    <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
+                  <?php endforeach; ?>
+                  <option value="null">Kosong</option>
+                </select>
+              </div>
+
+              <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                <select class="form-control" name="status_approve" id="status_approve">
+                  <option class="bg-warning text-dark" value="0" <?= session('status_approve') == '0' ? 'selected' : '' ?>>Menunggu Persetujuan</option>
+                  <option class="bg-success text-white" value="1" <?= session('status_approve') == '1' ? 'selected' : '' ?>>Telah Disetujui</option>
+                  <option class="bg-danger text-white" value="all" <?= session('status_approve') == 'all' ? 'selected' : '' ?>>Perlu Perbaikan</option>
+                </select>
+              </div>
+
+              <div class="<?= $isAdmin ? 'col-md-2' : 'col-md-3' ?> col-sm-6 mb-2 mb-md-0">
+                <select class="form-control" name="fiskal_objek" id="fiskal_objek">
+                  <option value="">Pilih Objek Fiskal</option>
+                  <option value="objek">Khusus Objek & Fiskal</option>
+                </select>
+              </div>
+
             </div>
-          <?php } else { ?>
-            <input type="hidden" id="idperusahaan" name="idperusahaan">
-            <div class="col-4">
-              <input type="text" id="tampilperusahaan" class="form-control" value="" style="width: 100%;" placeholder="Cari nama perusahaan..">
-            </div>
-            <div class="col-3">
-              <select class="form-control" name="bulan" id="bulan">
-                <option value="">Semua Bulan</option>
-                <option value="1" <?= $jurnal_bulan->bulan == '1' ? 'selected' : '' ?>>Januari</option>
-                <option value="2" <?= $jurnal_bulan->bulan == '2' ? 'selected' : '' ?>>Februari</option>
-                <option value="3" <?= $jurnal_bulan->bulan == '3' ? 'selected' : '' ?>>Maret</option>
-                <option value="4" <?= $jurnal_bulan->bulan == '4' ? 'selected' : '' ?>>April</option>
-                <option value="5" <?= $jurnal_bulan->bulan == '5' ? 'selected' : '' ?>>Mei</option>
-                <option value="6" <?= $jurnal_bulan->bulan == '6' ? 'selected' : '' ?>>Juni</option>
-                <option value="7" <?= $jurnal_bulan->bulan == '7' ? 'selected' : '' ?>>Juli</option>
-                <option value="8" <?= $jurnal_bulan->bulan == '8' ? 'selected' : '' ?>>Agustus</option>
-                <option value="9" <?= $jurnal_bulan->bulan == '9' ? 'selected' : '' ?>>September</option>
-                <option value="10" <?= $jurnal_bulan->bulan == '10' ? 'selected' : '' ?>>Oktober</option>
-                <option value="11" <?= $jurnal_bulan->bulan == '11' ? 'selected' : '' ?>>November</option>
-                <option value="12" <?= $jurnal_bulan->bulan == '12' ? 'selected' : '' ?>>Desember</option>
-              </select>
-            </div>
-            <div class="col-2">
-              <select class="form-control" name="tahun" id="tahun">
-                <?php foreach ($jurnal as $rows): ?>
-                  <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
-                <?php endforeach; ?>
-                <option value="null">Kosong</option>
-              </select>
-            </div>
-            <div class="col-3">
-              <select class="form-control" name="status_approve" id="status_approve">
-                <option value="0" <?= session('status_approve') == '0' ? 'selected' : '' ?>>Menunggu Persetujuan</option>
-                <option value="1" <?= session('status_approve') == '1' ? 'selected' : '' ?>>Telah Disetujui</option>
-                <option value="2" <?= session('status_approve') == '2' ? 'selected' : '' ?>>Perlu Perbaikan</option>
-              </select>
-            </div>
-          <?php } ?>
-        </div>
-        <div>
-          <?php if (session()->get('level_nama') != 'Supervisor'): ?>
-            <?php if (session()->get('databaseHitJurnal') <= session()->get('hitJurnal')) { ?>
-              <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></button>
-              <a href="<?php echo ('jurnal/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
-            <?php } else { ?>
-              <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-danger tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"><i class="fa fa-trash"></i></a>
-              <a href="<?php echo (site_url('histori')) ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah Data Jurnal"><i class="fas fa-plus fa-lg"></i></a>
-            <?php } ?>
-          <?php endif; ?>
+          </div>
+
+          <div class="col-md-2 text-md-right text-left mt-3 mt-md-0">
+            <?php if (!$isSupervisor): ?>
+              <?php
+              // Tentukan link berdasarkan limit hitJurnal
+              $link_delete = $allowEdit ? 'button' : site_url('histori');
+              $link_add    = $allowEdit ? site_url('jurnal/tambah') : site_url('histori');
+              ?>
+
+              <?php if ($allowEdit): ?>
+                <button type="button" class="btn btn-sm btn-danger shadow-sm tooltips" id="btn-delete" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
+                  <i class="fa fa-trash"></i>
+                </button>
+              <?php else: ?>
+                <a href="<?= $link_delete ?>" class="btn btn-sm btn-danger shadow-sm tooltips" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
+                  <i class="fa fa-trash"></i>
+                </a>
+              <?php endif; ?>
+
+              <a href="<?= $link_add ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="top" title="Tambah Data Jurnal">
+                <i class="fas fa-plus fa-lg"></i>
+              </a>
+            <?php endif; ?>
+          </div>
+
         </div>
       </div>
 
       <div class="card-body">
 
-        <?php
-        $pesan = session()->get('pesan');
-        if (!empty($pesan)) {
-          echo $pesan;
-        }
-        ?>
+        <?php if (session()->get('pesan')): ?>
+          <?= session()->get('pesan') ?>
+        <?php endif; ?>
 
-        <!-- datatable -->
         <div class="table-responsive">
-
-          <table class="table table-bordered table-striped table-condesed" id="table">
-            <thead>
-              <tr class="success" style="background-color:#055F93; color: white;">
-                <th style="width: 3%; text-align: center;"><input type="checkbox" id="check-all"></th>
-                <th style="width: 13%; text-align: center;">Tgl Jurnal</th>
-                <th style="width: 13%; text-align: center;">No. Jurnal</th>
-                <th style="width: 13%; text-align: center;">Referensi</th>
-                <th style="text-align: center;">Keterangan</th>
-                <th style="width: 10%; text-align: center;">Pembuat</th>
-                <th style="width: 14%; text-align: center;">Jumlah (Rp.)</th>
-                <th style="width: 5%; text-align: center;">Lamp</th>
-                <th style="width: 5%; text-align: center;">Opsi</th>
+          <table class="table table-bordered table-striped table-hover" id="table">
+            <thead style="background-color: #055F93; color: white;">
+              <tr>
+                <th class="text-center" style="width: 3%;"><input type="checkbox" id="check-all"></th>
+                <th class="text-center" style="width: 13%;">Tgl Jurnal</th>
+                <th class="text-center" style="width: 13%;">No. Jurnal</th>
+                <th class="text-center" style="width: 13%;">Referensi</th>
+                <th class="text-center">Keterangan</th>
+                <th class="text-center" style="width: 10%;">Pembuat</th>
+                <th class="text-center" style="width: 14%;">Jumlah (Rp.)</th>
+                <th class="text-center" style="width: 5%;">Lamp</th>
+                <th class="text-center" style="width: 5%;">Opsi</th>
               </tr>
             </thead>
             <tbody>
-
             </tbody>
           </table>
         </div>
+
+      </div>
     </form>
-
-
   </div>
 </div>
 
@@ -200,114 +202,115 @@ table.dataTable tbody tr.row-tidak-balance td .badge {
 
   $(document).ready(function() {
 
-      // 1. INISIALISASI DATATABLES (Script asli Anda)
-      var t = $('#table').DataTable({
-        "select": true,
-        "processing": true,
-        "serverSide": true,
-        "order": [],
-        "ajax": {
-          "url": "<?php echo site_url('jurnal/datatablesource') ?>",
-          "type": "POST",
-          data: function(d) {
-            d.cari = $('input[name=cari]').val();
-            d.idperusahaan = $('input[name=idperusahaan]').val();
-            d.tahun = $('#tahun').val();
-            d.bulan = $('#bulan').val();
-            d.status_approve = $('#status_approve').val();
-          }
-        },
-        "columnDefs": [{
-            "targets": [0],
-            "orderable": false,
-            "className": 'dt-body-center'
-          },
-          {
-            "targets": [1],
-            "className": 'dt-body-center'
-          },
-          {
-            "targets": [2],
-            "className": 'dt-body-center'
-          },
-          {
-            "targets": [5],
-            "className": 'dt-body-right'
-          },
-          {
-            "targets": [6],
-            "orderable": false,
-            "className": 'dt-body-right'
-          },
-          {
-            "targets": [7],
-            "orderable": false,
-            "className": 'dt-body-center'
-          },
-        ],
-        "language": {
-          "infoFiltered": ""
-        },
-        
-        // =========================================================
-        // TAMBAHKAN FITUR INI UNTUK MEWARNAI BARIS SECARA PAKSA
-        // =========================================================
-        // "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
-            
-        //     // Jika baris memiliki class TIDAK BALANCE (MERAH)
-        //     if ($(row).hasClass('row-tidak-balance')) {
-        //         $('td', row).each(function() {
-        //             this.style.setProperty('border-color', '#f5c6cb', 'important');
-        //         });
-        //     } 
-            
-        //     // Jika baris memiliki class BALANCE (HIJAU)
-        //     else if ($(row).hasClass('row-balance')) {
-        //         $('td', row).each(function() {
-        //             this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
-        //             this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
-        //             this.style.setProperty('border-color', '#c3e6cb', 'important');
-        //         });
-        //     }
-            
-        // }
-
-      });
-
-      // 2. TAMBAHKAN EVENT LISTENER KLIK BARIS DI SINI
-      $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function() {
-        var tr = $(this).closest('tr');
-        var row = t.row(tr);
-
-        if (row.child.isShown()) {
-          // Jika detail sudah terbuka, tutup detailnya
-          row.child.hide();
-          tr.removeClass('shown bg-light');
-        } else {
-          // Ambil idjurnal dari meta data (Pastikan Langkah 1 di PHP sudah Anda terapkan)
-          var idjurnal = row.data().DT_RowData.idjurnal;
-
-          // Tampilkan animasi loading sementara menunggu data dari server
-          row.child('<div class="text-center p-3"><i class="fas fa-spinner fa-spin text-primary"></i> Mengambil detail data...</div>').show();
-          tr.addClass('shown bg-light');
-
-          // Ambil data detail menggunakan AJAX
-          $.ajax({
-            url: "<?php echo site_url('jurnal/get_detail_jurnal') ?>", // Pastikan nama controller sesuai
-            type: "POST",
-            data: {
-              idjurnal: idjurnal
-            },
-            success: function(response) {
-              // Masukkan tabel HTML yang di-return oleh PHP ke dalam child row
-              row.child(response).show();
-            },
-            error: function() {
-              row.child('<div class="p-3 text-danger">Gagal mengambil data detail, periksa koneksi.</div>').show();
-            }
-          });
+    // 1. INISIALISASI DATATABLES (Script asli Anda)
+    var t = $('#table').DataTable({
+      "select": true,
+      "processing": true,
+      "serverSide": true,
+      "order": [],
+      "ajax": {
+        "url": "<?php echo site_url('jurnal/datatablesource') ?>",
+        "type": "POST",
+        data: function(d) {
+          d.cari = $('input[name=cari]').val();
+          d.idperusahaan = $('input[name=idperusahaan]').val();
+          d.tahun = $('#tahun').val();
+          d.bulan = $('#bulan').val();
+          d.status_approve = $('#status_approve').val();
+          d.fiskal_objek = $('#fiskal_objek').val();
         }
-      });
+      },
+      "columnDefs": [{
+          "targets": [0],
+          "orderable": false,
+          "className": 'dt-body-center'
+        },
+        {
+          "targets": [1],
+          "className": 'dt-body-center'
+        },
+        {
+          "targets": [2],
+          "className": 'dt-body-center'
+        },
+        {
+          "targets": [5],
+          "className": 'dt-body-right'
+        },
+        {
+          "targets": [6],
+          "orderable": false,
+          "className": 'dt-body-right'
+        },
+        {
+          "targets": [7],
+          "orderable": false,
+          "className": 'dt-body-center'
+        },
+      ],
+      "language": {
+        "infoFiltered": ""
+      },
+
+      // =========================================================
+      // TAMBAHKAN FITUR INI UNTUK MEWARNAI BARIS SECARA PAKSA
+      // =========================================================
+      // "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
+
+      //     // Jika baris memiliki class TIDAK BALANCE (MERAH)
+      //     if ($(row).hasClass('row-tidak-balance')) {
+      //         $('td', row).each(function() {
+      //             this.style.setProperty('border-color', '#f5c6cb', 'important');
+      //         });
+      //     } 
+
+      //     // Jika baris memiliki class BALANCE (HIJAU)
+      //     else if ($(row).hasClass('row-balance')) {
+      //         $('td', row).each(function() {
+      //             this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
+      //             this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
+      //             this.style.setProperty('border-color', '#c3e6cb', 'important');
+      //         });
+      //     }
+
+      // }
+
+    });
+
+    // 2. TAMBAHKAN EVENT LISTENER KLIK BARIS DI SINI
+    $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function() {
+      var tr = $(this).closest('tr');
+      var row = t.row(tr);
+
+      if (row.child.isShown()) {
+        // Jika detail sudah terbuka, tutup detailnya
+        row.child.hide();
+        tr.removeClass('shown bg-light');
+      } else {
+        // Ambil idjurnal dari meta data (Pastikan Langkah 1 di PHP sudah Anda terapkan)
+        var idjurnal = row.data().DT_RowData.idjurnal;
+
+        // Tampilkan animasi loading sementara menunggu data dari server
+        row.child('<div class="text-center p-3"><i class="fas fa-spinner fa-spin text-primary"></i> Mengambil detail data...</div>').show();
+        tr.addClass('shown bg-light');
+
+        // Ambil data detail menggunakan AJAX
+        $.ajax({
+          url: "<?php echo site_url('jurnal/get_detail_jurnal') ?>", // Pastikan nama controller sesuai
+          type: "POST",
+          data: {
+            idjurnal: idjurnal
+          },
+          success: function(response) {
+            // Masukkan tabel HTML yang di-return oleh PHP ke dalam child row
+            row.child(response).show();
+          },
+          error: function() {
+            row.child('<div class="p-3 text-danger">Gagal mengambil data detail, periksa koneksi.</div>').show();
+          }
+        });
+      }
+    });
 
     //untuk lihat semua pada kolom Keterangan
     $('#table').on('click', '.toggle-text', function() {
@@ -344,6 +347,10 @@ table.dataTable tbody tr.row-tidak-balance td .badge {
     })
 
     $('#status_approve').on('change', function() {
+      t.draw();
+      e.preventDefault();
+    })
+    $('#fiskal_objek').on('change', function() {
       t.draw();
       e.preventDefault();
     })
@@ -513,76 +520,84 @@ table.dataTable tbody tr.row-tidak-balance td .badge {
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Pastikan Anda sudah meload library SweetAlert2 di header/footer Anda
+  // Pastikan Anda sudah meload library SweetAlert2 di header/footer Anda
 
-$(document).ready(function() {
+  $(document).ready(function() {
 
     // Helper 1: Format angka ke Rupiah (Ribuan)
     function formatRupiah(angka) {
-        if (!angka || angka == 0) return '0';
-        // Format menggunakan locale id-ID agar otomatis pakai pemisah titik
-        return parseFloat(angka).toLocaleString('id-ID');
+      if (!angka || angka == 0) return '0';
+      // Format menggunakan locale id-ID agar otomatis pakai pemisah titik
+      return parseFloat(angka).toLocaleString('id-ID');
     }
 
     // Helper 2: Mapping Enum ke Text biasa untuk tampilan
-    const textObjek = { '0': '-', '1': 'PPh Psl 21', '2': 'PPh Psl 23', '3': 'PPh Psl 4(2)' };
-    const textFiskal = { '0': 'Tidak', '1': 'Ya' };
+    const textObjek = {
+      '0': '-',
+      '1': 'PPh Psl 21',
+      '2': 'PPh Psl 23',
+      '3': 'PPh Psl 4(2)'
+    };
+    const textFiskal = {
+      '0': 'Tidak',
+      '1': 'Ya'
+    };
 
     // Helper 3: Konfigurasi Toast SweetAlert2
     const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+      }
     });
 
     // Fungsi untuk mengecek logika disable/enable inputan
     function applyLogic(tr) {
-        let valObjek = tr.find('.inp-objek').val();
-        let inpObjekPajak = tr.find('.inp-objekpajak');
-        
-        if (valObjek === '0') {
-            inpObjekPajak.prop('readonly', true).val('0'); 
-        } else {
-            inpObjekPajak.prop('readonly', false);
-        }
+      let valObjek = tr.find('.inp-objek').val();
+      let inpObjekPajak = tr.find('.inp-objekpajak');
 
-        let valFiskal = tr.find('.inp-fiskal').val();
-        let inpKorPos = tr.find('.inp-korpos');
-        let inpKorNeg = tr.find('.inp-korneg');
+      if (valObjek === '0') {
+        inpObjekPajak.prop('readonly', true).val('0');
+      } else {
+        inpObjekPajak.prop('readonly', false);
+      }
 
-        if (valFiskal === '0') {
-            inpKorPos.prop('readonly', true).val('0');
-            inpKorNeg.prop('readonly', true).val('0');
-        } else {
-            inpKorPos.prop('readonly', false);
-            inpKorNeg.prop('readonly', false);
-        }
+      let valFiskal = tr.find('.inp-fiskal').val();
+      let inpKorPos = tr.find('.inp-korpos');
+      let inpKorNeg = tr.find('.inp-korneg');
+
+      if (valFiskal === '0') {
+        inpKorPos.prop('readonly', true).val('0');
+        inpKorNeg.prop('readonly', true).val('0');
+      } else {
+        inpKorPos.prop('readonly', false);
+        inpKorNeg.prop('readonly', false);
+      }
     }
 
     // Aksi ketika tombol Edit diklik
     $(document).on('click', '.btn-edit-inline', function() {
-        let tr = $(this).closest('tr');
-        
-        if (tr.hasClass('is-editing')) return; 
-        tr.addClass('is-editing');
+      let tr = $(this).closest('tr');
 
-        let id = tr.data('id');
-        let objek = tr.data('objek');
-        let objekPajak = tr.data('objekpajak');
-        let fiskal = tr.data('fiskal');
-        let korPos = tr.data('korpos');
-        let korNeg = tr.data('korneg');
-        let ket = tr.data('ket');
+      if (tr.hasClass('is-editing')) return;
+      tr.addClass('is-editing');
 
-        tr.find('td:eq(0)').html(`<button type="button" class="btn btn-success btn-save-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-check"></i></button>`);
+      let id = tr.data('id');
+      let objek = tr.data('objek');
+      let objekPajak = tr.data('objekpajak');
+      let fiskal = tr.data('fiskal');
+      let korPos = tr.data('korpos');
+      let korNeg = tr.data('korneg');
+      let ket = tr.data('ket');
 
-        tr.find('.td-objek').html(`
+      tr.find('td:eq(0)').html(`<button type="button" class="btn btn-success btn-save-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-check"></i></button>`);
+
+      tr.find('.td-objek').html(`
             <select class="form-control form-control-sm inp-objek" style="width: 80px;">
                 <option value="0" ${objek == '0' ? 'selected' : ''}>Pilih</option>
                 <option value="1" ${objek == '1' ? 'selected' : ''}>PPh Psl 21</option>
@@ -591,112 +606,121 @@ $(document).ready(function() {
             </select>
         `);
 
-        tr.find('.td-fiskal').html(`
+      tr.find('.td-fiskal').html(`
             <select class="form-control form-control-sm inp-fiskal" style="width: 60px;">
                 <option value="0" ${fiskal == '0' ? 'selected' : ''}>Tidak</option>
                 <option value="1" ${fiskal == '1' ? 'selected' : ''}>Ya</option>
             </select>
         `);
 
-        tr.find('.td-objekpajak').html(`<input type="number" class="form-control form-control-sm text-right inp-objekpajak" value="${objekPajak}" style="width: 80px;">`);
-        tr.find('.td-korpos').html(`<input type="number" class="form-control form-control-sm text-right inp-korpos" value="${korPos}" style="width: 80px;">`);
-        tr.find('.td-korneg').html(`<input type="number" class="form-control form-control-sm text-right inp-korneg" value="${korNeg}" style="width: 80px;">`);
-        tr.find('.td-ket').html(`<input type="text" class="form-control form-control-sm inp-ket" value="${ket}" style="width: 100px;">`);
+      tr.find('.td-objekpajak').html(`<input type="number" class="form-control form-control-sm text-right inp-objekpajak" value="${objekPajak}" style="width: 80px;">`);
+      tr.find('.td-korpos').html(`<input type="number" class="form-control form-control-sm text-right inp-korpos" value="${korPos}" style="width: 80px;">`);
+      tr.find('.td-korneg').html(`<input type="number" class="form-control form-control-sm text-right inp-korneg" value="${korNeg}" style="width: 80px;">`);
+      tr.find('.td-ket').html(`<input type="text" class="form-control form-control-sm inp-ket" value="${ket}" style="width: 100px;">`);
 
-        applyLogic(tr);
+      applyLogic(tr);
     });
 
     $(document).on('change', '.inp-objek, .inp-fiskal', function() {
-        let tr = $(this).closest('tr');
-        applyLogic(tr);
+      let tr = $(this).closest('tr');
+      applyLogic(tr);
     });
 
     // Aksi ketika tombol Simpan diklik
     $(document).on('click', '.btn-save-inline', function() {
-        let tr = $(this).closest('tr');
-        let iddetailjurnal = tr.data('id');
+      let tr = $(this).closest('tr');
+      let iddetailjurnal = tr.data('id');
 
-        // Tangkap nilai-nilai baru dari inputan
-        let valObjek = tr.find('.inp-objek').val();
-        let valObjekPajak = tr.find('.inp-objekpajak').val() || 0;
-        let valFiskal = tr.find('.inp-fiskal').val();
-        let valKorPos = tr.find('.inp-korpos').val() || 0;
-        let valKorNeg = tr.find('.inp-korneg').val() || 0;
-        let valKet = tr.find('.inp-ket').val();
+      // Tangkap nilai-nilai baru dari inputan
+      let valObjek = tr.find('.inp-objek').val();
+      let valObjekPajak = tr.find('.inp-objekpajak').val() || 0;
+      let valFiskal = tr.find('.inp-fiskal').val();
+      let valKorPos = tr.find('.inp-korpos').val() || 0;
+      let valKorNeg = tr.find('.inp-korneg').val() || 0;
+      let valKet = tr.find('.inp-ket').val();
 
-        let dataToSave = {
-            iddetailjurnal: iddetailjurnal,
-            objek: valObjek,
-            objek_pajak: valObjekPajak,
-            fiskal: valFiskal,
-            koreksi_positif: valKorPos,
-            koreksi_negatif: valKorNeg,
-            keterangan: valKet
-        };
+      let dataToSave = {
+        iddetailjurnal: iddetailjurnal,
+        objek: valObjek,
+        objek_pajak: valObjekPajak,
+        fiskal: valFiskal,
+        koreksi_positif: valKorPos,
+        koreksi_negatif: valKorNeg,
+        keterangan: valKet
+      };
 
-        if (dataToSave.fiskal === '1') {
-            if (parseFloat(dataToSave.koreksi_positif) === 0 && parseFloat(dataToSave.koreksi_negatif) === 0) {
-                // Gunakan SweetAlert jika ada, kalau tidak fallback ke alert biasa
-                if(typeof Swal !== 'undefined') {
-                    Swal.fire('Perhatian', 'Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!', 'warning');
-                } else {
-                    alert('Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!');
-                }
-                return;
-            }
+      if (dataToSave.fiskal === '1') {
+        if (parseFloat(dataToSave.koreksi_positif) === 0 && parseFloat(dataToSave.koreksi_negatif) === 0) {
+          // Gunakan SweetAlert jika ada, kalau tidak fallback ke alert biasa
+          if (typeof Swal !== 'undefined') {
+            Swal.fire('Perhatian', 'Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!', 'warning');
+          } else {
+            alert('Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!');
+          }
+          return;
         }
+      }
 
-        // Tampilkan indikator loading pada tombol
-        $(this).html('<i class="fas fa-spinner fa-spin"></i>');
+      // Tampilkan indikator loading pada tombol
+      $(this).html('<i class="fas fa-spinner fa-spin"></i>');
 
-        $.ajax({
-            url: '<?= base_url("jurnal/simpan-fiskal") ?>', 
-            type: 'POST',
-            data: dataToSave,
-            dataType: 'json',
-            success: function(response) {
-                if(response.status) {
-                    
-                    // 1. Tampilkan Toast Sukses
-                    if(typeof Swal !== 'undefined') {
-                        Toast.fire({ icon: 'success', title: 'Data berhasil diperbarui' });
-                    } else {
-                        alert('Data berhasil disimpan!'); // Fallback jika Swal tidak ada
-                    }
+      $.ajax({
+        url: '<?= base_url("jurnal/simpan-fiskal") ?>',
+        type: 'POST',
+        data: dataToSave,
+        dataType: 'json',
+        success: function(response) {
+          if (response.status) {
 
-                    // 2. Update data-* atribut di baris <tr> agar kalau diedit lagi, datanya sudah yang terbaru
-                    tr.data('objek', valObjek);
-                    tr.data('objekpajak', valObjekPajak);
-                    tr.data('fiskal', valFiskal);
-                    tr.data('korpos', valKorPos);
-                    tr.data('korneg', valKorNeg);
-                    tr.data('ket', valKet);
-
-                    // 3. Kembalikan inputan menjadi teks biasa + format angka jadi Rupiah
-                    tr.find('.td-objek').html(textObjek[valObjek]);
-                    tr.find('.td-objekpajak').html(formatRupiah(valObjekPajak));
-                    tr.find('.td-fiskal').html(textFiskal[valFiskal]);
-                    tr.find('.td-korpos').html(formatRupiah(valKorPos));
-                    tr.find('.td-korneg').html(formatRupiah(valKorNeg));
-                    tr.find('.td-ket').text(valKet);
-
-                    // 4. Kembalikan tombol Simpan menjadi tombol Edit (Kuning, ukuran kecil)
-                    tr.find('td:eq(0)').html(`<button type="button" class="btn btn-warning btn-edit-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-edit"></i></button>`);
-                    
-                    // 5. Lepas status editing dari baris tersebut
-                    tr.removeClass('is-editing');
-
-                } else {
-                    if(typeof Swal !== 'undefined') Toast.fire({ icon: 'error', title: 'Gagal menyimpan data' });
-                    tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
-                }
-            },
-            error: function() {
-                if(typeof Swal !== 'undefined') Toast.fire({ icon: 'error', title: 'Terjadi kesalahan server' });
-                tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
+            // 1. Tampilkan Toast Sukses
+            if (typeof Swal !== 'undefined') {
+              Toast.fire({
+                icon: 'success',
+                title: 'Data berhasil diperbarui'
+              });
+            } else {
+              alert('Data berhasil disimpan!'); // Fallback jika Swal tidak ada
             }
-        });
+
+            // 2. Update data-* atribut di baris <tr> agar kalau diedit lagi, datanya sudah yang terbaru
+            tr.data('objek', valObjek);
+            tr.data('objekpajak', valObjekPajak);
+            tr.data('fiskal', valFiskal);
+            tr.data('korpos', valKorPos);
+            tr.data('korneg', valKorNeg);
+            tr.data('ket', valKet);
+
+            // 3. Kembalikan inputan menjadi teks biasa + format angka jadi Rupiah
+            tr.find('.td-objek').html(textObjek[valObjek]);
+            tr.find('.td-objekpajak').html(formatRupiah(valObjekPajak));
+            tr.find('.td-fiskal').html(textFiskal[valFiskal]);
+            tr.find('.td-korpos').html(formatRupiah(valKorPos));
+            tr.find('.td-korneg').html(formatRupiah(valKorNeg));
+            tr.find('.td-ket').text(valKet);
+
+            // 4. Kembalikan tombol Simpan menjadi tombol Edit (Kuning, ukuran kecil)
+            tr.find('td:eq(0)').html(`<button type="button" class="btn btn-warning btn-edit-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-edit"></i></button>`);
+
+            // 5. Lepas status editing dari baris tersebut
+            tr.removeClass('is-editing');
+
+          } else {
+            if (typeof Swal !== 'undefined') Toast.fire({
+              icon: 'error',
+              title: 'Gagal menyimpan data'
+            });
+            tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
+          }
+        },
+        error: function() {
+          if (typeof Swal !== 'undefined') Toast.fire({
+            icon: 'error',
+            title: 'Terjadi kesalahan server'
+          });
+          tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
+        }
+      });
     });
-});
+  });
 </script>
 <?= $this->endSection() ?>
