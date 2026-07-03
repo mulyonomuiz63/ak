@@ -205,8 +205,9 @@ class JurnalController extends BaseController
                 }
                 // ========================================================================
 
-                // Masukkan gabungan ID Jurnal dan Badge ke dalam array datatable
-                $row[] = $rowdata->idjurnal . $badgeHTML;
+                // Masukkan gabungan ID Jurnal, Tombol Copy, dan Badge ke dalam array datatable
+                $copyBtn = ' <a href="javascript:void(0);" class="text-secondary ml-1 btn-copy-idjurnal" data-id="' . $rowdata->idjurnal . '" title="Copy ID Jurnal"><i class="fa fa-copy"></i></a>';
+                $row[] = '<span class="d-flex align-items-center">' . $rowdata->idjurnal . $copyBtn . '</span>' . $badgeHTML;
                 
                 $row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
 

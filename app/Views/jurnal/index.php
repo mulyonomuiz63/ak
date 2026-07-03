@@ -722,5 +722,45 @@ $list_bulan = [
       });
     });
   });
+
+  $(document).ready(function() {
+    // Event delegation untuk tombol copy (karena elemen diload dari datatable/ajax)
+    $(document).on('click', '.btn-copy-idjurnal', function(e) {
+      e.preventDefault();
+
+      // Ambil nilai ID Jurnal dari atribut data-id
+      var idToCopy = $(this).data('id');
+
+      // Proses copy ke clipboard menggunakan API navigator terbaru (jika didukung) atau execCommand (fallback)
+      var tempInput = $("<input>");
+      $("body").append(tempInput);
+      tempInput.val(idToCopy).select();
+      document.execCommand("copy");
+      tempInput.remove();
+
+      // Tampilkan notifikasi Toast (menggunakan SweetAlert2 jika ada)
+      if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end', // Pojok kanan atas
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+          }
+        });
+
+        Toast.fire({
+          icon: 'success',
+          title: 'ID Jurnal ' + idToCopy + ' disalin!'
+        });
+      } else {
+        // Fallback alert biasa jika SweetAlert2 tidak ditemukan di template Anda
+        alert('ID Jurnal ' + idToCopy + ' berhasil disalin!');
+      }
+    });
+  });
 </script>
 <?= $this->endSection() ?>
