@@ -1825,15 +1825,7 @@
               'posisi'    => 'Finance & Accounting',
 
             ],
-            [
-
-              'nama'      => 'Yeni Yuliana Saputri',
-
-              'gambar'    => 'yeni.jpg',
-
-              'posisi'    => 'Teknisi Akuntansi Pajak',
-
-            ],
+           
             [
 
               'nama'      => 'Rio Ramadan',
@@ -1843,25 +1835,6 @@
               'posisi'    => 'Teknisi Akuntansi Pajak',
 
             ],
-             [
-
-              'nama'      => 'Muhammad Zaki',
-
-              'gambar'    => 'zaki.jpg',
-
-              'posisi'    => 'Teknisi Akuntansi Pajak',
-
-            ],
-            [
-
-              'nama'      => 'Tyas Kurniasari',
-
-              'gambar'    => 'tyas.jpg',
-
-              'posisi'    => 'Teknisi Akuntansi Pajak',
-
-            ],
-
             [
 
               'nama'      => 'Mulyono',
