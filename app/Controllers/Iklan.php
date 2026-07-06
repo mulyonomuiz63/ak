@@ -7,15 +7,6 @@ class Iklan extends BaseController
 
     public $menuaktif = 'iklan';
 
-    public function __construct()
-    {
-        $idpengguna = session()->get('idpengguna');
-        if (empty($idpengguna)) {
-            $pesan = '<div class="alert alert-danger">Silahkan anda login</div>';
-            session()->setFlashdata('pesan', $pesan);
-            throw new \CodeIgniter\Router\Exceptions\RedirectException('login');
-        }
-    }
 
     public function index()
     {
@@ -27,7 +18,7 @@ class Iklan extends BaseController
     public function tambah()
     {
         if (!(session()->get('databaseHitPengguna') <= session()->get('hitPengguna'))) {
-            return redirect()->to('Iklan');
+            return redirect()->to('iklan');
         }
         $data['idiklan'] = "";
         $data['menuaktif'] = $this->menuaktif;
@@ -44,7 +35,7 @@ class Iklan extends BaseController
 					    </div>
 					</div>';
             $this->session->setFlashdata('pesan', $pesan);
-            return redirect()->to('Iklan');
+            return redirect()->to('iklan');
         };
 
         $data['idiklan'] = $idiklan;
@@ -73,8 +64,8 @@ class Iklan extends BaseController
 							<i class="bi bi-three-dots"></i>
 						</a>
 						<div class="dropdown-menu" >
-							<a class="dropdown-item" href="' . site_url('Iklan/edit/' . encrypt($rowdata->idiklan)) . '"  class="ml-2">Edit</a>
-							<a class="dropdown-item" href="' . site_url('Iklan/delete/' . encrypt($rowdata->idiklan)) . '"  class="ml-2"  id="hapus">Delete</a>
+							<a class="dropdown-item" href="' . site_url('iklan/edit/' . encrypt($rowdata->idiklan)) . '"  class="ml-2">Edit</a>
+							<a class="dropdown-item" href="' . site_url('iklan/delete/' . encrypt($rowdata->idiklan)) . '"  class="ml-2"  id="hapus">Delete</a>
 						</div>
 					</div>';
                 $data[] = $row;
@@ -103,7 +94,7 @@ class Iklan extends BaseController
 					    </div>
 					</div>';
             $this->session->setFlashdata('pesan', $pesan);
-            return redirect()->to('Iklan');
+            return redirect()->to('iklan');
         };
 
 
@@ -132,7 +123,7 @@ class Iklan extends BaseController
         }
 
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Iklan');
+        return redirect()->to('iklan');
     }
 
     public function deleteAll()
@@ -164,7 +155,7 @@ class Iklan extends BaseController
 					    </div>
 					</div>';
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Iklan');
+        return redirect()->to('iklan');
     }
 
     public function simpan()
@@ -260,7 +251,7 @@ class Iklan extends BaseController
         }
 
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Iklan');
+        return redirect()->to('iklan');
     }
 
     public function get_edit_data()
@@ -321,15 +312,5 @@ class Iklan extends BaseController
         }
 
         return $foto;
-    }
-
-    function resize_foto($data)
-    {
-        print_r($data);
-        exit;
-        $filePath = '';
-        $saveto = './uploads/iklan/thumbnails/' . $data['file_name'];
-        $image = \Config\Services::image();
-        $image->withFile($filePath)->resize(128, 128, true)->save($saveto, 80);
     }
 }

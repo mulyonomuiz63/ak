@@ -7,15 +7,6 @@ class Event extends BaseController
 
     public $menuaktif = 'event';
 
-    public function __construct()
-    {
-        $idpengguna = session()->get('idpengguna');
-        if (empty($idpengguna)) {
-            $pesan = '<div class="alert alert-danger">Silahkan anda login</div>';
-            session()->setFlashdata('pesan', $pesan);
-            throw new \CodeIgniter\Router\Exceptions\RedirectException('login');
-        }
-    }
 
     public function index()
     {
@@ -27,7 +18,7 @@ class Event extends BaseController
     public function tambah()
     {
         if (!(session()->get('databaseHitPengguna') <= session()->get('hitPengguna'))) {
-            return redirect()->to('Event');
+            return redirect()->to('event');
         }
         $data['idevent'] = "";
         $data['menuaktif'] = $this->menuaktif;
@@ -44,7 +35,7 @@ class Event extends BaseController
 					    </div>
 					</div>';
             $this->session->setFlashdata('pesan', $pesan);
-            return redirect()->to('Event');
+            return redirect()->to('event');
         };
 
         $data['idevent'] = $idevent;
@@ -72,8 +63,8 @@ class Event extends BaseController
 							<i class="bi bi-three-dots"></i>
 						</a>
 						<div class="dropdown-menu" >
-							<a class="dropdown-item" href="' . site_url('Event/edit/' . encrypt($rowdata->idevent)) . '"  class="ml-2">Edit</a>
-							<a class="dropdown-item" href="' . site_url('Event/delete/' . encrypt($rowdata->idevent)) . '"  class="ml-2"  id="hapus">Delete</a>
+							<a class="dropdown-item" href="' . site_url('event/edit/' . encrypt($rowdata->idevent)) . '"  class="ml-2">Edit</a>
+							<a class="dropdown-item" href="' . site_url('event/delete/' . encrypt($rowdata->idevent)) . '"  class="ml-2"  id="hapus">Delete</a>
 						</div>
 					</div>';
                 $data[] = $row;
@@ -102,7 +93,7 @@ class Event extends BaseController
 					    </div>
 					</div>';
             $this->session->setFlashdata('pesan', $pesan);
-            return redirect()->to('Event');
+            return redirect()->to('event');
         };
 
 
@@ -131,7 +122,7 @@ class Event extends BaseController
         }
 
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Event');
+        return redirect()->to('event');
     }
 
     public function deleteAll()
@@ -163,7 +154,7 @@ class Event extends BaseController
 					    </div>
 					</div>';
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Event');
+        return redirect()->to('event');
     }
 
     public function simpan()
@@ -258,7 +249,7 @@ class Event extends BaseController
         }
 
         $this->session->setFlashdata('pesan', $pesan);
-        return redirect()->to('Event');
+        return redirect()->to('event');
     }
 
     public function get_edit_data()

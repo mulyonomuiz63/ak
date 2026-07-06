@@ -11,6 +11,7 @@ $routes->get('pssk-atc', 'Landing::pssk_atc');
 $routes->get('validasi-jurnal/(:any)', 'ValidasiJurnal::index/$1');
 
 
+
 //login
 $routes->get('login', 'LoginController::index', ['filter' => 'guestFilter']);
 $routes->post('cek-login', 'LoginController::cekLogin', ['filter' => 'guestFilter']);
@@ -21,6 +22,28 @@ $routes->get('lupapassword', 'LoginController::lupapassword', ['filter' => 'gues
 $routes->get('ubah-password/(:any)', 'LoginController::ubahPassword/$1', ['filter' => 'guestFilter']);
 
 $routes->get('logout', 'LoginController::logout');
+
+$routes->group('iklan', ['filter' => 'authFilter'], function ($routes) {
+    $routes->get('', 'Iklan::index');
+    $routes->get('deleteAll', 'Iklan::deleteAll');
+    $routes->get('tambah', 'Iklan::tambah');
+    $routes->post('datatablesource', 'Iklan::datatablesource');
+    $routes->post('simpan', 'Iklan::simpan');
+    $routes->post('get_edit_data', 'Iklan::get_edit_data');
+    $routes->get('edit/(:segment)', 'Iklan::edit/$1');
+    $routes->get('delete/(:segment)', 'Iklan::delete/$1');
+});
+
+$routes->group('event', ['filter' => 'authFilter'], function ($routes) {
+    $routes->get('', 'Event::index');
+    $routes->get('deleteAll', 'Event::deleteAll');
+    $routes->get('tambah', 'Event::tambah');
+    $routes->post('datatablesource', 'Event::datatablesource');
+    $routes->post('simpan', 'Event::simpan');
+    $routes->post('get_edit_data', 'Event::get_edit_data');
+    $routes->get('edit/(:segment)', 'Event::edit/$1');
+    $routes->get('delete/(:segment)', 'Event::delete/$1');
+});
 
 $routes->group('dashboard', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('', 'DashboardController::index');

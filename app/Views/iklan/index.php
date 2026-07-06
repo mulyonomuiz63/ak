@@ -5,7 +5,7 @@
 
     <!-- Page Heading -->
     <div class="card shadow mb-4">
-        <form action="<?php echo site_url('Iklan/deleteAll') ?>" id="form-delete" method="post" enctype="multipart/form-data">
+        <form action="<?php echo site_url('iklan/deleteAll') ?>" id="form-delete" method="post" enctype="multipart/form-data">
             <div class="card-header d-sm-flex align-items-center justify-content-between py-3">
                 <div class="row">
                     <div class="col-12">
@@ -23,7 +23,7 @@
                 </div>
                 <div>
                     <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data iklan"><i class="fa fa-trash"></i></button>
-                    <a href="<?php echo ('Iklan/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah data iklan"><i class="fas fa-plus fa-lg"></i></a>
+                    <a href="<?php echo ('iklan/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah data iklan"><i class="fas fa-plus fa-lg"></i></a>
                 </div>
             </div>
             <div class="card-body">
@@ -74,7 +74,7 @@
             "serverSide": true,
             "order": [],
             "ajax": {
-                "url": "<?php echo site_url('Iklan/datatablesource') ?>",
+                "url": "<?php echo site_url('iklan/datatablesource') ?>",
                 "type": "POST",
                 data: function(d) {
                   d.status = $('#status').val();

@@ -14,7 +14,7 @@
         <div class="card-body">
 
 
-            <form action="<?php echo (site_url('Event/simpan')) ?>" id="form" method="post" enctype="multipart/form-data">
+            <form action="<?php echo (site_url('event/simpan')) ?>" id="form" method="post" enctype="multipart/form-data">
                 <div class="row">
                     <input type="hidden" id="idevent" name="idevent" class="form-control" readonly="">
 
@@ -70,7 +70,7 @@
                 <hr>
                 <div class="clearfix"></div>
                 <div class="text-right">
-                    <a href="<?php echo (site_url('Event')) ?>" class="btn btn-danger">Kembali</a>
+                    <a href="<?php echo (site_url('event')) ?>" class="btn btn-danger">Kembali</a>
                     <button type="submit" id="simpan" class="btn btn-success">Simpan</button>
 
                 </div>
@@ -94,7 +94,7 @@
             //console.log(idevent);
             $.ajax({
                     type: 'POST',
-                    url: '<?php echo site_url("Event/get_edit_data") ?>',
+                    url: '<?php echo site_url("event/get_edit_data") ?>',
                     data: {
                         idevent: idevent
                     },

@@ -5,12 +5,12 @@
 
     <!-- Page Heading -->
     <div class="card shadow mb-4">
-        <form action="<?php echo site_url('Event/deleteAll') ?>" id="form-delete" method="post" enctype="multipart/form-data">
+        <form action="<?php echo site_url('event/deleteAll') ?>" id="form-delete" method="post" enctype="multipart/form-data">
             <div class="card-header d-sm-flex align-items-center justify-content-between py-3">
                 <h6 class="m-0 font-weight-bold text-info">Data Event</h6>
                 <div>
                     <button type="button" class="btn btn-sm btn-danger tooltips" id="btn-delete" data-toggle="tooltip" data-placement="left" title="Hapus data event"><i class="fa fa-trash"></i></button>
-                    <a href="<?php echo ('Event/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah data event"><i class="fas fa-plus fa-lg"></i></a>
+                    <a href="<?php echo ('event/tambah') ?>" class="btn btn-sm btn-success shadow-sm tooltips" data-toggle="tooltip" data-placement="left" title="Tambah data event"><i class="fas fa-plus fa-lg"></i></a>
                 </div>
             </div>
             <div class="card-body">
@@ -60,7 +60,7 @@
             "serverSide": true,
             "order": [],
             "ajax": {
-                "url": "<?php echo site_url('Event/datatablesource') ?>",
+                "url": "<?php echo site_url('event/datatablesource') ?>",
                 "type": "POST"
             },
             "columnDefs": [{

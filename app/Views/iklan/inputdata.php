@@ -14,7 +14,7 @@
         <div class="card-body">
 
 
-            <form action="<?php echo (site_url('Iklan/simpan')) ?>" id="form" method="post" enctype="multipart/form-data">
+            <form action="<?php echo (site_url('iklan/simpan')) ?>" id="form" method="post" enctype="multipart/form-data">
                 <div class="row">
                     <input type="hidden" id="idiklan" name="idiklan" class="form-control" readonly="">
 
@@ -79,7 +79,7 @@
                 <hr>
                 <div class="clearfix"></div>
                 <div class="text-right">
-                    <a href="<?php echo (site_url('Iklan')) ?>" class="btn btn-danger">Kembali</a>
+                    <a href="<?php echo (site_url('iklan')) ?>" class="btn btn-danger">Kembali</a>
                     <button type="submit" id="simpan" class="btn btn-success">Simpan</button>
 
                 </div>
@@ -103,7 +103,7 @@
             //console.log(idiklan);
             $.ajax({
                     type: 'POST',
-                    url: '<?php echo site_url("Iklan/get_edit_data") ?>',
+                    url: '<?php echo site_url("iklan/get_edit_data") ?>',
                     data: {
                         idiklan: idiklan
                     },
