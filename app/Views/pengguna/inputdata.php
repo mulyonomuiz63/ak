@@ -365,14 +365,18 @@
             var ttd = result.pic_ttd;
           }
           if (ttd != null && ttd != '') {
-            var url = "<?= base_url("uploads/ttd"); ?>/" + ttd;
+            // PERBAIKAN: Tambahkan parameter waktu (?t=waktu_sekarang) untuk mencegah Cache Browser
+            var timeStamp = new Date().getTime();
+            var url = "<?= base_url("uploads/ttd"); ?>/" + ttd + "?t=" + timeStamp;
 
             $('#ttd').html('<div><img src="' + url + '" alt="" height="120px"><input type="hidden" value="' + ttd + '" id="file-hapus" ></div>');
             $("#tombol").html('<a style="position:absolute" href="#"  class="btn btn-danger btn_remove btn-sm mr-2 mt-2"><i class="fa fa-trash"></i></a>');
           }
 
           if (result.foto != '' && result.foto != null) {
-            $("#output1").attr("src", "<?php echo (base_url('./uploads/pengguna')) ?>/" + result.foto);
+            // PERBAIKAN: Terapkan juga pada foto profil agar langsung berubah saat diedit
+            var timeStamp = new Date().getTime();
+            $("#output1").attr("src", "<?php echo (base_url('./uploads/pengguna')) ?>/" + result.foto + "?t=" + timeStamp);
           } else {
             $("#output1").attr("src", "<?php echo (base_url('./images/nofoto.png')) ?>");
           }
