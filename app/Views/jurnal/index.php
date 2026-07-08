@@ -61,7 +61,7 @@ $list_bulan = [
                 <select class="form-control" name="bulan" id="bulan">
                   <option value="">Semua Bulan</option>
                   <?php foreach ($list_bulan as $val => $nama): ?>
-                    <option value="<?= $val ?>" <?= $jurnal_bulan->bulan == $val ? 'selected' : '' ?>><?= $nama ?></option>
+                    <option value="<?= $val ?>" <?= (isset($jurnal_bulan) && $jurnal_bulan->bulan == $val) ? 'selected' : '' ?>><?= $nama ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
@@ -69,7 +69,7 @@ $list_bulan = [
               <div class="<?= $isAdmin ? 'col-md-2' : 'col-md-3' ?> col-sm-6 mb-2 mb-md-0">
                 <select class="form-control" name="tahun" id="tahun">
                   <?php foreach ($jurnal as $rows): ?>
-                    <option value="<?= $rows->tgljurnal ?>" <?= $jurnal_bulan->tahun == $rows->tgljurnal ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
+                    <option value="<?= $rows->tgljurnal ?>" <?= (isset($jurnal_bulan) && $jurnal_bulan->tahun == $rows->tgljurnal) ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
                   <?php endforeach; ?>
                   <option value="null">Kosong</option>
                 </select>
