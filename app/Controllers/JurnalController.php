@@ -108,60 +108,60 @@ class JurnalController extends BaseController
 
 
 	public function datatablesource()
-    {
-        $RsData = $this->jurnal_model->get_datatables();
-        $no = $this->request->getPost('start');
+	{
+		$RsData = $this->jurnal_model->get_datatables();
+		$no = $this->request->getPost('start');
 
-        // 1. SIAPKAN 2 ARRAY TERPISAH
-        $dataBalance = array();
-        $dataTidakBalance = array();
+		// 1. SIAPKAN 2 ARRAY TERPISAH
+		$dataBalance = array();
+		$dataTidakBalance = array();
 
-        // Panggil koneksi database sekali di luar loop untuk efisiensi
-        $db = \Config\Database::connect();
+		// Panggil koneksi database sekali di luar loop untuk efisiensi
+		$db = \Config\Database::connect();
 
-        if ($RsData->getNumRows() > 0) {
-            foreach ($RsData->getResult() as $rowdata) {
+		if ($RsData->getNumRows() > 0) {
+			foreach ($RsData->getResult() as $rowdata) {
 
-                // ========================================================================
-                // 1. CEK STATUS BALANCE, OBJEK PAJAK, DAN FISKAL UNTUK BARIS INI
-                // ========================================================================
-                // Penambahan parameter false di akhir select() agar CodeIgniter tidak merusak fungsi CASE WHEN
-                $cekDetail = $db->table('jurnaldetail')
-                    ->select('SUM(debet) as t_debet, SUM(kredit) as t_kredit, SUM(CASE WHEN objek != "0" THEN 1 ELSE 0 END) as jml_objek, SUM(CASE WHEN fiskal != "0" THEN 1 ELSE 0 END) as jml_fiskal', false)
-                    ->where('idjurnal', $rowdata->idjurnal)
-                    ->get()
-                    ->getRow();
+				// ========================================================================
+				// 1. CEK STATUS BALANCE, OBJEK PAJAK, DAN FISKAL UNTUK BARIS INI
+				// ========================================================================
+				// Penambahan parameter false di akhir select() agar CodeIgniter tidak merusak fungsi CASE WHEN
+				$cekDetail = $db->table('jurnaldetail')
+					->select('SUM(debet) as t_debet, SUM(kredit) as t_kredit, SUM(CASE WHEN objek != "0" THEN 1 ELSE 0 END) as jml_objek, SUM(CASE WHEN fiskal != "0" THEN 1 ELSE 0 END) as jml_fiskal', false)
+					->where('idjurnal', $rowdata->idjurnal)
+					->get()
+					->getRow();
 
-                // Tentukan apakah balance atau tidak (anggap balance jika debet == kredit)
-                $isBalance = ($cekDetail->t_debet == $cekDetail->t_kredit);
-                // ========================================================================
+				// Tentukan apakah balance atau tidak (anggap balance jika debet == kredit)
+				$isBalance = ($cekDetail->t_debet == $cekDetail->t_kredit);
+				// ========================================================================
 
-                if (session()->get('level_super') != 3) {
-                    if ($rowdata->approve == 1) {
-                        $approve = '<a href="#" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
-                    } elseif ($rowdata->approve == 2) {
-                        $approve = '<a href="#" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
-                    } else {
-                        $approve = '<a href="#" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Sedang di proses PIC"><i class="bi bi-check-circle-fill"></i></a>';
-                    }
+				if (session()->get('level_super') != 3) {
+					if ($rowdata->approve == 1) {
+						$approve = '<a href="#" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+					} elseif ($rowdata->approve == 2) {
+						$approve = '<a href="#" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+					} else {
+						$approve = '<a href="#" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Sedang di proses PIC"><i class="bi bi-check-circle-fill"></i></a>';
+					}
 
-                    $opsi = ' <a href="javascript:void(0)" data-cetak_pdf="' . site_url('jurnal/lihat/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-secondary btn-circle tooltips" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" id="cetak-pdf" title="Cetak jurnal ke pdf"><i class="fa fa-print"></i></a> <a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-warning btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Ubah data jurnal"><i class="fa fa-edit"></i></a>
+					$opsi = ' <a href="javascript:void(0)" data-cetak_pdf="' . site_url('jurnal/lihat/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-secondary btn-circle tooltips" data-toggle="modal" data-placement="left" data-target="#modalcetakpdf" id="cetak-pdf" title="Cetak jurnal ke pdf"><i class="fa fa-print"></i></a> <a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-warning btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Ubah data jurnal"><i class="fa fa-edit"></i></a>
                           <a href="' . site_url('jurnal/delete/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle" id="hapus"><i class="fa fa-trash tooltips" data-toggle="tooltip" data-placement="left" title="Hapus data jurnal"></i></a>';
-                    $app = $approve;
-                } else {
-                    if ($rowdata->approve == 0 || $rowdata->id_pic == null) {
-                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Menunggu Persetujuan"><i class="bi bi-check-circle-fill"></i></a>';
-                    } elseif ($rowdata->approve == 1 || $rowdata->id_pic == null) {
-                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
-                    } else {
-                        $approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
-                    }
-                    $app = $approve;
-                    $opsi = $approve;
-                }
+					$app = $approve;
+				} else {
+					if ($rowdata->approve == 0 || $rowdata->id_pic == null) {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-info btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Menunggu Persetujuan"><i class="bi bi-check-circle-fill"></i></a>';
+					} elseif ($rowdata->approve == 1 || $rowdata->id_pic == null) {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-success btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Telah Disetujui"><i class="bi bi-check-circle-fill"></i></a>';
+					} else {
+						$approve = '<a href="' . site_url('jurnal/edit/' . encrypt($rowdata->idjurnal)) . '" class="btn btn-sm btn-danger btn-circle tooltips" data-toggle="tooltip" data-placement="left" title="Jurnal Perlu Perbaikan"><i class="bi bi-x-circle-fill"></i></a>';
+					}
+					$app = $approve;
+					$opsi = $approve;
+				}
 
-                if (session()->get('level_super') != 3) {
-                    $option = '<div class="dropdown custom-dropdown dropleft mr-2">
+				if (session()->get('level_super') != 3) {
+					$option = '<div class="dropdown custom-dropdown dropleft mr-2">
                                 <a class="badge btn-info" href="#" role="button" id="dropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <i class="bi bi-three-dots"></i>
                                 </a>
@@ -171,127 +171,127 @@ class JurnalController extends BaseController
                                     </div>
                                 </div>
                             </div>';
-                } else {
-                    $option = "";
-                }
+				} else {
+					$option = "";
+				}
 
-                $no++;
-                $row = array();
+				$no++;
+				$row = array();
 
-                $row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
-                $row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
+				$row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
+				$row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
 
-                // ========================================================================
-                // 2. KUMPULKAN SEMUA BADGE (BALANCE, OBJEK, FISKAL)
-                // ========================================================================
-                $badgeHTML = '<br>'; // Mulai dari baris baru di bawah ID Jurnal
+				// ========================================================================
+				// 2. KUMPULKAN SEMUA BADGE (BALANCE, OBJEK, FISKAL)
+				// ========================================================================
+				$badgeHTML = '<br>'; // Mulai dari baris baru di bawah ID Jurnal
 
-                if ($isBalance) {
-                    $badgeHTML .= '<span class="badge badge-success mt-1 mr-1" style="font-size:10px;"><i class="fa fa-check-circle"></i> BALANCE</span>';
-                    $row['DT_RowClass'] = 'row-balance';
-                } else {
-                    $badgeHTML .= '<span class="badge badge-danger mt-1 mr-1" style="font-size:10px;"><i class="fa fa-exclamation-triangle"></i> TIDAK BALANCE</span>';
-                    $row['DT_RowClass'] = 'row-tidak-balance';
-                }
+				if ($isBalance) {
+					$badgeHTML .= '<span class="badge badge-success mt-1 mr-1" style="font-size:10px;"><i class="fa fa-check-circle"></i> BALANCE</span>';
+					$row['DT_RowClass'] = 'row-balance';
+				} else {
+					$badgeHTML .= '<span class="badge badge-danger mt-1 mr-1" style="font-size:10px;"><i class="fa fa-exclamation-triangle"></i> TIDAK BALANCE</span>';
+					$row['DT_RowClass'] = 'row-tidak-balance';
+				}
 
-                // Tambahkan Badge Objek Pajak jika nilai jml_objek > 0
-                if ($cekDetail->jml_objek > 0) {
-                    $badgeHTML .= '<span class="badge badge-info mt-1 mr-1" style="font-size:10px;"><i class="fas fa-file-invoice-dollar"></i> PPh</span>';
-                }
+				// Tambahkan Badge Objek Pajak jika nilai jml_objek > 0
+				if ($cekDetail->jml_objek > 0) {
+					$badgeHTML .= '<span class="badge badge-info mt-1 mr-1" style="font-size:10px;"><i class="fas fa-file-invoice-dollar"></i> PPh</span>';
+				}
 
-                // Tambahkan Badge Fiskal jika nilai jml_fiskal > 0
-                if ($cekDetail->jml_fiskal > 0) {
-                    $badgeHTML .= '<span class="badge badge-warning mt-1" style="font-size:10px; color:#000;"><i class="fas fa-balance-scale"></i> FISKAL</span>';
-                }
-                // ========================================================================
+				// Tambahkan Badge Fiskal jika nilai jml_fiskal > 0
+				if ($cekDetail->jml_fiskal > 0) {
+					$badgeHTML .= '<span class="badge badge-warning mt-1" style="font-size:10px; color:#000;"><i class="fas fa-balance-scale"></i> FISKAL</span>';
+				}
+				// ========================================================================
 
-                // Masukkan gabungan ID Jurnal, Tombol Copy, dan Badge ke dalam array datatable
-                $copyBtn = ' <a href="javascript:void(0);" class="text-secondary ml-1 btn-copy-idjurnal" data-id="' . $rowdata->idjurnal . '" title="Copy ID Jurnal"><i class="fa fa-copy"></i></a>';
-                $row[] = '<span class="d-flex align-items-center">' . $rowdata->idjurnal . $copyBtn . '</span>' . $badgeHTML;
-                
-                $row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
+				// Masukkan gabungan ID Jurnal, Tombol Copy, dan Badge ke dalam array datatable
+				$copyBtn = ' <a href="javascript:void(0);" class="text-secondary ml-1 btn-copy-idjurnal" data-id="' . $rowdata->idjurnal . '" title="Copy ID Jurnal"><i class="fa fa-copy"></i></a>';
+				$row[] = '<span class="d-flex align-items-center">' . $rowdata->idjurnal . $copyBtn . '</span>' . $badgeHTML;
 
-                $teks = ringkas_teks($rowdata->keterangan, 5);
-                if ($teks['full'] == '') {
-                    $row[] = '<span>' . $teks['short'] . '</span>';
-                } else {
-                    $row[] = '
+				$row[] = $rowdata->referensi == "" ? "-" : $rowdata->referensi;
+
+				$teks = ringkas_teks($rowdata->keterangan, 5);
+				if ($teks['full'] == '') {
+					$row[] = '<span>' . $teks['short'] . '</span>';
+				} else {
+					$row[] = '
                     <span class="text-short">' . $teks['short'] . '...</span>
                     <span class="text-full d-none">' . $teks['full'] . '</span>
                     <a href="javascript:void(0)" class="toggle-text text-primary ml-1">Lihat semua</a>
                 ';
-                }
+				}
 
-                $row[] = $rowdata->namapengguna;
-                $row[] = '<span class="font-weight-bold">' . number_format($rowdata->jumlah) . '</span>';
+				$row[] = $rowdata->namapengguna;
+				$row[] = '<span class="font-weight-bold">' . number_format($rowdata->jumlah) . '</span>';
 
-                $lamp = '-';
-                if ($rowdata->totalfile != 0) {
-                    $lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
-                } else if ($rowdata->filelampiran != null || $rowdata->filelampiran != '') {
-                    $lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
-                }
-                $row[] = $lamp;
+				$lamp = '-';
+				if ($rowdata->totalfile != 0) {
+					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+				} else if ($rowdata->filelampiran != null || $rowdata->filelampiran != '') {
+					$lamp = '<a href="#" class="btn btn-sm btn-secondary btn-circle tooltips" id="lihatFile" data-id="' . $rowdata->idjurnal . '" data-toggle="tooltip" data-placement="left" title="Untuk melihat lampiran file"><i class="bi bi-file-earmark"></i></a> ';
+				}
+				$row[] = $lamp;
 
-                $row[] = '<div class="d-flex justify-content-center align-items-center">
+				$row[] = '<div class="d-flex justify-content-center align-items-center">
                         ' . $option . '
                         ' . $app . '
                       </div>';
 
-                $row['DT_RowData'] = array(
-                    'idjurnal' => $rowdata->idjurnal
-                );
+				$row['DT_RowData'] = array(
+					'idjurnal' => $rowdata->idjurnal
+				);
 
-                // ========================================================================
-                // 3. MASUKKAN KE ARRAY YANG SESUAI (PISAHKAN BALANCE & TIDAK BALANCE)
-                // ========================================================================
-                if (!$isBalance) {
-                    $dataTidakBalance[] = $row;
-                } else {
-                    $dataBalance[] = $row;
-                }
-            }
-        }
+				// ========================================================================
+				// 3. MASUKKAN KE ARRAY YANG SESUAI (PISAHKAN BALANCE & TIDAK BALANCE)
+				// ========================================================================
+				if (!$isBalance) {
+					$dataTidakBalance[] = $row;
+				} else {
+					$dataBalance[] = $row;
+				}
+			}
+		}
 
-        // ========================================================================
-        // 4. GABUNGKAN ARRAY: YANG TIDAK BALANCE SELALU DI ATAS
-        // ========================================================================
-        $dataFinal = array_merge($dataTidakBalance, $dataBalance);
+		// ========================================================================
+		// 4. GABUNGKAN ARRAY: YANG TIDAK BALANCE SELALU DI ATAS
+		// ========================================================================
+		$dataFinal = array_merge($dataTidakBalance, $dataBalance);
 
-        $output = array(
-            "draw" => $this->request->getPost('draw'),
-            "recordsTotal" => $this->jurnal_model->count_all(),
-            "recordsFiltered" => $this->jurnal_model->count_filtered(),
-            "data" => $dataFinal, 
-        );
+		$output = array(
+			"draw" => $this->request->getPost('draw'),
+			"recordsTotal" => $this->jurnal_model->count_all(),
+			"recordsFiltered" => $this->jurnal_model->count_filtered(),
+			"data" => $dataFinal,
+		);
 
-        return $this->response->setJSON($output);
-    }
+		return $this->response->setJSON($output);
+	}
 
 	public function get_detail_jurnal()
-    {
-        $idjurnal = $this->request->getPost('idjurnal');
-        $db = \Config\Database::connect();
+	{
+		$idjurnal = $this->request->getPost('idjurnal');
+		$db = \Config\Database::connect();
 
-        $detail = $db->table('jurnaldetail')
-            ->select('jurnaldetail.iddetailjurnal, akun.kdakun, akun.nmakun, jurnaldetail.debet, jurnaldetail.kredit, jurnaldetail.objek, jurnaldetail.objek_pajak, jurnaldetail.fiskal, jurnaldetail.koreksi_positif, jurnaldetail.koreksi_negatif, jurnaldetail.keterangan')
-            ->join('akun', 'akun.keyakun = jurnaldetail.keyakun', 'left')
-            ->where('jurnaldetail.idjurnal', $idjurnal)
-            ->get()
-            ->getResult();
+		$detail = $db->table('jurnaldetail')
+			->select('jurnaldetail.iddetailjurnal, akun.kdakun, akun.nmakun, jurnaldetail.debet, jurnaldetail.kredit, jurnaldetail.objek, jurnaldetail.objek_pajak, jurnaldetail.fiskal, jurnaldetail.koreksi_positif, jurnaldetail.koreksi_negatif, jurnaldetail.keterangan')
+			->join('akun', 'akun.keyakun = jurnaldetail.keyakun', 'left')
+			->where('jurnaldetail.idjurnal', $idjurnal)
+			->get()
+			->getResult();
 
-        // Wrapper utama (diberi overflow: hidden agar tidak bocor scroll-nya ke luar)
-        $html = '<div class="p-3 my-2 rounded" style="background-color: #d4e5f5; border: 1px solid #e2e8f0; border-left: 4px solid #20c997; overflow: hidden; max-width: 100%;">';
-        
-        $html .= '  <div class="d-flex align-items-center mb-3 pb-2" style="border-bottom: 1px dashed #cbd5e1;">';
-        $html .= '      <i class="fas fa-sitemap text-secondary mr-2"></i>';
-        $html .= '      <h6 class="m-0 font-weight-bold text-secondary" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Rincian Jurnal Akuntansi</h6>';
-        $html .= '  </div>';
+		// Wrapper utama (diberi overflow: hidden agar tidak bocor scroll-nya ke luar)
+		$html = '<div class="p-3 my-2 rounded" style="background-color: #d4e5f5; border: 1px solid #e2e8f0; border-left: 4px solid #20c997; overflow: hidden; max-width: 100%;">';
 
-        // Wrapper tabel khusus untuk scroll horizontal
-        $html .= '  <div class="bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; width: 100%; overflow-x: auto;">';
-        $html .= '      <table class="table table-sm table-hover table-bordered mb-0" id="tabel-detail-jurnal" style="width: 100%; font-size: 12px; white-space: nowrap;">';
-        $html .= '          <thead style="background-color: #f1f5f9; color: #475569;">
+		$html .= '  <div class="d-flex align-items-center mb-3 pb-2" style="border-bottom: 1px dashed #cbd5e1;">';
+		$html .= '      <i class="fas fa-sitemap text-secondary mr-2"></i>';
+		$html .= '      <h6 class="m-0 font-weight-bold text-secondary" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Rincian Jurnal Akuntansi</h6>';
+		$html .= '  </div>';
+
+		// Wrapper tabel khusus untuk scroll horizontal
+		$html .= '  <div class="bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; width: 100%; overflow-x: auto;">';
+		$html .= '      <table class="table table-sm table-hover table-bordered mb-0" id="tabel-detail-jurnal" style="width: 100%; font-size: 12px; white-space: nowrap;">';
+		$html .= '          <thead style="background-color: #f1f5f9; color: #475569;">
                             <tr>
                                 <th class="py-2 px-2 text-center">Aksi</th>
                                 <th class="py-2 px-2">Akun</th>
@@ -305,27 +305,27 @@ class JurnalController extends BaseController
                                 <th class="py-2 px-2">Keterangan</th>
                             </tr>
                         </thead>';
-        $html .= '          <tbody>';
+		$html .= '          <tbody>';
 
-        $tDebet = 0;
-        $tKredit = 0;
+		$tDebet = 0;
+		$tKredit = 0;
 
-        $mapObjek = ['0' => '-', '1' => 'PPh Psl 21', '2' => 'PPh Psl 23', '3' => 'PPh Psl 4(2)'];
-        $mapFiskal = ['0' => 'Tidak', '1' => 'Ya'];
+		$mapObjek = ['0' => '-', '1' => 'PPh Psl 21', '2' => 'PPh Psl 23', '3' => 'PPh Psl 4(2)'];
+		$mapFiskal = ['0' => 'Tidak', '1' => 'Ya'];
 
-        if (count($detail) > 0) {
-            foreach ($detail as $d) {
-                $valObjek = $d->objek ?? '0';
-                $valFiskal = $d->fiskal ?? '0';
-                $txtObjek = $mapObjek[$valObjek] ?? '-';
-                $txtFiskal = $mapFiskal[$valFiskal] ?? 'Tidak';
+		if (count($detail) > 0) {
+			foreach ($detail as $d) {
+				$valObjek = $d->objek ?? '0';
+				$valFiskal = $d->fiskal ?? '0';
+				$txtObjek = $mapObjek[$valObjek] ?? '-';
+				$txtFiskal = $mapFiskal[$valFiskal] ?? 'Tidak';
 
-                $valObjekPajak = $d->objek_pajak ?? 0;
-                $valKorPos = $d->koreksi_positif ?? 0;
-                $valKorNeg = $d->koreksi_negatif ?? 0;
-                $valKet = $d->keterangan ?? '';
+				$valObjekPajak = $d->objek_pajak ?? 0;
+				$valKorPos = $d->koreksi_positif ?? 0;
+				$valKorNeg = $d->koreksi_negatif ?? 0;
+				$valKet = $d->keterangan ?? '';
 
-                $html .= '          <tr id="row-' . $d->iddetailjurnal . '" 
+				$html .= '          <tr id="row-' . $d->iddetailjurnal . '" 
                                     data-id="' . $d->iddetailjurnal . '" 
                                     data-objek="' . $valObjek . '" 
                                     data-objekpajak="' . $valObjekPajak . '" 
@@ -334,51 +334,51 @@ class JurnalController extends BaseController
                                     data-korneg="' . $valKorNeg . '" 
                                     data-ket="' . $valKet . '">';
 
-                // Penyesuaian ukuran tombol Edit: ditambah style="padding: 2px 6px; font-size: 10px;"
-                $html .= '              <td class="py-2 px-2 text-center align-middle">
+				// Penyesuaian ukuran tombol Edit: ditambah style="padding: 2px 6px; font-size: 10px;"
+				$html .= '              <td class="py-2 px-2 text-center align-middle">
                                         <button type="button" class="btn btn-warning btn-edit-inline" style="padding: 2px 6px; font-size: 10px;" title=""><i class="fas fa-edit"></i></button>
                                     </td>';
-                
-                $html .= '              <td class="py-2 px-2 align-middle"><b>' . $d->kdakun . '</b> - ' . $d->nmakun . '</td>';
-                $html .= '              <td class="py-2 px-2 text-right text-success align-middle">' . number_format($d->debet, 0, ',', '.') . '</td>';
-                $html .= '              <td class="py-2 px-2 text-right text-danger align-middle">' . number_format($d->kredit, 0, ',', '.') . '</td>';
 
-                $html .= '              <td class="py-2 px-2 td-objek align-middle">' . $txtObjek . '</td>';
-                $html .= '              <td class="py-2 px-2 text-right td-objekpajak align-middle">' . number_format($valObjekPajak, 0, ',', '.') . '</td>';
-                $html .= '              <td class="py-2 px-2 td-fiskal align-middle">' . $txtFiskal . '</td>';
-                $html .= '              <td class="py-2 px-2 text-right td-korpos align-middle">' . number_format($valKorPos, 0, ',', '.') . '</td>';
-                $html .= '              <td class="py-2 px-2 text-right td-korneg align-middle">' . number_format($valKorNeg, 0, ',', '.') . '</td>';
-                $html .= '              <td class="py-2 px-2 td-ket align-middle">' . htmlspecialchars($valKet) . '</td>';
-                $html .= '          </tr>';
+				$html .= '              <td class="py-2 px-2 align-middle"><b>' . $d->kdakun . '</b> - ' . $d->nmakun . '</td>';
+				$html .= '              <td class="py-2 px-2 text-right text-success align-middle">' . number_format($d->debet, 0, ',', '.') . '</td>';
+				$html .= '              <td class="py-2 px-2 text-right text-danger align-middle">' . number_format($d->kredit, 0, ',', '.') . '</td>';
 
-                $tDebet += $d->debet;
-                $tKredit += $d->kredit;
-            }
-        } else {
-            $html .= '              <tr><td colspan="10" class="py-3 text-center text-muted font-italic">Tidak ada detail data jurnal</td></tr>';
-        }
+				$html .= '              <td class="py-2 px-2 td-objek align-middle">' . $txtObjek . '</td>';
+				$html .= '              <td class="py-2 px-2 text-right td-objekpajak align-middle">' . number_format($valObjekPajak, 0, ',', '.') . '</td>';
+				$html .= '              <td class="py-2 px-2 td-fiskal align-middle">' . $txtFiskal . '</td>';
+				$html .= '              <td class="py-2 px-2 text-right td-korpos align-middle">' . number_format($valKorPos, 0, ',', '.') . '</td>';
+				$html .= '              <td class="py-2 px-2 text-right td-korneg align-middle">' . number_format($valKorNeg, 0, ',', '.') . '</td>';
+				$html .= '              <td class="py-2 px-2 td-ket align-middle">' . htmlspecialchars($valKet) . '</td>';
+				$html .= '          </tr>';
 
-        $html .= '          </tbody>';
-        $html .= '          <tfoot style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">';
-        $html .= '              <tr>';
-        $html .= '                  <td colspan="2" class="text-right font-weight-bold py-2 px-3 text-secondary">TOTAL :</td>';
-        $html .= '                  <td class="text-right font-weight-bold py-2 px-3 text-dark">' . number_format($tDebet, 0, ',', '.') . '</td>';
-        $html .= '                  <td class="text-right font-weight-bold py-2 px-3 text-dark">' . number_format($tKredit, 0, ',', '.') . '</td>';
-        $html .= '                  <td colspan="6"></td>';
-        $html .= '              </tr>';
-        $html .= '          </tfoot>';
-        $html .= '      </table>';
-        $html .= '  </div>'; // Tutup wrapper scroll tabel
+				$tDebet += $d->debet;
+				$tKredit += $d->kredit;
+			}
+		} else {
+			$html .= '              <tr><td colspan="10" class="py-3 text-center text-muted font-italic">Tidak ada detail data jurnal</td></tr>';
+		}
 
-        $status_badge = ($tDebet == $tKredit)
-            ? '<span class="badge badge-success px-3 py-2"><i class="fas fa-check-circle mr-1"></i> BALANCE</span>'
-            : '<span class="badge badge-danger px-3 py-2"><i class="fas fa-times-circle mr-1"></i> TIDAK BALANCE</span>';
+		$html .= '          </tbody>';
+		$html .= '          <tfoot style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">';
+		$html .= '              <tr>';
+		$html .= '                  <td colspan="2" class="text-right font-weight-bold py-2 px-3 text-secondary">TOTAL :</td>';
+		$html .= '                  <td class="text-right font-weight-bold py-2 px-3 text-dark">' . number_format($tDebet, 0, ',', '.') . '</td>';
+		$html .= '                  <td class="text-right font-weight-bold py-2 px-3 text-dark">' . number_format($tKredit, 0, ',', '.') . '</td>';
+		$html .= '                  <td colspan="6"></td>';
+		$html .= '              </tr>';
+		$html .= '          </tfoot>';
+		$html .= '      </table>';
+		$html .= '  </div>'; // Tutup wrapper scroll tabel
 
-        $html .= '  <div class="mt-3 text-right"><span class="font-weight-bold text-secondary mr-2">STATUS JURNAL:</span> ' . $status_badge . '</div>';
-        $html .= '</div>';
+		$status_badge = ($tDebet == $tKredit)
+			? '<span class="badge badge-success px-3 py-2"><i class="fas fa-check-circle mr-1"></i> BALANCE</span>'
+			: '<span class="badge badge-danger px-3 py-2"><i class="fas fa-times-circle mr-1"></i> TIDAK BALANCE</span>';
 
-        echo $html;
-    }
+		$html .= '  <div class="mt-3 text-right"><span class="font-weight-bold text-secondary mr-2">STATUS JURNAL:</span> ' . $status_badge . '</div>';
+		$html .= '</div>';
+
+		echo $html;
+	}
 
 
 
@@ -487,33 +487,45 @@ class JurnalController extends BaseController
 
 			$jurnalfile = $this->jurnal_model->getJurnalFile($id)->getResult();
 
-			foreach ($jurnalfile as $rows) {
-
-				if (file_exists('./uploads/jurnal/thumbnails/' . $rows->file)) {
-
-					unlink('./uploads/jurnal/thumbnails/' . $rows->file);
-				};
-			}
 
 			$hapus = $this->jurnal_model->hapus($id);
 
 			if ($hapus) {
 
+				// --- A. Hapus Arsip / Multi File (Tabel jurnalfile) ---
+				foreach ($jurnalfile as $rows) {
 
+					// Hapus dari Google Drive (Jika memiliki kode_file)
+					if (!empty($rows->kode_file)) {
+						$this->_deleteFromGoogleDrive($rows->kode_file);
+					}
 
-				if ($filelampiran != '' && $filelampiran != null) {
-
-					if (file_exists('./uploads/jurnal/' . $filelampiran)) {
-
-						unlink('./uploads/jurnal/' . $filelampiran);
-					};
+					// Hapus dari Server Lokal (Untuk file-file lama yang belum migrasi)
+					if (!empty($rows->file)) {
+						$pathThumb = FCPATH . 'uploads/jurnal/thumbnails/' . $rows->file;
+						if (file_exists($pathThumb)) {
+							unlink($pathThumb);
+						}
+					}
 				}
 
+				// --- B. Hapus Lampiran Utama (Tabel jurnal) ---
+				// Hapus dari Google Drive
+				if (!empty($kodeFileUtama)) {
+					$this->_deleteFromGoogleDrive($kodeFileUtama);
+				}
 
+				// Hapus dari Server Lokal
+				if (!empty($filelampiran)) {
+					$pathUtama = FCPATH . 'uploads/jurnal/' . $filelampiran;
+					if (file_exists($pathUtama)) {
+						unlink($pathUtama);
+					}
+				}
 
 				$dataBerhasil +=  1;
 			} else {
-
+				// Jika gagal hapus database (misal karena relasi tabel), file aman tidak ikut terhapus
 				$dataGagal += 1;
 			}
 		}
@@ -683,71 +695,70 @@ class JurnalController extends BaseController
 		// 5. SUSUN ARRAY DETAIL AKUN (DEBET & KREDIT)
 		// ====================================================
 		$arrUpdate = []; // Menampung detail lama yang di-edit
-        $arrInsert = []; // Menampung detail baru (baik saat Create Jurnal maupun Tambah Detail saat Edit)
+		$arrInsert = []; // Menampung detail baru (baik saat Create Jurnal maupun Tambah Detail saat Edit)
 
-        // Ambil data post berupa array
-        $iddetailjurnal   = $request->getPost('iddetailjurnal'); // Pastikan di view form edit, input ini berupa array name="iddetailjurnal[]"
-        $keyakun   = $request->getPost('keyakun');
-        $debet     = $request->getPost('debet');
-        $kredit    = $request->getPost('kredit');
-        $urut      = 1;
+		// Ambil data post berupa array
+		$iddetailjurnal   = $request->getPost('iddetailjurnal'); // Pastikan di view form edit, input ini berupa array name="iddetailjurnal[]"
+		$keyakun   = $request->getPost('keyakun');
+		$debet     = $request->getPost('debet');
+		$kredit    = $request->getPost('kredit');
+		$urut      = 1;
 
-        if ($keyakun) {
-            foreach ($keyakun as $key => $value) {
-                if (!$value) continue;
+		if ($keyakun) {
+			foreach ($keyakun as $key => $value) {
+				if (!$value) continue;
 
-                // Cek apakah baris ini memiliki ID Detail (artinya data lama yang diedit)
-                $idDetailSpesifik = isset($iddetailjurnal[$key]) && $iddetailjurnal[$key] != '' ? $iddetailjurnal[$key] : null;
+				// Cek apakah baris ini memiliki ID Detail (artinya data lama yang diedit)
+				$idDetailSpesifik = isset($iddetailjurnal[$key]) && $iddetailjurnal[$key] != '' ? $iddetailjurnal[$key] : null;
 
-                $rowData = [
-                    'idjurnal'  => $idjurnal,
-                    'keyakun'   => $value,
-                    'deskripsi' => "",
-                    'debet'     => str_replace(',', '', $debet[$key]),
-                    'kredit'    => str_replace(',', '', $kredit[$key]),
-                    'nourut'    => $urut++,
-                ];
+				$rowData = [
+					'idjurnal'  => $idjurnal,
+					'keyakun'   => $value,
+					'deskripsi' => "",
+					'debet'     => str_replace(',', '', $debet[$key]),
+					'kredit'    => str_replace(',', '', $kredit[$key]),
+					'nourut'    => $urut++,
+				];
 
-                // Jika ada ID detail, masukkan ke array Update
-                if (!empty($idDetailSpesifik)) {
-                    $rowData['iddetailjurnal'] = $idDetailSpesifik;
-                    $arrUpdate[] = $rowData;
-                } 
-                // Jika TIDAK ADA ID detail, masukkan ke array Insert (Baris Baru)
-                else {
-                    $arrInsert[] = $rowData;
-                }
-            }
-        }
+				// Jika ada ID detail, masukkan ke array Update
+				if (!empty($idDetailSpesifik)) {
+					$rowData['iddetailjurnal'] = $idDetailSpesifik;
+					$arrUpdate[] = $rowData;
+				}
+				// Jika TIDAK ADA ID detail, masukkan ke array Insert (Baris Baru)
+				else {
+					$arrInsert[] = $rowData;
+				}
+			}
+		}
 
-        // ====================================================
-        // 6. SIMPAN DATA UTAMA (CREATE ATAU UPDATE)
-        // ====================================================
-        $dataUtama = [
-            'tgljurnal'  => $tgljurnal,
-            'tag'        => '',
-            'keterangan' => $request->getPost('keterangan'),
-            'jumlah'     => $jumlah,
-            'tglupdate'  => date('Y-m-d H:i:s'),
-            'idpengguna' => $request->getPost('idpengguna'),
-            'referensi'  => $request->getPost('referensi'),
-        ];
+		// ====================================================
+		// 6. SIMPAN DATA UTAMA (CREATE ATAU UPDATE)
+		// ====================================================
+		$dataUtama = [
+			'tgljurnal'  => $tgljurnal,
+			'tag'        => '',
+			'keterangan' => $request->getPost('keterangan'),
+			'jumlah'     => $jumlah,
+			'tglupdate'  => date('Y-m-d H:i:s'),
+			'idpengguna' => $request->getPost('idpengguna'),
+			'referensi'  => $request->getPost('referensi'),
+		];
 
-        if (!$isUpdate) { // CREATE
-            $dataUtama['idjurnal']     = $idjurnal;
-            $dataUtama['tglinsert']    = $dataUtama['tglupdate'];
-            $dataUtama['filelampiran'] = null;
-            
-            // Saat CREATE, semua detail pasti masuk ke $arrInsert
-            $simpan = $this->jurnal_model->simpan($dataUtama, $arrInsert, $idjurnal);
-            
-        } else { // UPDATE
-            $dataUtama['filelampiran'] = ($fileif == '1') ? null : $file2_lama;
-            $dataUtama['approve']      = '0';
-            
-            // Saat UPDATE, kita kirimkan KEDUA array (Update dan Insert) ke Model
-            $simpan = $this->jurnal_model->updateWhere($dataUtama, $arrUpdate, $arrInsert, $idjurnal);
-        }
+		if (!$isUpdate) { // CREATE
+			$dataUtama['idjurnal']     = $idjurnal;
+			$dataUtama['tglinsert']    = $dataUtama['tglupdate'];
+			$dataUtama['filelampiran'] = null;
+
+			// Saat CREATE, semua detail pasti masuk ke $arrInsert
+			$simpan = $this->jurnal_model->simpan($dataUtama, $arrInsert, $idjurnal);
+		} else { // UPDATE
+			$dataUtama['filelampiran'] = ($fileif == '1') ? null : $file2_lama;
+			$dataUtama['approve']      = '0';
+
+			// Saat UPDATE, kita kirimkan KEDUA array (Update dan Insert) ke Model
+			$simpan = $this->jurnal_model->updateWhere($dataUtama, $arrUpdate, $arrInsert, $idjurnal);
+		}
 
 		// ====================================================
 		// 7. PENANGANAN RESPON KE USER
@@ -1411,55 +1422,55 @@ class JurnalController extends BaseController
 	}
 
 	public function simpanFiskal()
-    {
-        // Pastikan request datang dari AJAX
-        if ($this->request->isAJAX()) {
-            $iddetailjurnal = $this->request->getPost('iddetailjurnal');
-            
-            // Tangkap data enum dari request
-            $objek = $this->request->getPost('objek');
-            $fiskal = $this->request->getPost('fiskal');
-            
-            // Validasi ketat untuk memastikan tipe data Enum masuk ke database
-            // Memastikan nilainya berwujud string yang valid sesuai opsi, jika tidak default ke '0'
-            $objek_enum = in_array($objek, ['0', '1', '2', '3']) ? (string)$objek : '0';
-            $fiskal_enum = in_array($fiskal, ['0', '1']) ? (string)$fiskal : '0';
+	{
+		// Pastikan request datang dari AJAX
+		if ($this->request->isAJAX()) {
+			$iddetailjurnal = $this->request->getPost('iddetailjurnal');
 
-            // Susun data untuk diupdate
-            $data = [
-                'objek'           => $objek_enum,
-                'objek_pajak'     => empty($this->request->getPost('objek_pajak')) ? 0 : $this->request->getPost('objek_pajak'),
-                'fiskal'          => $fiskal_enum,
-                'koreksi_positif' => empty($this->request->getPost('koreksi_positif')) ? 0 : $this->request->getPost('koreksi_positif'),
-                'koreksi_negatif' => empty($this->request->getPost('koreksi_negatif')) ? 0 : $this->request->getPost('koreksi_negatif'),
-                'keterangan'      => $this->request->getPost('keterangan')
-            ];
+			// Tangkap data enum dari request
+			$objek = $this->request->getPost('objek');
+			$fiskal = $this->request->getPost('fiskal');
 
-            $db = \Config\Database::connect();
-            
-            // Lakukan proses update berdasarkan iddetailjurnal
-            $update = $db->table('jurnaldetail')
-                         ->where('iddetailjurnal', $iddetailjurnal)
-                         ->update($data);
+			// Validasi ketat untuk memastikan tipe data Enum masuk ke database
+			// Memastikan nilainya berwujud string yang valid sesuai opsi, jika tidak default ke '0'
+			$objek_enum = in_array($objek, ['0', '1', '2', '3']) ? (string)$objek : '0';
+			$fiskal_enum = in_array($fiskal, ['0', '1']) ? (string)$fiskal : '0';
 
-            if ($update) {
-                // Berikan balasan JSON sukses ke jQuery
-                return $this->response->setJSON([
-                    'status' => true, 
-                    'message' => 'Data berhasil disimpan'
-                ]);
-            } else {
-                // Berikan balasan JSON gagal ke jQuery
-                return $this->response->setJSON([
-                    'status' => false, 
-                    'message' => 'Gagal menyimpan ke database'
-                ]);
-            }
-        } else {
-            // Jika bukan request AJAX, tolak aksesnya
-            return $this->response->setStatusCode(403)->setBody('Direct access not allowed');
-        }
-    }
+			// Susun data untuk diupdate
+			$data = [
+				'objek'           => $objek_enum,
+				'objek_pajak'     => empty($this->request->getPost('objek_pajak')) ? 0 : $this->request->getPost('objek_pajak'),
+				'fiskal'          => $fiskal_enum,
+				'koreksi_positif' => empty($this->request->getPost('koreksi_positif')) ? 0 : $this->request->getPost('koreksi_positif'),
+				'koreksi_negatif' => empty($this->request->getPost('koreksi_negatif')) ? 0 : $this->request->getPost('koreksi_negatif'),
+				'keterangan'      => $this->request->getPost('keterangan')
+			];
+
+			$db = \Config\Database::connect();
+
+			// Lakukan proses update berdasarkan iddetailjurnal
+			$update = $db->table('jurnaldetail')
+				->where('iddetailjurnal', $iddetailjurnal)
+				->update($data);
+
+			if ($update) {
+				// Berikan balasan JSON sukses ke jQuery
+				return $this->response->setJSON([
+					'status' => true,
+					'message' => 'Data berhasil disimpan'
+				]);
+			} else {
+				// Berikan balasan JSON gagal ke jQuery
+				return $this->response->setJSON([
+					'status' => false,
+					'message' => 'Gagal menyimpan ke database'
+				]);
+			}
+		} else {
+			// Jika bukan request AJAX, tolak aksesnya
+			return $this->response->setStatusCode(403)->setBody('Direct access not allowed');
+		}
+	}
 
 
 	/**
