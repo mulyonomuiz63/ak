@@ -21,6 +21,8 @@ $routes->post('simpanregistrasi', 'LoginController::simpanregistrasi', ['filter'
 $routes->post('kirim-reset-password', 'LoginController::kirimResetPassword', ['filter' => 'guestFilter']);
 $routes->get('lupapassword', 'LoginController::lupapassword', ['filter' => 'guestFilter']);
 $routes->get('ubah-password/(:any)', 'LoginController::ubahPassword/$1', ['filter' => 'guestFilter']);
+$routes->get('Login/verifikasi/(:segment)', 'LoginController::verifikasi/$1', ['filter' => 'guestFilter']);
+$routes->get('Login/verifikasi/(:segment)/(:segment)', 'LoginController::verifikasi/$1/$2', ['filter' => 'guestFilter']);
 
 $routes->get('logout', 'LoginController::logout');
 
