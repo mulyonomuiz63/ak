@@ -153,59 +153,60 @@ class Login_model extends Model
 
 
 	public function kirimresetpassword($from_email, $from_nama, $passwordemail, $email, $password_reset)
-	{
-		/**
-				Untuk mengaktifkan email google
-				https://myaccount.google.com/lesssecureapps?pli=1
-				Allow less secure apps: ON
-		 **/
+    {
+        /**
+                Untuk mengaktifkan email google
+                https://myaccount.google.com/lesssecureapps?pli=1
+                Allow less secure apps: ON
+         **/
 
-		$textemail = '				
-					<span>Anda baru saja melakukan permintaan reset kata sandi? <br>
-					Jika IYA, Silahkan klik link dibawah untuk merubah kata sandi anda. </span><br><br>
-					
-					<div>
-						<a href="' . $password_reset . '" style="display: inline-block; width: 200px; height: 30px; background: #1C3FAA; color: #fff; text-decoration: none; border-radius: 5px; text-align: center; line-height: 30px; font-family: `Segoe UI`, Tahoma, Geneva, Verdana, sans-serif;">Ubah Kata Sandi</a>			
-					</div><br><br>
+        $textemail = '              
+                    <span>Anda baru saja melakukan permintaan reset kata sandi? <br>
+                    Jika IYA, Silahkan klik link dibawah untuk merubah kata sandi anda. </span><br><br>
+                    
+                    <div>
+                        <a href="' . $password_reset . '" style="display: inline-block; width: 200px; height: 30px; background: #1C3FAA; color: #fff; text-decoration: none; border-radius: 5px; text-align: center; line-height: 30px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;">Ubah Kata Sandi</a>          
+                    </div><br><br>
  
-					<div style="width: 100%; font-size: 14px;">
-						<b>Best Regards,</b> 
-						<div style="width: 100%; font-size: 14px;"> 
-						TEAM AKUNTANMU.COM
-						<br>Kantor Menara 165 Lt4 - Jakarta Selatan
-						<br>Telepon: 021-86941220 / 0821-80744966</div>
-						</div>
-					</div>			
-			  		';
+                    <div style="width: 100%; font-size: 14px;">
+                        <b>Best Regards,</b> 
+                        <div style="width: 100%; font-size: 14px;"> 
+                        TEAM AKUNTANMU.COM
+                        <br>Kantor Menara 165 Lt4 - Jakarta Selatan
+                        <br>Telepon: 021-86941220 / 0821-80744966
+                        </div>
+                    </div>          
+                    ';
 
-		$config = array();
-		$config['protocol'] = "smtp";
-		$config['mailType'] = "html";
-		$config['SMTPHost'] = "smtp.hostinger.com";
-		$config['SMTPPort'] = "465";
-		$config['SMTPTimeout'] = "5";
-		$config['SMTPUser'] = $from_email;
-		$config['SMTPPass'] = $passwordemail;
-		$config['SMTPCrypto'] = 'ssl';
-		$config['CRLF'] = "\r\n";
-		$config['newline'] = "\r\n";
-		$config['wordWrap'] = TRUE;
+        $config = array();
+        $config['protocol']   = 'smtp';
+        $config['mailType']   = 'html';
+        $config['SMTPHost']   = 'smtp.hostinger.com';
+        $config['SMTPPort']   = 465; // Diubah menjadi integer
+        $config['SMTPTimeout']= 5;   // Diubah menjadi integer
+        $config['SMTPUser']   = $from_email;
+        $config['SMTPPass']   = $passwordemail;
+        $config['SMTPCrypto'] = 'ssl';
+        $config['CRLF']       = "\r\n";
+        $config['newline']    = "\r\n";
+        $config['wordWrap']   = TRUE;
 
-		//memanggil library email dan set konfigurasi untuk pengiriman email
-		$this->email = \Config\Services::email();
-		$this->email->initialize($config);
+        // memanggil library email dan set konfigurasi untuk pengiriman email
+        // Menggunakan variabel lokal untuk mencegah error "Dynamic Property"
+        $emailService = \Config\Services::email();
+        $emailService->initialize($config);
 
-		//$datatemplate['namaperusahaan'] = $namaperusahaan;
-		//$templateemail = $this->load->view('isiemailverifikasi', $datatemplate);
+        //$datatemplate['namaperusahaan'] = $namaperusahaan;
+        //$templateemail = $this->load->view('isiemailverifikasi', $datatemplate);
 
-		//konfigurasi pengiriman
-		$this->email->setFrom($from_email, $from_nama);
-		$this->email->setTo($email);
-		$this->email->setSubject("Reset Password Akun");
-		$this->email->setMessage($textemail);
+        // konfigurasi pengiriman
+        $emailService->setFrom($from_email, $from_nama);
+        $emailService->setTo($email);
+        $emailService->setSubject("Reset Password Akun");
+        $emailService->setMessage($textemail);
 
-		return $this->email->send();
-	}
+        return $emailService->send();
+    }
 
 	public function simpanresetpassword($data, $email)
 	{
