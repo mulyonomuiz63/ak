@@ -54,7 +54,7 @@ class Login_model_affiliator extends Model
 		$config = array();
 		$config['protocol'] = "smtp";
 		$config['mailType'] = "html";
-		$config['SMTPHost'] = "mail.akuntanmu.com";
+		$config['SMTPHost'] = "smtp.hostinger.com";
 		$config['SMTPPort'] = "465";
 		$config['SMTPTimeout'] = "5";
 		$config['SMTPUser'] = $from_email;
@@ -124,7 +124,7 @@ class Login_model_affiliator extends Model
 		$config = array();
 		$config['protocol'] = "smtp";
 		$config['mailType'] = "html";
-		$config['SMTPHost'] = "mail.akuntanmu.com";
+		$config['SMTPHost'] = "smtp.hostinger.com";
 		$config['SMTPPort'] = "465";
 		$config['SMTPTimeout'] = "5";
 		$config['SMTPUser'] = $from_email;

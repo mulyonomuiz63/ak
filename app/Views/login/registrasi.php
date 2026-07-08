@@ -2,7 +2,7 @@
 <?= $this->section('content') ?>
 <!-- Logo -->
 <!-- Form Registrasi -->
-<form action="<?php echo (site_url('Login/simpanregistrasi')) ?>" class="user" method="post" id="form">
+<form action="<?php echo (site_url('simpanregistrasi')) ?>" class="user" method="post" id="form">
     <?php
     $pesan = session()->getFlashdata('pesan');
     if (!empty($pesan)) {

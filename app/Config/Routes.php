@@ -17,6 +17,7 @@ $routes->get('login', 'LoginController::index', ['filter' => 'guestFilter']);
 $routes->post('cek-login', 'LoginController::cekLogin', ['filter' => 'guestFilter']);
 $routes->get('registrasi', 'LoginController::registrasi', ['filter' => 'guestFilter']);
 $routes->post('registrasi/(:any)', 'LoginController::registrasi/$1', ['filter' => 'guestFilter']);
+$routes->post('simpanregistrasi', 'LoginController::simpanregistrasi', ['filter' => 'guestFilter']);
 $routes->post('kirim-reset-password', 'LoginController::kirimResetPassword', ['filter' => 'guestFilter']);
 $routes->get('lupapassword', 'LoginController::lupapassword', ['filter' => 'guestFilter']);
 $routes->get('ubah-password/(:any)', 'LoginController::ubahPassword/$1', ['filter' => 'guestFilter']);

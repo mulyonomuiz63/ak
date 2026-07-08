@@ -155,7 +155,7 @@ class LoginController extends BaseController
 
 	public function simpanregistrasi()
 	{
-	    
+	     
 	    	
 		$token = $this->request->getPost('recaptcha_token');
 
