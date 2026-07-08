@@ -32,51 +32,49 @@ class Login_model extends Model
 	}
 
 	public function kirimemail($from_email, $from_nama, $passwordemail, $email, $namaperusahaan, $encrypted_id, $kode_referal)
-	{
+    {
+        $textemail = '              
+                    <div style="font-weight: bold; font-size: 16px;">' . $namaperusahaan . '</div><br>
+                    <span>Terima kasih sudah mendaftar pada layanan kami
+                    <br>Silahkan aktivasi akun anda dibawah ini.</span><br><br>
+                    
+                    <div style="width: 100%;">
+                        <a href="' . site_url("Login/verifikasi/" . $encrypted_id . '/' . $kode_referal) . '" style="background-color: #055F93; width: 300px; height: 50px; color: white; text-decoration: none; display: inline-block; text-align: center; line-height: 50px; font-weight: bold;">AKTIVASI AKUN</a>            
+                    </div><br><br>
 
-		$textemail = '				
-					<div style="font-weight: bold; font-size: 16px;">' . $namaperusahaan . '</div><br>
-					<span>Terima kasih sudah mendaftar pada layanan kami
-					<br>Silahkan aktivasi akun anda dibawah ini.</span><br><br>
-					
-					<div style="width: 100%;">
-						<button style="background-color: #055F93; width: 300px; height: 50px; color: white"><a href="' . site_url("Login/verifikasi/" . $encrypted_id . '/' . $kode_referal) . '" style="color: white; text-decoration: none">AKTIVASI AKUN</a></button>			
-					</div><br><br>
+                    <div style="width: 100%; font-size: 14px;">
+                        <b>Best Regards,</b> <div style="width: 100%; font-size: 14px;">
+                        TEAM AKUNTANMU.COM
+                        <br>Kantor Menara 165 Lt4 - Jakarta Selatan
+                        <br>Telepon: 021-86941220 / 0821-80744966</div>
+                    </div>          
+                    ';
 
-					<div style="width: 100%; font-size: 14px;">
-						<b>Best Regards,</b> <div style="width: 100%; font-size: 14px;">
-						TEAM AKUNTANMU.COM
-						<br>Kantor Menara 165 Lt4 - Jakarta Selatan
-						<br>Telepon: 021-86941220 / 0821-80744966</div>
-					</div>			
-			  		';
+        $config = array();
+        $config['protocol']   = 'smtp';
+        $config['mailType']   = 'html';
+        $config['SMTPHost']   = 'smtp.hostinger.com';
+        $config['SMTPPort']   = 465; // Harus berupa integer, bukan string "465"
+        $config['SMTPTimeout']= 5;   // Harus berupa integer
+        $config['SMTPUser']   = $from_email;
+        $config['SMTPPass']   = $passwordemail;
+        $config['SMTPCrypto'] = 'ssl';
+        $config['CRLF']       = "\r\n";
+        $config['newline']    = "\r\n";
+        $config['wordWrap']   = true;
 
-		$config = array();
-		$config['protocol'] = "smtp";
-		$config['mailType'] = "html";
-		$config['SMTPHost'] = "smtp.hostinger.com";
-		$config['SMTPPort'] = "465";
-		$config['SMTPTimeout'] = "5";
-		$config['SMTPUser'] = $from_email;
-		$config['SMTPPass'] = $passwordemail;
-		$config['SMTPCrypto'] = 'ssl';
-		$config['CRLF'] = "\r\n";
-		$config['newline'] = "\r\n";
-		$config['wordWrap'] = TRUE;
+        // Menggunakan variabel lokal untuk mencegah error "Dynamic Property" di PHP 8+
+        $emailService = \Config\Services::email();
+        $emailService->initialize($config);
 
+        // Konfigurasi pengiriman
+        $emailService->setFrom($from_email, $from_nama);
+        $emailService->setTo($email);
+        $emailService->setSubject("Informasi Akun");
+        $emailService->setMessage($textemail);
 
-		//memanggil library email dan set konfigurasi untuk pengiriman email
-		$this->email = \Config\Services::email();
-		$this->email->initialize($config);
-
-		//konfigurasi pengiriman
-		$this->email->setFrom($from_email, $from_nama);
-		$this->email->setTo($email);
-		$this->email->setSubject("Informasi Akun");
-		$this->email->setMessage($textemail);
-
-		return $this->email->send();
-	}
+        return $emailService->send();
+    }
 
 	public function verifikasi_email($idencrypt, $data, $kode_referal)
 	{
