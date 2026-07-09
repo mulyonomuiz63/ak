@@ -85,7 +85,9 @@ $routes->group('pengguna', ['filter' => 'authFilter'], function ($routes) {
     $routes->get('edit/(:segment)', 'PenggunaController::edit/$1');
     $routes->post('get-edit', 'PenggunaController::getEdit');
     $routes->post('store', 'PenggunaController::store');
-    $routes->post('delete-all', 'PenggunaController::deleteAll');
+    $routes->post('delete-all', 'PenggunaController::deleteAll'); 
+    $routes->post('cek-username', 'LoginController::cekUsername'); 
+    $routes->post('cek-email', 'LoginController::cekEmail'); 
 });
 
 //akun

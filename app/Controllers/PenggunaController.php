@@ -210,12 +210,30 @@ class PenggunaController extends BaseController
 		$level				= $this->request->getPost('level');
 		$username			= $this->request->getPost('username');
 		$email				= $this->request->getPost('email');
-		$password			= $this->request->getPost('password') == ''? $this->request->getPost('password_lama') : md5($this->request->getPost('password'));
+		$password			= $this->request->getPost('password') == '' ? $this->request->getPost('password_lama') : md5($this->request->getPost('password'));
 		$idperusahaan		= $this->session->get('idperusahaan');
 		$file_lama 			= $this->request->getPost('file_lama');
 		$upload_file 		= $this->request->getFile('upload_file');
-
 		$signature 		= $this->request->getPost('signature');
+		$nama_file = $file_lama;
+
+		$query = $this->db->query("
+			SELECT COUNT(*) as total 
+			FROM pengguna 
+			WHERE (
+				(username = ? AND username != '') 
+				OR 
+				(email = ? AND email != '')
+			) 
+			AND idpengguna != ?", 
+			[$username, $email, $idpengguna]
+		);
+
+		$row = $query->getRow();
+		if ($row->total > 0) {
+			return redirect()->back()->with('error', 'Username atau Email sudah terdaftar!');
+		}
+
 		if ($signature != null) {
 			$nama_file = $idperusahaan . date("his") . ".png";
 			@file_put_contents(FCPATH . 'uploads/ttd/' . $nama_file, @file_get_contents($signature));
@@ -225,8 +243,6 @@ class PenggunaController extends BaseController
 					unlink('./uploads/ttd/' . $file_lama);
 				};
 			};
-		} else {
-			$nama_file = $file_lama;
 		}
 
 
@@ -250,8 +266,8 @@ class PenggunaController extends BaseController
 						unlink('./uploads/ttd/' . $file_lama);
 					};
 				}
+				$nama_file = $newName;
 			}
-			$nama_file = $newName;
 		}
 
 
@@ -264,7 +280,7 @@ class PenggunaController extends BaseController
 				return redirect()->to('pengguna');
 			}
 
-			if ($level != 3) {
+			if (!in_array($level, [1, 9])) {
 				$data = array(
 					'idpengguna' 	=> $idpengguna,
 					'namapengguna' 	=> $namapengguna,
@@ -276,37 +292,31 @@ class PenggunaController extends BaseController
 					'foto' 	 		=> $foto,
 					'file_ttd' 	 	=> $nama_file,
 				);
-			} else {
-				$data = array(
-					'idpengguna' 	=> $idpengguna,
-					'namapengguna' 	=> $namapengguna,
-					'idperusahaan' 	=> $idperusahaan,
-					'email' 		=> $email,
-					'level' 		=> $level,
-					'username' 		=> $username,
-					'password' 		=> $password,
-					'foto' 	 		=> $foto,
-					'pic_ttd' 	 	=> $nama_file,
-				);
+				$simpan = $this->pengguna_model->simpan($data);
 			}
-			$simpan = $this->pengguna_model->simpan($data);
 		} else { // ini kondisi jika edit data
-
-			$idpengguna 		= $this->request->getPost('idpengguna');
-			$file_lama = $this->request->getPost('file_lama');
 			$foto = $this->update_upload_foto($_FILES, "file", $file_lama, $idpengguna);
-			
-			
-			
+
 			if (empty($idpengguna)) {
 				return redirect()->to('pengguna');
 			}
 
-			if ($idpengguna == '8888888888') {
-				$level = '9';
-			}
+			if (!in_array($level, [1, 9])) {
 
-			if ($level != 3) {
+				$datafil = array(
+					'file_ttd' =>  '',
+				);
+
+				$file = $this->request->getPost('hapusfile');
+				if ($file  != '') {
+					$this->pengguna_model->deleteFile($datafil, $idpengguna);
+					if ($file != '' && $file != null) {
+						if (file_exists('./uploads/ttd/' . $file)) {
+							unlink('./uploads/ttd/' . $file);
+						};
+					}
+				}
+				
 				$data = array(
 					'namapengguna' 	=> $namapengguna,
 					'email' 		=> $email,
@@ -315,45 +325,8 @@ class PenggunaController extends BaseController
 					'password' 		=> $password,
 					'file_ttd' 	 	=> $nama_file,
 				);
-			} else {
-				$data = array(
-					'namapengguna' 	=> $namapengguna,
-					'email' 		=> $email,
-					'level' 		=> $level,
-					'username' 		=> $username,
-					'password' 		=> $password,
-					'pic_ttd' 	 	=> $nama_file,
-				);
+				$simpan = $this->pengguna_model->updateWhere($data, $idpengguna);				
 			}
-
-			$simpan = $this->pengguna_model->updateWhere($data, $idpengguna);
-			
-			if ($level != 3) {
-    			$datafil = array(
-    				'file_ttd' =>  '',
-    			);
-    		} else {
-    			$datafil = array(
-    				'pic_ttd' =>  '',
-    			);
-    		}
-    
-            $file = $this->request->getPost('hapusfile');
-            if($file  != ''){
-        		$this->pengguna_model->deleteFile($datafil, $idpengguna);
-        
-        
-        
-        		if ($file != '' && $file != null) {
-        
-        			if (file_exists('./uploads/ttd/' . $file)) {
-        
-        				unlink('./uploads/ttd/' . $file);
-        			};
-        		}
-
-            }
-
 		}
 
 		if ($simpan) {
@@ -364,7 +337,6 @@ class PenggunaController extends BaseController
 					    </div>
 					</div>';
 		} else {
-			$eror = $this->db->error();
 			$pesan = '<div>
 						<div class="alert alert-danger alert-dismissable">
 			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
@@ -378,15 +350,11 @@ class PenggunaController extends BaseController
 	}
 	function deleteFile($idpengguna, $file, $level)
 	{
-		if ($level != 3) {
+		if (!in_array($level, [1, 9])) {
 			$data = array(
 				'file_ttd' =>  '',
 			);
-		} else {
-			$data = array(
-				'pic_ttd' =>  '',
-			);
-		}
+		} 
 
 		$this->pengguna_model->deleteFile($data, $idpengguna);
 
