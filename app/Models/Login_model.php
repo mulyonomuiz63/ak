@@ -217,7 +217,7 @@ class Login_model extends Model
 
 	function cekEmail($email)
 	{
-		$sql = "select * from pengguna where email='$email'";
+		$sql = "select * from pengguna where email='$email' AND email != ''";
 
 		$hasil = $this->db->query($sql);
 
