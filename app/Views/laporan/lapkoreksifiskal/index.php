@@ -242,7 +242,7 @@
                                 // Mengambil dan menghitung nilai Korfis & Fiskal
                                 $korfis_pos = 0;
                                 $korfis_neg = 0;
-                                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
+                                $fiskal_val = 0;
                               }
                               
     
