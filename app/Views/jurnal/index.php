@@ -343,7 +343,13 @@ $list_bulan = [
     });
 
     // 2. EVENT LISTENER KLIK BARIS (CHILD ROW JURNAL)
-    $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function() {
+    $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function(e) {
+      
+      // CEK: Jika yang diklik adalah tombol copy, icon copy, atau teks "lihat semua", batalkan buka detail
+      if ($(e.target).closest('.btn-copy-idjurnal, .toggle-text').length > 0) {
+        return; 
+      }
+
       var tr = $(this).closest('tr');
       var row = t.row(tr);
 
@@ -373,7 +379,9 @@ $list_bulan = [
     });
 
     // Toggle Keterangan (lihat semua/ringkas)
-    $('#table').on('click', '.toggle-text', function() {
+    $('#table').on('click', '.toggle-text', function(e) {
+      e.stopPropagation(); // Mencegah klik menembus ke fungsi buka baris
+
       let $cell = $(this).closest('td');
       let shortText = $cell.find('.text-short');
       let fullText = $cell.find('.text-full');

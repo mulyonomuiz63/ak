@@ -350,7 +350,7 @@ class JurnalController extends BaseController
 				$html .= '              <td class="py-2 px-2 text-right td-korneg align-middle">' . number_format($valKorNeg, 0, ',', '.') . '</td>';
 				// Potong teks keterangan jika lebih dari 10 karakter
 				$shortKet = (strlen($valKet) > 10) ? substr($valKet, 0, 10) . '...' : $valKet;
-				$html .= '              <td class="py-2 px-2 td-ket align-middle btn-edit-inline" style="cursor:pointer;" title="Klik untuk edit / lihat selengkapnya">' . htmlspecialchars($shortKet) . '</td>';
+				$html .= '              <td class="py-2 px-2 td-ket align-middle btn-edit-inline" style="cursor:pointer;" title="' . htmlspecialchars($valKet) . '">' . htmlspecialchars($shortKet) . '</td>';
 				$html .= '          </tr>';
 
 				$tDebet += $d->debet;
