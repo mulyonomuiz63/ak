@@ -231,12 +231,12 @@
                                 // Mengambil dan menghitung nilai Korfis & Fiskal
                                 $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
                                 $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
-                                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
+                                $fiskal_val = $data->fiskal == 1 ? (float)$data->jumlah + $korfis_pos - $korfis_neg : 0;
                               } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72')) {
                                 // Mengambil dan menghitung nilai Korfis & Fiskal
                                 $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
                                 $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
-                                $fiskal_val = (float)$data->jumlah - $korfis_pos + $korfis_neg;
+                                $fiskal_val = $data->fiskal == 1 ? (float)$data->jumlah - $korfis_pos + $korfis_neg : 0;
                               }else{
                                 $totalpengeluaran += 0;
                                 // Mengambil dan menghitung nilai Korfis & Fiskal

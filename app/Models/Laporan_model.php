@@ -359,7 +359,8 @@ class Laporan_model extends Model
                     SUM(jd.debet) AS tdebet,
                     SUM(jd.kredit) AS tkredit,
                     SUM(jd.koreksi_positif) AS tkoreksi_positif,
-                    SUM(jd.koreksi_negatif) AS tkoreksi_negatif
+                    SUM(jd.koreksi_negatif) AS tkoreksi_negatif,
+                    MAX(jd.fiskal) AS tfiskal -- TAMBAHAN KOLOM FISKAL
                 FROM jurnaldetail jd
                 JOIN jurnal j ON j.idjurnal = jd.idjurnal
                 JOIN akun c ON c.keyakun = jd.keyakun
@@ -380,8 +381,9 @@ class Laporan_model extends Model
                     kdakun_full AS lvl4,
                     SUM(tdebet) AS total_debet,
                     SUM(tkredit) AS total_kredit,
-                    SUM(tkoreksi_positif) AS total_koreksi_positif, -- TAMBAHAN
-                    SUM(tkoreksi_negatif) AS total_koreksi_negatif  -- TAMBAHAN
+                    SUM(tkoreksi_positif) AS total_koreksi_positif,
+                    SUM(tkoreksi_negatif) AS total_koreksi_negatif,
+                    MAX(tfiskal) AS total_fiskal -- TAMBAHAN KOLOM FISKAL
                 FROM raw_trans
                 GROUP BY idperusahaan, lvl1, lvl2, lvl3, kdakun_full
             )
@@ -402,8 +404,9 @@ class Laporan_model extends Model
                         ELSE COALESCE(r.total_kredit,0) - COALESCE(r.total_debet,0)
                     END
                 ) AS jumlah,
-                SUM(COALESCE(r.total_koreksi_positif, 0)) AS koreksi_positif, -- TAMBAHAN
-                SUM(COALESCE(r.total_koreksi_negatif, 0)) AS koreksi_negatif  -- TAMBAHAN
+                SUM(COALESCE(r.total_koreksi_positif, 0)) AS koreksi_positif,
+                SUM(COALESCE(r.total_koreksi_negatif, 0)) AS koreksi_negatif,
+                MAX(COALESCE(r.total_fiskal, '0')) AS fiskal -- TAMBAHAN KOLOM FISKAL
             FROM akun_index ai
             LEFT JOIN realisasi r 
                    ON (ai.level = 1 AND r.lvl1 = ai.kdakun_index AND r.idperusahaan = ai.idperusahaan)
