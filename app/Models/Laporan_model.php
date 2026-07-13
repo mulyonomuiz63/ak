@@ -367,7 +367,6 @@ class Laporan_model extends Model
                 WHERE c.status='0'
                   AND p.idperusahaan=?
                   AND j.tgljurnal BETWEEN ? AND ?
-                  AND jd.fiskal != '0' -- Filter tambahan untuk menampilkan yang fiskalnya selain 0
                 GROUP BY c.kdakun, p.idperusahaan
             ),
             
