@@ -142,7 +142,7 @@ if ($uri_sub_dokumen == 'dokumen-masuk' || $uri_sub_dokumen == 'dokumen-keluar')
     <li class="nav-item <?= $menuLaporan ? 'active' : ''; ?>">
       <a class="nav-link <?= $menuLaporan ? '' : 'collapsed'; ?>" href="#" data-toggle="collapse" data-target="#laporanMenu" aria-expanded="true" aria-controls="laporanMenu">
         <i class="fas fa-fw fa-file-invoice"></i>
-        <span class="font-size ml-1">Laporan</span>
+        <span class="font-size">Laporan</span>
       </a>
       <div id="laporanMenu" class="collapse <?= $menuLaporan ? 'show' : ''; ?> mt-1" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
         <div class="bg-white py-2 collapse-inner rounded shadow-sm">

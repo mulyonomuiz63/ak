@@ -168,15 +168,13 @@
     
                             $totalpendapatan = 0;
                             $totalpengeluaran = 0;
+                            $totalfiskal = 0;
+                            $totalkorpositif = 0;
+                            $totalkornegatif = 0;
     
                             foreach ($rsData->getResult() as $data) {
                               $total1 += $data->jumlah;
                               $font = '';
-
-                              // Mengambil dan menghitung nilai Korfis & Fiskal
-                              $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
-                              $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
-                              $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
     
                               if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) && $kdakun_old != '' && substr($kdakun_old, 0, 1) != '7') {
                                 echo '
@@ -184,7 +182,9 @@
                                     <td style="border-right-color: #e6f5fe;background-color: #e6f5fe;"></td>
                                     <td style="background-color: #e6f5fe; font-size: 13px; font-weight: bold; text-align:left;">' . $totaldesc . '</td>
                                     <td style="background-color: #e6f5fe; font-size: 13px; font-weight: bold; text-align:right;">' . ($totalrupiah >= 0 ? number_format($totalrupiah, 0, ",", ".") : "(" . number_format($totalrupiah * -1, 0, ",", ".") . ")") . '</td>
-                                    <td style="background-color: #e6f5fe;" colspan="3"></td>
+                                    <td style="background-color: #e6f5fe; font-size: 13px; font-weight: bold; text-align:right;">' . ($totalkorpositif >= 0 ? number_format($totalkorpositif, 0, ",", ".") : "(" . number_format($totalkorpositif * -1, 0, ",", ".") . ")") . '</td>
+                                    <td style="background-color: #e6f5fe; font-size: 13px; font-weight: bold; text-align:right;">' . ($totalkornegatif >= 0 ? number_format($totalkornegatif, 0, ",", ".") : "(" . number_format($totalkornegatif * -1, 0, ",", ".") . ")") . '</td>
+                                    <td style="background-color: #e6f5fe; font-size: 13px; font-weight: bold; text-align:right;">' . ($totalfiskal >= 0 ? number_format($totalfiskal, 0, ",", ".") : "(" . number_format($totalfiskal * -1, 0, ",", ".") . ")") . '</td>
                                   </tr>';
                                 if ($totaldesc == "TOTAL PENDAPATAN") {
                                   $total_pendapatan = $totalrupiah;
@@ -205,6 +205,9 @@
     
     
                                 $totalrupiah = 0;
+                                $totalfiskal = 0;
+                                $totalkorpositif = 0;
+                                $totalkornegatif = 0;
                               }
     
                               //khusus PENDAPATAN DAN BEBAN LAINNYA
@@ -213,6 +216,26 @@
                                   echo '';
                                 }
                                 $totalrupiah = 0;
+                              }
+
+                              if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71')) {
+                                $totalpendapatan += $data->jumlah;
+                                // Mengambil dan menghitung nilai Korfis & Fiskal
+                                $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
+                                $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
+                                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
+                              } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') ) {
+                                $totalpengeluaran += $data->jumlah;
+                                // Mengambil dan menghitung nilai Korfis & Fiskal
+                                $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
+                                $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
+                                $fiskal_val = (float)$data->jumlah - $korfis_pos + $korfis_neg;
+                              } else {
+                                $totalpengeluaran += 0;
+                                // Mengambil dan menghitung nilai Korfis & Fiskal
+                                $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
+                                $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
+                                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
                               }
     
                               switch ($data->level) {
@@ -239,25 +262,20 @@
                                   $font = 'font-size: 13px;';
                                   $spasi = str_repeat('&nbsp;', 12);
                                   $totalrupiah += $data->jumlah;
+                                  $totalfiskal += $fiskal_val;
+                                  $totalkorpositif += $korfis_pos;
+                                  $totalkornegatif += $korfis_neg;
                                   break;
                                 default:
                                   $font = '';
                                   break;
                               }
-    
-                              if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') && $data->level == '4') {
-                                $totalpendapatan += $data->jumlah;
-                              } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
-                                $totalpengeluaran += $data->jumlah;
-                              } else {
-                                $totalpengeluaran += 0;
-                              }
-    
+        
     
                               if ($akunlevel3 == 1) {
                                 if ($data->level != 4) {
                                   echo '
-                                  <tr>
+                                  <tr> 
                                     <td style="' . $font . ' text-align:center;">' . $data->kdakun . '</td>
                                     <td style="' . $font . ' text-align:left;">' . $spasi . $data->nmakun . '</td>
                                     <td style="' . $font . ' text-align:right;">' . ((($data->kdakun != '70000') || ($data->kdakun != '700000')) && $data->level != 1  ? ($data->jumlah >= 0 ? number_format($data->jumlah, 0, ",", ".") : "(" . number_format($data->jumlah * -1, 0, ",", ".") . ")") : "") . '</td>
