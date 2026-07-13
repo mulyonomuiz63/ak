@@ -3,7 +3,6 @@
   /* Memaksa semua kolom (td) pada baris yang error menjadi merah muda */
   table.dataTable tbody tr.row-tidak-balance td {
     background-color: red !important;
-    /* Warna merah muda pucat */
   }
 
   /* Membedakan warna sedikit saat kursor melewati baris tersebut (Hover) */
@@ -151,38 +150,25 @@ $list_bulan = [
   </div>
 </div>
 
+<!-- Modal File Lampiran -->
 <div class="modal fade" id="fileModal" tabindex="-1" aria-labelledby="fileModalLabel" aria-hidden="true">
-
   <div class="modal-dialog">
-
     <div class="modal-content">
-
-
       <table id="tampiltbody" style="width: 100%; ">
-
         <thead class="text-light" width="100%" style="background-color:#055F93;">
-
           <tr>
             <th class="text-left">Lampiran file <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button></th>
-
           </tr>
-
         </thead>
-
         <tbody>
         </tbody>
-
       </table>
     </div>
-
   </div>
-
 </div>
 
-
-</div>
 <!--modal cetak pdf-->
 <div class="modal fade" id="modalcetakpdf" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl" role="document">
@@ -193,16 +179,119 @@ $list_bulan = [
 </div>
 <!--modal cetak pdf-->
 
+<!-- Modal Form Edit Fiskal & Objek Pajak -->
+<div class="modal fade" id="modalEditFiskal" tabindex="-1" aria-labelledby="modalEditFiskalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header text-white" style="background-color: #055F93;">
+        <h5 class="modal-title" id="modalEditFiskalLabel"><i class="fas fa-edit"></i> Edit Rincian Jurnal</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit_iddetailjurnal">
+
+        <!-- INFORMASI AKUN, DEBET, KREDIT -->
+        <div class="p-3 mb-4 rounded border" style="background-color: #f8f9fa;">
+          <div class="row text-sm">
+            <div class="col-12 mb-2 border-bottom pb-2">
+              <span class="text-muted font-weight-bold"><i class="fas fa-book"></i> Akun:</span><br>
+              <strong class="text-dark" id="info_akun" style="font-size: 1.1em;">-</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted font-weight-bold">Debet:</span><br>
+              <strong class="text-success" id="info_debet" style="font-size: 1.1em;">-</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted font-weight-bold">Kredit:</span><br>
+              <strong class="text-danger" id="info_kredit" style="font-size: 1.1em;">-</strong>
+            </div>
+          </div>
+        </div>
+        <!-- END INFORMASI -->
+
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Objek Pajak</label>
+          <div class="col-sm-8">
+            <select class="form-control" id="edit_objek">
+              <option value="0">Pilih</option>
+              <option value="1">PPh Psl 21</option>
+              <option value="2">PPh Psl 23</option>
+              <option value="3">PPh Psl 4 ayat 2</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Nominal Objek</label>
+          <div class="col-sm-8">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">Rp</span>
+              </div>
+              <input type="number" class="form-control text-right" id="edit_objekpajak">
+            </div>
+          </div>
+        </div>
+        <hr>
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Fiskal</label>
+          <div class="col-sm-8">
+            <select class="form-control" id="edit_fiskal">
+              <option value="0">Tidak</option>
+              <option value="1">Ya</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Kor. Positif</label>
+          <div class="col-sm-8">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">Rp</span>
+              </div>
+              <input type="number" class="form-control text-right" id="edit_korpos">
+            </div>
+          </div>
+        </div>
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Kor. Negatif</label>
+          <div class="col-sm-8">
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text">Rp</span>
+              </div>
+              <input type="number" class="form-control text-right" id="edit_korneg">
+            </div>
+          </div>
+        </div>
+        <hr>
+        <div class="form-group row align-items-center">
+          <label class="col-sm-4 col-form-label font-weight-bold">Keterangan</label>
+          <div class="col-sm-8">
+            <textarea class="form-control" id="edit_ket" rows="2" placeholder="Masukkan keterangan tambahan..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
+        <button type="button" class="btn btn-success" id="btnSaveModalFiskal"><i class="fas fa-save"></i> Simpan Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Modal Edit Fiskal -->
 
 <!-- /.container-fluid -->
 <script src="<?php echo (base_url('assets/jquery-ui/jquery-ui-2.js')) ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="text/javascript">
   var table;
 
   $(document).ready(function() {
 
-    // 1. INISIALISASI DATATABLES (Script asli Anda)
+    // 1. INISIALISASI DATATABLES
     var t = $('#table').DataTable({
       "select": true,
       "processing": true,
@@ -251,58 +340,29 @@ $list_bulan = [
       "language": {
         "infoFiltered": ""
       },
-
-      // =========================================================
-      // TAMBAHKAN FITUR INI UNTUK MEWARNAI BARIS SECARA PAKSA
-      // =========================================================
-      // "rowCallback": function(row, data, displayNum, displayIndex, dataIndex) {
-
-      //     // Jika baris memiliki class TIDAK BALANCE (MERAH)
-      //     if ($(row).hasClass('row-tidak-balance')) {
-      //         $('td', row).each(function() {
-      //             this.style.setProperty('border-color', '#f5c6cb', 'important');
-      //         });
-      //     } 
-
-      //     // Jika baris memiliki class BALANCE (HIJAU)
-      //     else if ($(row).hasClass('row-balance')) {
-      //         $('td', row).each(function() {
-      //             this.style.setProperty('background-color', '#d4edda', 'important'); // Hijau muda
-      //             this.style.setProperty('color', '#155724', 'important');            // Teks hijau gelap
-      //             this.style.setProperty('border-color', '#c3e6cb', 'important');
-      //         });
-      //     }
-
-      // }
-
     });
 
-    // 2. TAMBAHKAN EVENT LISTENER KLIK BARIS DI SINI
+    // 2. EVENT LISTENER KLIK BARIS (CHILD ROW JURNAL)
     $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function() {
       var tr = $(this).closest('tr');
       var row = t.row(tr);
 
       if (row.child.isShown()) {
-        // Jika detail sudah terbuka, tutup detailnya
         row.child.hide();
         tr.removeClass('shown bg-light');
       } else {
-        // Ambil idjurnal dari meta data (Pastikan Langkah 1 di PHP sudah Anda terapkan)
         var idjurnal = row.data().DT_RowData.idjurnal;
 
-        // Tampilkan animasi loading sementara menunggu data dari server
         row.child('<div class="text-center p-3"><i class="fas fa-spinner fa-spin text-primary"></i> Mengambil detail data...</div>').show();
         tr.addClass('shown bg-light');
 
-        // Ambil data detail menggunakan AJAX
         $.ajax({
-          url: "<?php echo site_url('jurnal/get_detail_jurnal') ?>", // Pastikan nama controller sesuai
+          url: "<?php echo site_url('jurnal/get_detail_jurnal') ?>",
           type: "POST",
           data: {
             idjurnal: idjurnal
           },
           success: function(response) {
-            // Masukkan tabel HTML yang di-return oleh PHP ke dalam child row
             row.child(response).show();
           },
           error: function() {
@@ -312,10 +372,9 @@ $list_bulan = [
       }
     });
 
-    //untuk lihat semua pada kolom Keterangan
+    // Toggle Keterangan (lihat semua/ringkas)
     $('#table').on('click', '.toggle-text', function() {
       let $cell = $(this).closest('td');
-
       let shortText = $cell.find('.text-short');
       let fullText = $cell.find('.text-full');
 
@@ -330,31 +389,18 @@ $list_bulan = [
       }
     });
 
+    // Event Filter DataTables
     $('#search-form').on('keyup', function(e) {
       t.draw();
       e.preventDefault();
     });
-    //end (document).ready
 
-    $('#tahun').on('change', function() {
+    $('#tahun, #bulan, #status_approve, #fiskal_objek').on('change', function(e) {
       t.draw();
       e.preventDefault();
-    })
+    });
 
-    $('#bulan').on('change', function() {
-      t.draw();
-      e.preventDefault();
-    })
-
-    $('#status_approve').on('change', function() {
-      t.draw();
-      e.preventDefault();
-    })
-    $('#fiskal_objek').on('change', function() {
-      t.draw();
-      e.preventDefault();
-    })
-
+    // Konfirmasi hapus satuan
     $(document).on("click", "#hapus", function(e) {
       var link = $(this).attr("href");
       e.preventDefault();
@@ -365,89 +411,61 @@ $list_bulan = [
       });
     });
 
-
-    $(document).ready(function() {
-      $("#check-all").click(function() {
-        if ($(this).is(":checked"))
-          $(".check-item").prop("checked", true);
-        else
-          $(".check-item").prop("checked", false);
-      });
-
-      $("#btn-delete").click(function(e) {
-        e.preventDefault();
-        if ($("#check-all").is(":checked")) {
-          bootbox.confirm("Anda yakin ingin menghapus data ini ?", function(result) {
-            if (result) {
-              $("#form-delete").submit();
-            }
-          });
-
-        } else if ($(".check-item").is(":checked")) {
-          bootbox.confirm("Anda yakin ingin menghapus data ini ?", function(result) {
-            if (result) {
-              $("#form-delete").submit();
-            }
-          });
-        } else {
-          bootbox.confirm("silahkan pilih data yang akan di hapus?", function(result) {
-
-          });
-
-        }
-      });
+    // Hapus massal & Check all
+    $("#check-all").click(function() {
+      if ($(this).is(":checked"))
+        $(".check-item").prop("checked", true);
+      else
+        $(".check-item").prop("checked", false);
     });
 
+    $("#btn-delete").click(function(e) {
+      e.preventDefault();
+      if ($("#check-all").is(":checked") || $(".check-item").is(":checked")) {
+        bootbox.confirm("Anda yakin ingin menghapus data ini ?", function(result) {
+          if (result) {
+            $("#form-delete").submit();
+          }
+        });
+      } else {
+        bootbox.confirm("Silahkan pilih data yang akan di hapus?", function(result) {});
+      }
+    });
 
+    // Autocomplete Nama Perusahaan
     $("#tampilperusahaan").autocomplete({
-
       minLength: 0,
-
       source: function(request, response) {
-
         $.ajax({
-
           type: "POST",
-
           url: "<?php echo site_url('jurnal/autocomplatePerusahaan'); ?>",
-
           dataType: "json",
-
           data: {
-
             term: request.term
-
           },
-
           success: function(data) {
             response(data);
-
           }
-
         });
-
       },
-
       select: function(event, ui) {
         $('#idperusahaan').val(ui.item.idperusahaan)
         $('#tampilperusahaan').val(ui.item.namaperusahaan)
         reload();
         return false;
-
       }
-
     }).autocomplete("instance")._renderItem = function(ul, item) {
       return $("<li>")
         .append("<div><b>" + item.namaperusahaan + " </b></div>")
-
         .appendTo(ul);
-
     };
 
     function reload() {
       t.draw();
     }
   });
+
+  // Event modal File Lampiran
   $(document).on("click", "#lihatFile", function(e) {
     e.preventDefault();
     let idjurnal = $(this).data('id');
@@ -476,10 +494,10 @@ $list_bulan = [
       "language": {
         "infoFiltered": ""
       }
-
     });
   });
 
+  // Event cetak PDF Iframe
   $(document).on("click", "#cetak-pdf, [data-cetak_pdf]", function(e) {
     const url = $(this).data('cetak_pdf');
     $(".isiKonten").html(`
@@ -490,10 +508,8 @@ $list_bulan = [
                 </button>
             </div>
             
-            <!-- Gunakan tinggi tetap misal 75vh agar modal tidak menembus layar -->
             <div class="modal-body p-0" style="position: relative; height: 75vh; overflow: hidden;">
                 
-                <!-- Indikator Loading (Tampil di tengah) -->
                 <div id="loadingIframe" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10;">
                     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                         <span class="sr-only">Loading...</span>
@@ -501,37 +517,28 @@ $list_bulan = [
                     <div class="mt-3 font-weight-bold text-muted">Sedang menarik banyak data...<br>Mohon tunggu sebentar.</div>
                 </div>
 
-                <!-- Iframe (Awalnya disembunyikan menggunakan opacity) -->
                 <iframe id="frameBukuBesar" src="${url}" width="100%" height="100%" style="border: none; opacity: 0; transition: opacity 0.5s; position: relative; z-index: 5;"></iframe>
                 
             </div>
         `);
 
-    // 2. Deteksi kapan Iframe selesai memuat SELURUH data dari server
     $("#frameBukuBesar").on("load", function() {
-      // Sembunyikan loading
       $("#loadingIframe").fadeOut();
-
-      // Tampilkan iframe secara halus
       $(this).css("opacity", "1");
     });
   });
-</script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  // Pastikan Anda sudah meload library SweetAlert2 di header/footer Anda
 
+  // ==============================================================
+  // LOGIKA MODAL EDIT FISKAL DAN OBJEK PAJAK BESERTA INFO SUMMARY
+  // ==============================================================
   $(document).ready(function() {
 
-    // Helper 1: Format angka ke Rupiah (Ribuan)
     function formatRupiah(angka) {
       if (!angka || angka == 0) return '0';
-      // Format menggunakan locale id-ID agar otomatis pakai pemisah titik
       return parseFloat(angka).toLocaleString('id-ID');
     }
 
-    // Helper 2: Mapping Enum ke Text biasa untuk tampilan
     const textObjek = {
       '0': '-',
       '1': 'PPh Psl 21',
@@ -543,7 +550,6 @@ $list_bulan = [
       '1': 'Ya'
     };
 
-    // Helper 3: Konfigurasi Toast SweetAlert2
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -556,10 +562,11 @@ $list_bulan = [
       }
     });
 
-    // Fungsi untuk mengecek logika disable/enable inputan
-    function applyLogic(tr) {
-      let valObjek = tr.find('.inp-objek').val();
-      let inpObjekPajak = tr.find('.inp-objekpajak');
+    let activeRow = null;
+
+    function applyLogicModal() {
+      let valObjek = $('#edit_objek').val();
+      let inpObjekPajak = $('#edit_objekpajak');
 
       if (valObjek === '0') {
         inpObjekPajak.prop('readonly', true).val('0');
@@ -567,9 +574,9 @@ $list_bulan = [
         inpObjekPajak.prop('readonly', false);
       }
 
-      let valFiskal = tr.find('.inp-fiskal').val();
-      let inpKorPos = tr.find('.inp-korpos');
-      let inpKorNeg = tr.find('.inp-korneg');
+      let valFiskal = $('#edit_fiskal').val();
+      let inpKorPos = $('#edit_korpos');
+      let inpKorNeg = $('#edit_korneg');
 
       if (valFiskal === '0') {
         inpKorPos.prop('readonly', true).val('0');
@@ -580,64 +587,55 @@ $list_bulan = [
       }
     }
 
-    // Aksi ketika tombol Edit diklik
+    // Aksi ketika tombol Edit diklik (MEMBUKA MODAL & MENAMPILKAN SUMMARY INFO)
     $(document).on('click', '.btn-edit-inline', function() {
       let tr = $(this).closest('tr');
+      activeRow = tr;
 
-      if (tr.hasClass('is-editing')) return;
-      tr.addClass('is-editing');
+      // ======================================================
+      // 1. Ekstrak data Akun, Debet, Kredit dari baris tabel
+      // Sesuai HTML controller yang di-generate:
+      // td:eq(0) = Button Edit
+      // td:eq(1) = Akun
+      // td:eq(2) = Debet
+      // td:eq(3) = Kredit
+      // ======================================================
+      let namaAkun = tr.find('td:eq(1)').text().trim();
+      let debet = tr.find('td:eq(2)').text().trim();
+      let kredit = tr.find('td:eq(3)').text().trim();
 
-      let id = tr.data('id');
-      let objek = tr.data('objek');
-      let objekPajak = tr.data('objekpajak');
-      let fiskal = tr.data('fiskal');
-      let korPos = tr.data('korpos');
-      let korNeg = tr.data('korneg');
-      let ket = tr.data('ket');
+      $('#info_akun').text(namaAkun || '-');
+      $('#info_debet').text(debet || '0');
+      $('#info_kredit').text(kredit || '0');
 
-      tr.find('td:eq(0)').html(`<button type="button" class="btn btn-success btn-save-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-check"></i></button>`);
+      // 2. Set value form modal dengan data-*
+      $('#edit_iddetailjurnal').val(tr.data('id'));
+      $('#edit_objek').val(tr.data('objek'));
+      $('#edit_objekpajak').val(tr.data('objekpajak'));
+      $('#edit_fiskal').val(tr.data('fiskal'));
+      $('#edit_korpos').val(tr.data('korpos'));
+      $('#edit_korneg').val(tr.data('korneg'));
+      $('#edit_ket').val(tr.data('ket'));
 
-      tr.find('.td-objek').html(`
-            <select class="form-control form-control-sm inp-objek" style="width: 80px;">
-                <option value="0" ${objek == '0' ? 'selected' : ''}>Pilih</option>
-                <option value="1" ${objek == '1' ? 'selected' : ''}>PPh Psl 21</option>
-                <option value="2" ${objek == '2' ? 'selected' : ''}>PPh Psl 23</option>
-                <option value="3" ${objek == '3' ? 'selected' : ''}>PPh Psl 4 ayat 2</option>
-            </select>
-        `);
+      applyLogicModal();
 
-      tr.find('.td-fiskal').html(`
-            <select class="form-control form-control-sm inp-fiskal" style="width: 60px;">
-                <option value="0" ${fiskal == '0' ? 'selected' : ''}>Tidak</option>
-                <option value="1" ${fiskal == '1' ? 'selected' : ''}>Ya</option>
-            </select>
-        `);
-
-      tr.find('.td-objekpajak').html(`<input type="number" class="form-control form-control-sm text-right inp-objekpajak" value="${objekPajak}" style="width: 80px;">`);
-      tr.find('.td-korpos').html(`<input type="number" class="form-control form-control-sm text-right inp-korpos" value="${korPos}" style="width: 80px;">`);
-      tr.find('.td-korneg').html(`<input type="number" class="form-control form-control-sm text-right inp-korneg" value="${korNeg}" style="width: 80px;">`);
-      tr.find('.td-ket').html(`<input type="text" class="form-control form-control-sm inp-ket" value="${ket}" style="width: 100px;">`);
-
-      applyLogic(tr);
+      $('#modalEditFiskal').modal('show');
     });
 
-    $(document).on('change', '.inp-objek, .inp-fiskal', function() {
-      let tr = $(this).closest('tr');
-      applyLogic(tr);
+    $(document).on('change', '#edit_objek, #edit_fiskal', function() {
+      applyLogicModal();
     });
 
-    // Aksi ketika tombol Simpan diklik
-    $(document).on('click', '.btn-save-inline', function() {
-      let tr = $(this).closest('tr');
-      let iddetailjurnal = tr.data('id');
+    // Aksi ketika tombol SIMPAN pada Modal diklik
+    $(document).on('click', '#btnSaveModalFiskal', function() {
 
-      // Tangkap nilai-nilai baru dari inputan
-      let valObjek = tr.find('.inp-objek').val();
-      let valObjekPajak = tr.find('.inp-objekpajak').val() || 0;
-      let valFiskal = tr.find('.inp-fiskal').val();
-      let valKorPos = tr.find('.inp-korpos').val() || 0;
-      let valKorNeg = tr.find('.inp-korneg').val() || 0;
-      let valKet = tr.find('.inp-ket').val();
+      let iddetailjurnal = $('#edit_iddetailjurnal').val();
+      let valObjek = $('#edit_objek').val();
+      let valObjekPajak = $('#edit_objekpajak').val() || 0;
+      let valFiskal = $('#edit_fiskal').val();
+      let valKorPos = $('#edit_korpos').val() || 0;
+      let valKorNeg = $('#edit_korneg').val() || 0;
+      let valKet = $('#edit_ket').val();
 
       let dataToSave = {
         iddetailjurnal: iddetailjurnal,
@@ -651,7 +649,6 @@ $list_bulan = [
 
       if (dataToSave.fiskal === '1') {
         if (parseFloat(dataToSave.koreksi_positif) === 0 && parseFloat(dataToSave.koreksi_negatif) === 0) {
-          // Gunakan SweetAlert jika ada, kalau tidak fallback ke alert biasa
           if (typeof Swal !== 'undefined') {
             Swal.fire('Perhatian', 'Jika menggunakan Fiskal, minimal salah satu koreksi (Positif/Negatif) harus diisi!', 'warning');
           } else {
@@ -661,8 +658,10 @@ $list_bulan = [
         }
       }
 
-      // Tampilkan indikator loading pada tombol
-      $(this).html('<i class="fas fa-spinner fa-spin"></i>');
+      let btn = $(this);
+      let originalText = btn.html();
+      btn.html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+      btn.prop('disabled', true);
 
       $.ajax({
         url: '<?= base_url("jurnal/simpan-fiskal") ?>',
@@ -670,97 +669,77 @@ $list_bulan = [
         data: dataToSave,
         dataType: 'json',
         success: function(response) {
+          btn.html(originalText);
+          btn.prop('disabled', false);
+
           if (response.status) {
 
-            // 1. Tampilkan Toast Sukses
             if (typeof Swal !== 'undefined') {
               Toast.fire({
                 icon: 'success',
                 title: 'Data berhasil diperbarui'
               });
             } else {
-              alert('Data berhasil disimpan!'); // Fallback jika Swal tidak ada
+              alert('Data berhasil disimpan!');
             }
 
-            // 2. Update data-* atribut di baris <tr> agar kalau diedit lagi, datanya sudah yang terbaru
-            tr.data('objek', valObjek);
-            tr.data('objekpajak', valObjekPajak);
-            tr.data('fiskal', valFiskal);
-            tr.data('korpos', valKorPos);
-            tr.data('korneg', valKorNeg);
-            tr.data('ket', valKet);
+            activeRow.data('objek', valObjek);
+            activeRow.data('objekpajak', valObjekPajak);
+            activeRow.data('fiskal', valFiskal);
+            activeRow.data('korpos', valKorPos);
+            activeRow.data('korneg', valKorNeg);
+            activeRow.data('ket', valKet);
 
-            // 3. Kembalikan inputan menjadi teks biasa + format angka jadi Rupiah
-            tr.find('.td-objek').html(textObjek[valObjek]);
-            tr.find('.td-objekpajak').html(formatRupiah(valObjekPajak));
-            tr.find('.td-fiskal').html(textFiskal[valFiskal]);
-            tr.find('.td-korpos').html(formatRupiah(valKorPos));
-            tr.find('.td-korneg').html(formatRupiah(valKorNeg));
-            tr.find('.td-ket').text(valKet);
+            activeRow.find('.td-objek').html(textObjek[valObjek]);
+            activeRow.find('.td-objekpajak').html(formatRupiah(valObjekPajak));
+            activeRow.find('.td-fiskal').html(textFiskal[valFiskal]);
+            activeRow.find('.td-korpos').html(formatRupiah(valKorPos));
+            activeRow.find('.td-korneg').html(formatRupiah(valKorNeg));
+            // Potong string menjadi maksimal 10 karakter jika lebih dari 10
+            let shortKet = valKet.length > 10 ? valKet.substring(0, 10) + '...' : valKet;
+            activeRow.find('.td-ket').text(shortKet);
 
-            // 4. Kembalikan tombol Simpan menjadi tombol Edit (Kuning, ukuran kecil)
-            tr.find('td:eq(0)').html(`<button type="button" class="btn btn-warning btn-edit-inline" style="padding: 2px 6px; font-size: 10px; line-height: 1.2;" title=""><i class="fas fa-edit"></i></button>`);
-
-            // 5. Lepas status editing dari baris tersebut
-            tr.removeClass('is-editing');
+            $('#modalEditFiskal').modal('hide');
 
           } else {
             if (typeof Swal !== 'undefined') Toast.fire({
               icon: 'error',
               title: 'Gagal menyimpan data'
             });
-            tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
           }
         },
         error: function() {
+          btn.html(originalText);
+          btn.prop('disabled', false);
           if (typeof Swal !== 'undefined') Toast.fire({
             icon: 'error',
             title: 'Terjadi kesalahan server'
           });
-          tr.find('.btn-save-inline').html('<i class="fas fa-check"></i>');
         }
       });
     });
-  });
 
-  $(document).ready(function() {
-    // Event delegation untuk tombol copy (karena elemen diload dari datatable/ajax)
+    // Copy ID Jurnal ke Clipboard
     $(document).on('click', '.btn-copy-idjurnal', function(e) {
       e.preventDefault();
-
-      // Ambil nilai ID Jurnal dari atribut data-id
       var idToCopy = $(this).data('id');
 
-      // Proses copy ke clipboard menggunakan API navigator terbaru (jika didukung) atau execCommand (fallback)
       var tempInput = $("<input>");
       $("body").append(tempInput);
       tempInput.val(idToCopy).select();
       document.execCommand("copy");
       tempInput.remove();
 
-      // Tampilkan notifikasi Toast (menggunakan SweetAlert2 jika ada)
       if (typeof Swal !== 'undefined') {
-        const Toast = Swal.mixin({
-          toast: true,
-          position: 'top-end', // Pojok kanan atas
-          showConfirmButton: false,
-          timer: 3000,
-          timerProgressBar: true,
-          didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-          }
-        });
-
         Toast.fire({
           icon: 'success',
           title: 'ID Jurnal ' + idToCopy + ' disalin!'
         });
       } else {
-        // Fallback alert biasa jika SweetAlert2 tidak ditemukan di template Anda
         alert('ID Jurnal ' + idToCopy + ' berhasil disalin!');
       }
     });
+
   });
 </script>
 <?= $this->endSection() ?>
