@@ -218,13 +218,13 @@
                                 $totalrupiah = 0;
                               }
 
-                              if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71')) {
+                              if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') && $data->level == '4') {
                                 $totalpendapatan += $data->jumlah;
                                 // Mengambil dan menghitung nilai Korfis & Fiskal
                                 $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
                                 $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
                                 $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
-                              } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') ) {
+                              } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
                                 $totalpengeluaran += $data->jumlah;
                                 // Mengambil dan menghitung nilai Korfis & Fiskal
                                 $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
@@ -237,6 +237,7 @@
                                 $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
                                 $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
                               }
+                              
     
                               switch ($data->level) {
                                 case '1':
