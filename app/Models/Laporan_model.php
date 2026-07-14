@@ -471,7 +471,6 @@ class Laporan_model extends Model
                 WHERE c.status='0'
                   AND p.idperusahaan=?
                   AND j.tgljurnal BETWEEN ? AND ?
-                  AND jd.objek != '0' -- Filter tambahan untuk menampilkan yang objeknya selain 0
                 GROUP BY c.kdakun, p.idperusahaan
             ),
             
