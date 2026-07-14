@@ -145,7 +145,7 @@
                             <tr style="background-color:#055F93; color: white;">
                               <th width="10%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Kode Akun</th>
                               <th width="30%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Nama Akun</th>
-                              <th width="15%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Pembukuan</th>
+                              <th width="15%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Komersial</th>
                               <th width="15%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Objek Pajak</th>
                               <th width="15%" style="font-size:13px; font-weight:bold; text-align:center; vertical-align:middle;">Selisih</th>
                             </tr>
