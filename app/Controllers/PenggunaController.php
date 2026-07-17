@@ -319,9 +319,18 @@ class PenggunaController extends BaseController
 
 			if (!in_array($level, [1, 9])) {
 
-				$datafil = array(
-					'file_ttd' =>  '',
-				);
+				
+				if ($level == 2) {
+					$datafil = array(
+						'file_ttd' =>  '',
+					);
+				} elseif ($level == 3) {
+					$datafil = array(
+						'pic_ttd' =>  '',
+					);
+				}else{
+					$datafil['file_ttd'] = '';
+				}
 
 				$file = $this->request->getPost('hapusfile');
 				if ($file  != '') {
@@ -374,9 +383,17 @@ class PenggunaController extends BaseController
 	function deleteFile($idpengguna, $file, $level)
 	{
 		if (!in_array($level, [1, 9])) {
-			$data = array(
-				'file_ttd' =>  '',
-			);
+			if ($level == 2) {
+				$data = array(
+					'file_ttd' =>  '',
+				);
+			} elseif ($level == 3) {
+				$data = array(
+					'pic_ttd' =>  '',
+				);
+			}else{
+				$data['file_ttd'] = '';
+			}
 		}
 
 		$this->pengguna_model->deleteFile($data, $idpengguna);
