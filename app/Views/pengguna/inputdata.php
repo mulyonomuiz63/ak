@@ -79,6 +79,7 @@
                   <label for="">Akses Level</label>
                   <select name="level" id="level" class="form-control" <?php echo ($idpengguna == '8888888888') ? 'readonly=""' : '' ?>>
                     <option value="">Pilih akses level...</option>
+                    <option value="1">Admin</option>
                     <option value="2">Staff</option>
                     <option value="3">Supervisor</option>
                     <?php
