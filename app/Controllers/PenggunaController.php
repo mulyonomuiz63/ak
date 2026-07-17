@@ -301,9 +301,9 @@ class PenggunaController extends BaseController
 					'password'      => $password,
 					'foto'          => $foto,
 				);
-				if ($level == 2) {
+				if ($level == '2') {
 					$data['file_ttd'] = $nama_file;
-				} elseif ($level == 3) {
+				} elseif ($level == '3') {
 					$data['pic_ttd']  = $nama_file;
 				}else{
 					$data['file_ttd'] = $nama_file;
@@ -320,11 +320,11 @@ class PenggunaController extends BaseController
 			if (!in_array($level, [1, 9])) {
 
 				
-				if ($level == 2) {
+				if ($level == '2') {
 					$datafil = array(
 						'file_ttd' =>  '',
 					);
-				} elseif ($level == 3) {
+				} elseif ($level == '3') {
 					$datafil = array(
 						'pic_ttd' =>  '',
 					);
@@ -340,6 +340,7 @@ class PenggunaController extends BaseController
 						if (file_exists(FCPATH . 'uploads/ttd/' . $file)) {
 							unlink(FCPATH . 'uploads/ttd/' . $file);
 						};
+						$nama_file = '';
 					}
 				}
 
@@ -350,9 +351,9 @@ class PenggunaController extends BaseController
 					'username'      => $username,
 					'password'      => $password,
 				);
-				if ($level == 2) {
+				if ($level == '2') {
 					$data['file_ttd'] = $nama_file;
-				} elseif ($level == 3) {
+				} elseif ($level == '3') {
 					$data['pic_ttd']  = $nama_file;
 				}else{
 					$data['file_ttd'] = $nama_file;
@@ -383,11 +384,11 @@ class PenggunaController extends BaseController
 	function deleteFile($idpengguna, $file, $level)
 	{
 		if (!in_array($level, [1, 9])) {
-			if ($level == 2) {
+			if ($level == '2') {
 				$data = array(
 					'file_ttd' =>  '',
 				);
-			} elseif ($level == 3) {
+			} elseif ($level == '3') {
 				$data = array(
 					'pic_ttd' =>  '',
 				);
