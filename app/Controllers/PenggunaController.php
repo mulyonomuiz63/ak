@@ -205,7 +205,7 @@ class PenggunaController extends BaseController
 	public function store()
 	{
 		// 1. Inisialisasi awal untuk menghindari error "Undefined variable" 
-		// jika alur tidak masuk ke dalam if (!in_array($level, [1, 9]))
+		// jika alur tidak masuk ke dalam if (!in_array($level, [9]))
 		$simpan = false;
 
 		$idpengguna         = $this->request->getPost('idpengguna');
@@ -289,8 +289,8 @@ class PenggunaController extends BaseController
 			if (empty($idpengguna)) {
 				return redirect()->to('pengguna');
 			}
-
-			if (!in_array($level, [1, 9])) {
+ 
+			if (!in_array($level, [9])) {
 				$data = array(
 					'idpengguna'    => $idpengguna,
 					'namapengguna'  => $namapengguna,
@@ -317,7 +317,7 @@ class PenggunaController extends BaseController
 				return redirect()->to('pengguna');
 			}
 
-			if (!in_array($level, [1, 9])) {
+			if (!in_array($level, [9])) {
 
 				
 				if ($level == '2') {
@@ -383,7 +383,7 @@ class PenggunaController extends BaseController
 	}
 	function deleteFile($idpengguna, $file, $level)
 	{
-		if (!in_array($level, [1, 9])) {
+		if (!in_array($level, [9])) {
 			if ($level == '2') {
 				$data = array(
 					'file_ttd' =>  '',
