@@ -300,8 +300,14 @@ class PenggunaController extends BaseController
 					'username'      => $username,
 					'password'      => $password,
 					'foto'          => $foto,
-					'file_ttd'      => $nama_file,
 				);
+				if ($level == 2) {
+					$data['file_ttd'] = $nama_file;
+				} elseif ($level == 3) {
+					$data['pic_ttd']  = $nama_file;
+				}else{
+					$data['file_ttd'] = $nama_file;
+				}
 				$simpan = $this->pengguna_model->simpan($data);
 			}
 		} else { // ini kondisi jika edit data
@@ -334,8 +340,14 @@ class PenggunaController extends BaseController
 					'level'         => $level,
 					'username'      => $username,
 					'password'      => $password,
-					'file_ttd'      => $nama_file,
 				);
+				if ($level == 2) {
+					$data['file_ttd'] = $nama_file;
+				} elseif ($level == 3) {
+					$data['pic_ttd']  = $nama_file;
+				}else{
+					$data['file_ttd'] = $nama_file;
+				}
 				$simpan = $this->pengguna_model->updateWhere($data, $idpengguna);
 			}
 		}
