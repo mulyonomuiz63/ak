@@ -280,7 +280,7 @@ class PenggunaController extends BaseController
 				return redirect()->to('pengguna');
 			}
 
-			if (!in_array($level, [1, 9])) {
+			if (!in_array($level, [1, 3, 9])) {
 				$data = array(
 					'idpengguna' 	=> $idpengguna,
 					'namapengguna' 	=> $namapengguna,
@@ -301,7 +301,7 @@ class PenggunaController extends BaseController
 				return redirect()->to('pengguna');
 			}
 
-			if (!in_array($level, [1, 9])) {
+			if (!in_array($level, [1, 3, 9])) {
 
 				$datafil = array(
 					'file_ttd' =>  '',
@@ -350,7 +350,7 @@ class PenggunaController extends BaseController
 	}
 	function deleteFile($idpengguna, $file, $level)
 	{
-		if (!in_array($level, [1, 9])) {
+		if (!in_array($level, [1, 3, 9])) {
 			$data = array(
 				'file_ttd' =>  '',
 			);
