@@ -204,33 +204,38 @@ class PenggunaController extends BaseController
 
 	public function store()
 	{
+		// 1. Inisialisasi awal untuk menghindari error "Undefined variable" 
+		// jika alur tidak masuk ke dalam if (!in_array($level, [1, 9]))
+		$simpan = false;
 
-		$idpengguna 		= $this->request->getPost('idpengguna');
-		$namapengguna		= $this->request->getPost('namapengguna');
-		$level				= $this->request->getPost('level');
-		$username			= $this->request->getPost('username');
-		$email				= $this->request->getPost('email');
-		$password			= $this->request->getPost('password') == '' ? $this->request->getPost('password_lama') : md5($this->request->getPost('password'));
-		$idperusahaan		= $this->session->get('idperusahaan');
-		$file_lama 			= $this->request->getPost('file_lama');
-		$upload_file 		= $this->request->getFile('upload_file');
-		$signature 		= $this->request->getPost('signature');
-		$nama_file = $file_lama;
+		$idpengguna         = $this->request->getPost('idpengguna');
+		$namapengguna       = $this->request->getPost('namapengguna');
+		$level              = $this->request->getPost('level');
+		$username           = $this->request->getPost('username');
+		$email              = $this->request->getPost('email');
+		$password           = $this->request->getPost('password') == '' ? $this->request->getPost('password_lama') : md5($this->request->getPost('password'));
+		$idperusahaan       = $this->session->get('idperusahaan');
+		$file_lama          = $this->request->getPost('file_lama');
+		$upload_file        = $this->request->getFile('upload_file');
+		$signature          = $this->request->getPost('signature');
+		$nama_file          = $file_lama;
 
-		$query = $this->db->query("
-			SELECT COUNT(*) as total 
-			FROM pengguna 
-			WHERE (
-				(username = ? AND username != '') 
-				OR 
-				(email = ? AND email != '')
-			) 
-			AND idpengguna != ?", 
+		$query = $this->db->query(
+			"
+        SELECT COUNT(*) as total 
+        FROM pengguna 
+        WHERE (
+            (username = ? AND username != '') 
+            OR 
+            (email = ? AND email != '')
+        ) 
+        AND idpengguna != ?",
 			[$username, $email, $idpengguna]
 		);
 
 		$row = $query->getRow();
-		if ($row->total > 0) {
+		// 2. Safety Check: Pastikan $row tidak null
+		if ($row && $row->total > 0) {
 			return redirect()->back()->with('error', 'Username atau Email sudah terdaftar!');
 		}
 
@@ -239,20 +244,20 @@ class PenggunaController extends BaseController
 			@file_put_contents(FCPATH . 'uploads/ttd/' . $nama_file, @file_get_contents($signature));
 
 			if ($file_lama != '') {
-				if (file_exists('./uploads/ttd/' . $file_lama)) {
-					unlink('./uploads/ttd/' . $file_lama);
+				// 3. Menggunakan FCPATH agar path konsisten dan file berhasil dihapus
+				if (file_exists(FCPATH . 'uploads/ttd/' . $file_lama)) {
+					unlink(FCPATH . 'uploads/ttd/' . $file_lama);
 				};
 			};
 		}
 
-
-		if ($upload_file->isValid()) {
+		// 4. Safety check: Pastikan variabel merupakan objek file valid dan belum dipindahkan
+		if ($upload_file && $upload_file->isValid() && !$upload_file->hasMoved()) {
 			$path = FCPATH . 'uploads/ttd';
 			$newName = $upload_file->getRandomName();
 			if ($upload_file->move($path, $newName)) {
 
 				// resizing newName
-
 				$this->image->withFile($path . '/' . $newName)
 					->resize(
 						1012,
@@ -262,8 +267,9 @@ class PenggunaController extends BaseController
 						'width'
 					);
 				if ($file_lama != '') {
-					if (file_exists('./uploads/ttd/' . $file_lama)) {
-						unlink('./uploads/ttd/' . $file_lama);
+					// Menggunakan FCPATH untuk penyeragaman
+					if (file_exists(FCPATH . 'uploads/ttd/' . $file_lama)) {
+						unlink(FCPATH . 'uploads/ttd/' . $file_lama);
 					};
 				}
 				$nama_file = $newName;
@@ -273,24 +279,28 @@ class PenggunaController extends BaseController
 
 		if (empty($idpengguna)) { // ini kondisi jika tambah data 
 			$tglinsert = date('Y-m-d');
-			$idpengguna 			= $this->db->query('SELECT create_idpengguna("' . $tglinsert . '") AS idpengguna')->getRow()->idpengguna;
-			$foto 					= $this->upload_foto($_FILES, "file", $idpengguna);
+
+			// 5. Mencegah error 'Attempt to read property on null'
+			$queryInsert = $this->db->query('SELECT create_idpengguna("' . $tglinsert . '") AS idpengguna')->getRow();
+			$idpengguna  = $queryInsert ? $queryInsert->idpengguna : null;
+
+			$foto        = $this->upload_foto($_FILES, "file", $idpengguna);
 
 			if (empty($idpengguna)) {
 				return redirect()->to('pengguna');
 			}
 
-			if (!in_array($level, [1, 3, 9])) {
+			if (!in_array($level, [1, 9])) {
 				$data = array(
-					'idpengguna' 	=> $idpengguna,
-					'namapengguna' 	=> $namapengguna,
-					'idperusahaan' 	=> $idperusahaan,
-					'email' 		=> $email,
-					'level' 		=> $level,
-					'username' 		=> $username,
-					'password' 		=> $password,
-					'foto' 	 		=> $foto,
-					'file_ttd' 	 	=> $nama_file,
+					'idpengguna'    => $idpengguna,
+					'namapengguna'  => $namapengguna,
+					'idperusahaan'  => $idperusahaan,
+					'email'         => $email,
+					'level'         => $level,
+					'username'      => $username,
+					'password'      => $password,
+					'foto'          => $foto,
+					'file_ttd'      => $nama_file,
 				);
 				$simpan = $this->pengguna_model->simpan($data);
 			}
@@ -301,7 +311,7 @@ class PenggunaController extends BaseController
 				return redirect()->to('pengguna');
 			}
 
-			if (!in_array($level, [1, 3, 9])) {
+			if (!in_array($level, [1, 9])) {
 
 				$datafil = array(
 					'file_ttd' =>  '',
@@ -311,38 +321,39 @@ class PenggunaController extends BaseController
 				if ($file  != '') {
 					$this->pengguna_model->deleteFile($datafil, $idpengguna);
 					if ($file != '' && $file != null) {
-						if (file_exists('./uploads/ttd/' . $file)) {
-							unlink('./uploads/ttd/' . $file);
+						// Menggunakan FCPATH untuk penyeragaman
+						if (file_exists(FCPATH . 'uploads/ttd/' . $file)) {
+							unlink(FCPATH . 'uploads/ttd/' . $file);
 						};
 					}
 				}
-				
+
 				$data = array(
-					'namapengguna' 	=> $namapengguna,
-					'email' 		=> $email,
-					'level' 		=> $level,
-					'username' 		=> $username,
-					'password' 		=> $password,
-					'file_ttd' 	 	=> $nama_file,
+					'namapengguna'  => $namapengguna,
+					'email'         => $email,
+					'level'         => $level,
+					'username'      => $username,
+					'password'      => $password,
+					'file_ttd'      => $nama_file,
 				);
-				$simpan = $this->pengguna_model->updateWhere($data, $idpengguna);				
+				$simpan = $this->pengguna_model->updateWhere($data, $idpengguna);
 			}
 		}
 
 		if ($simpan) {
 			$pesan = '<div>
-						<div class="alert alert-success alert-dismissable">
-			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-			                <strong>Berhasil.</strong> Data telah disimpan
-					    </div>
-					</div>';
+                    <div class="alert alert-success alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                        <strong>Berhasil.</strong> Data telah disimpan
+                    </div>
+                </div>';
 		} else {
 			$pesan = '<div>
-						<div class="alert alert-danger alert-dismissable">
-			                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
-			                <strong>Gagal,</strong> Data gagal di simpan <br>
-					    </div>
-					</div>';
+                    <div class="alert alert-danger alert-dismissable">
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x</button>
+                        <strong>Gagal,</strong> Data gagal di simpan <br>
+                    </div>
+                </div>';
 		}
 
 		$this->session->setFlashdata('pesan', $pesan);
@@ -350,11 +361,11 @@ class PenggunaController extends BaseController
 	}
 	function deleteFile($idpengguna, $file, $level)
 	{
-		if (!in_array($level, [1, 3, 9])) {
+		if (!in_array($level, [1, 9])) {
 			$data = array(
 				'file_ttd' =>  '',
 			);
-		} 
+		}
 
 		$this->pengguna_model->deleteFile($data, $idpengguna);
 
