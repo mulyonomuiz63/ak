@@ -112,6 +112,7 @@ class LapKoreksiFiskalController extends BaseController
         $totaldesc = '';
         $totaldesc2 = '';
         $totalrupiah = 0;
+        $totalfiskal = 0; // Tambahan variabel total fiskal
 
         $totalpendapatan = 0;
         $totalpengeluaran = 0;
@@ -125,22 +126,26 @@ class LapKoreksiFiskalController extends BaseController
             $total1 += $data->jumlah;
             $font = '';
 
-            // Hitung Korfis & Fiskal
+            // Hitung Korfis & Fiskal sesuai logika VIEW
             $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
             $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
-            $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
-
-            // TANGKAP PAJAK (Berbarengan di loop pertama)
-            if ($data->kdakun == "730000" || $data->kdakun == "73000") {
-                $bebanpajakpenghasilan = $data->jumlah;
+            
+            if (substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') {
+                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
+            } elseif (substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') {
+                $fiskal_val = (float)$data->jumlah - $korfis_pos + $korfis_neg;
+            } else {
+                $fiskal_val = 0;
             }
 
+            // Pengecekan Grup Akun untuk mencetak Baris Subtotal
             if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) && $kdakun_old != '' && substr($kdakun_old, 0, 1) != '7') {
                 $htmlChunk .= '
                         <tr style="background-color: #E5E4E2;">
                             <td width="40%" style="font-weight: bold; text-align:left;">' . $totaldesc . '</td>
                             <td width="15%" style="font-weight: bold; text-align:right;">' . ($totalrupiah >= 0 ? number_format($totalrupiah, 0, ",", ".") : "(" . number_format($totalrupiah * -1, 0, ",", ".") . ")") . '</td>
-                            <td width="45%" colspan="3"></td>
+                            <td width="30%" colspan="2"></td>
+                            <td width="15%" style="font-weight: bold; text-align:right;">' . ($totalfiskal >= 0 ? number_format($totalfiskal, 0, ",", ".") : "(" . number_format($totalfiskal * -1, 0, ",", ".") . ")") . '</td>
                         </tr>';
 
                 if ($totaldesc == "TOTAL PENDAPATAN") {
@@ -158,13 +163,23 @@ class LapKoreksiFiskalController extends BaseController
                         </tr>';
                 }
                 $totalrupiah = 0;
+                $totalfiskal = 0;
             }
 
-            //khusus PENDAPATAN DAN BEBAN LAINNYA
+            // khusus PENDAPATAN DAN BEBAN LAINNYA
             if ((substr($kdakun_old, 0, 2) != substr($data->kdakun, 0, 2)) && $kdakun_old != '' && substr($kdakun_old, 0, 1) == '7' && $kdakun_old != '70000') {
                 $totalrupiah = 0;
+                $totalfiskal = 0;
             }
 
+            // Hitung Pendapatan & Pengeluaran Utama
+            if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') && $data->level == '4') {
+                $totalpendapatan += $data->jumlah;
+            } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
+                $totalpengeluaran += $data->jumlah;
+            }
+
+            // Format Huruf dan Spasi Leveling
             switch ($data->level) {
                 case '1':
                     $font = 'font-weight: bold;';
@@ -184,62 +199,53 @@ class LapKoreksiFiskalController extends BaseController
                     $font = '';
                     $spasi = str_repeat('&nbsp;', 12);
                     $totalrupiah += $data->jumlah;
+                    $totalfiskal += $fiskal_val;
                     break;
                 default:
                     $font = '';
                     break;
             }
 
-            // Lanjutan Tangkap Pajak dengan Format HTML 5 Kolom
+            // TANGKAP PAJAK (Disimpan ke variabel agar dirender paling bawah)
             if ($data->kdakun == "730000" || $data->kdakun == "73000") {
+                $bebanpajakpenghasilan = $data->jumlah;
+                $fiskal_pajak = (float)$data->jumlah + $korfis_pos - $korfis_neg; // Rumus pajak sesuai view
                 $pajakHtmlPdf = '
                         <tr style="color:#000000;">
-                            <td width="40%" style="' . $font . ' text-align:left;">' . $spasi . $data->kdakun . ' - ' . $data->nmakun . '</td>
+                            <td width="40%" style="' . $font . ' text-align:left;">' . $spasi . $data->kdakun . ' - Beban Pajak Penghasilan</td>
                             <td width="15%" style="text-align:right;">' . ($data->jumlah >= 0 ? number_format($data->jumlah, 0, ",", ".") : "(" . number_format($data->jumlah * -1, 0, ",", ".") . ")") . '</td>
                             <td width="15%" style="text-align:right;">' . ($korfis_pos >= 0 ? number_format($korfis_pos, 0, ",", ".") : "(" . number_format($korfis_pos * -1, 0, ",", ".") . ")") . '</td>
                             <td width="15%" style="text-align:right;">' . ($korfis_neg >= 0 ? number_format($korfis_neg, 0, ",", ".") : "(" . number_format($korfis_neg * -1, 0, ",", ".") . ")") . '</td>
-                            <td width="15%" style="text-align:right;">' . ($fiskal_val >= 0 ? number_format($fiskal_val, 0, ",", ".") : "(" . number_format($fiskal_val * -1, 0, ",", ".") . ")") . '</td>
-                        </tr>';
-            }
-
-            if ((substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') && $data->level == '4') {
-                $totalpendapatan += $data->jumlah;
-            } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
-                $totalpengeluaran += $data->jumlah;
-            } else {
-                $totalpengeluaran += 0;
-            }
-
-            if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) and $kdakun_old != '') {
-                $htmlChunk .= '
-                        <tr>
-                            <td width="40%" style="font-weight: bold; text-align:left;"></td>
-                            <td width="15%" style="font-weight: bold; text-align:right;"></td>
-                            <td width="45%" colspan="3"></td>
+                            <td width="15%" style="text-align:right;">' . ($fiskal_pajak >= 0 ? number_format($fiskal_pajak, 0, ",", ".") : "(" . number_format($fiskal_pajak * -1, 0, ",", ".") . ")") . '</td>
                         </tr>';
             }
 
             // Konten Baris (Cetak Ringkas / Detail)
-            if ($akunlevel3 == 1) {
-                if ($data->level != 4) {
-                    $htmlChunk .= '
-                        <tr>
-                            <td width="40%" style="' . $font . ' text-align:left;">' . $spasi . $data->kdakun . ' - ' . $data->nmakun . '</td>
-                            <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level != 1 ? ($data->jumlah >= 0 ? number_format($data->jumlah, 0, ",", ".") : "(" . number_format($data->jumlah * -1, 0, ",", ".") . ")") : "") . '</td>
-                            <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level != 1 ? ($korfis_pos >= 0 ? number_format($korfis_pos, 0, ",", ".") : "(" . number_format($korfis_pos * -1, 0, ",", ".") . ")") : "") . '</td>
-                            <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level != 1 ? ($korfis_neg >= 0 ? number_format($korfis_neg, 0, ",", ".") : "(" . number_format($korfis_neg * -1, 0, ",", ".") . ")") : "") . '</td>
-                            <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level != 1 ? ($fiskal_val >= 0 ? number_format($fiskal_val, 0, ",", ".") : "(" . number_format($fiskal_val * -1, 0, ",", ".") . ")") : "") . '</td>
-                        </tr>';
+            if ($data->kdakun != "730000" && $data->kdakun != "73000") {
+                $renderBaris = false;
+                
+                if ($akunlevel3 == 1) {
+                    if ($data->level != 4) { $renderBaris = true; }
+                } else {
+                    $renderBaris = true;
                 }
-            } else {
-                if ($data->kdakun != "730000" && $data->kdakun != "73000") {
+
+                if ($renderBaris) {
+                    // Logika menampilkan angka (sesuai kondisi ternary view)
+                    $tampilAngka = ($data->kdakun != '70000' && $data->kdakun != '700000' && $data->level != 1);
+
+                    $v_jumlah = $tampilAngka ? ($data->jumlah >= 0 ? number_format($data->jumlah, 0, ",", ".") : "(" . number_format($data->jumlah * -1, 0, ",", ".") . ")") : "";
+                    $v_pos    = $tampilAngka ? ($korfis_pos >= 0 ? number_format($korfis_pos, 0, ",", ".") : "(" . number_format($korfis_pos * -1, 0, ",", ".") . ")") : "";
+                    $v_neg    = $tampilAngka ? ($korfis_neg >= 0 ? number_format($korfis_neg, 0, ",", ".") : "(" . number_format($korfis_neg * -1, 0, ",", ".") . ")") : "";
+                    $v_fisk   = $tampilAngka ? ($fiskal_val >= 0 ? number_format($fiskal_val, 0, ",", ".") : "(" . number_format($fiskal_val * -1, 0, ",", ".") . ")") : "";
+
                     $htmlChunk .= '
                     <tr>
                         <td width="40%" style="' . $font . ' text-align:left;">' . $spasi . $data->kdakun . ' - ' . $data->nmakun . '</td>
-                        <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level == 4 ? ($data->jumlah >= 0 ? number_format($data->jumlah, 0, ",", ".") : "(" . number_format($data->jumlah * -1, 0, ",", ".") . ")") : "") . '</td>
-                        <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level == 4 ? ($korfis_pos >= 0 ? number_format($korfis_pos, 0, ",", ".") : "(" . number_format($korfis_pos * -1, 0, ",", ".") . ")") : "") . '</td>
-                        <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level == 4 ? ($korfis_neg >= 0 ? number_format($korfis_neg, 0, ",", ".") : "(" . number_format($korfis_neg * -1, 0, ",", ".") . ")") : "") . '</td>
-                        <td width="15%" style="' . $font . ' text-align:right;">' . ($data->kdakun != '70000' && $data->level == 4 ? ($fiskal_val >= 0 ? number_format($fiskal_val, 0, ",", ".") : "(" . number_format($fiskal_val * -1, 0, ",", ".") . ")") : "") . '</td>
+                        <td width="15%" style="' . $font . ' text-align:right;">' . $v_jumlah . '</td>
+                        <td width="15%" style="' . $font . ' text-align:right;">' . $v_pos . '</td>
+                        <td width="15%" style="' . $font . ' text-align:right;">' . $v_neg . '</td>
+                        <td width="15%" style="' . $font . ' text-align:right;">' . $v_fisk . '</td>
                     </tr>';
                 }
             }
@@ -250,22 +256,24 @@ class LapKoreksiFiskalController extends BaseController
             // [OPTIMASI]: Chunk render HTML
             if ($rowCount % $chunkSize == 0) {
                 $htmlChunk .= $tableFooter;
-                $pdf->SetFont('times', '', 9); // Font sedikit dikecilkan agar 5 kolom muat dengan rapi
+                $pdf->SetFont('times', '', 9); 
                 $pdf->writeHTML($htmlChunk, true, false, false, false, '');
                 $htmlChunk = $tableHeader; // Buka tabel baru
             }
         }
 
-        // Tulis sisa akhir laporan
+        // Tulis sisa akhir laporan (Subtotal Terakhir)
         if ($totaldesc2 != "TOTAL BEBAN LAINNYA") {
             $htmlChunk .= '
                         <tr style="background-color: #E5E4E2;">
                             <td width="40%" style="font-weight: bold; text-align:left;">' . $totaldesc2 . '</td>
                             <td width="15%" style="font-weight: bold; text-align:right;">' . ($totalrupiah >= 0 ? number_format($totalrupiah, 0, ",", ".") : "(" . number_format($totalrupiah * -1, 0, ",", ".") . ")") . '</td>
-                            <td width="45%" colspan="3"></td>
+                            <td width="30%" colspan="2"></td>
+                            <td width="15%" style="font-weight: bold; text-align:right;">' . ($totalfiskal >= 0 ? number_format($totalfiskal, 0, ",", ".") : "(" . number_format($totalfiskal * -1, 0, ",", ".") . ")") . '</td>
                         </tr>';
         }
 
+        // Laba/Rugi Sebelum Pajak
         $totallabasebelumpajak = $totalpendapatan - $totalpengeluaran;
         $htmlChunk .= '
                         <tr style="background-color:#E5E4E2; color:#000000;">
@@ -274,9 +282,10 @@ class LapKoreksiFiskalController extends BaseController
                             <td width="45%" colspan="3"></td>
                         </tr>';
 
-        // Masukkan HTML Pajak yang sudah kita tangkap tadi
+        // Masukkan HTML Pajak yang sudah ditangkap di atas
         $htmlChunk .= $pajakHtmlPdf;
 
+        // Laba/Rugi Setelah Pajak
         $totallabasetelahpajak = ($totalpendapatan - $totalpengeluaran) - $bebanpajakpenghasilan;
         $htmlChunk .= '
                         <tr style="background-color:#055F93; color:#ffffff;">
@@ -302,8 +311,6 @@ class LapKoreksiFiskalController extends BaseController
 
 	public function lapKoreksiFiskalExcel($tglawal, $tglakhir, $akunlevel3, $idperusahaan)
     {
-        $menuaktif = 'lapkoreksifiskal';
-
         // [1] BYPASS MEMORY: Bebaskan memori dan waktu eksekusi untuk data skala besar
         ini_set('memory_limit', '-1');
         set_time_limit(0);
@@ -391,6 +398,7 @@ class LapKoreksiFiskalController extends BaseController
         $totaldesc = '';
         $totaldesc2 = '';
         $totalrupiah = 0;
+        $totalfiskal = 0; // Tambahan variabel Total Fiskal
 
         $totalpendapatan = 0;
         $totalpengeluaran = 0;
@@ -404,14 +412,16 @@ class LapKoreksiFiskalController extends BaseController
             $total1 += $data->jumlah;
             $spasi = '';
 
-            // Hitung Nilai Korfis & Fiskal
+            // Hitung Nilai Korfis & Fiskal sesuai logika VIEW
             $korfis_pos = isset($data->koreksi_positif) ? (float)$data->koreksi_positif : 0;
             $korfis_neg = isset($data->koreksi_negatif) ? (float)$data->koreksi_negatif : 0;
-            $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
-
-            // TANGKAP PAJAK
-            if ($data->kdakun == "730000" || $data->kdakun == "73000") {
-                $bebanpajakpenghasilan = $data->jumlah;
+            
+            if (substr($data->kdakun, 0, 1) == '4' || substr($data->kdakun, 0, 2) == '71') {
+                $fiskal_val = (float)$data->jumlah + $korfis_pos - $korfis_neg;
+            } elseif (substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') {
+                $fiskal_val = (float)$data->jumlah - $korfis_pos + $korfis_neg;
+            } else {
+                $fiskal_val = 0;
             }
 
             // Sisipan Baris Sub-total Kelompok Utama
@@ -420,7 +430,8 @@ class LapKoreksiFiskalController extends BaseController
                 echo "<td></td>";
                 echo "<td>{$totaldesc}</td>";
                 echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalrupiah}</td>";
-                echo "<td colspan='3'></td>"; // Kolom kosong agar tabel tidak geser
+                echo "<td colspan='2'></td>"; // 2 Kolom kosong agar selaras dengan header
+                echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalfiskal}</td>";
                 echo "</tr>";
                 
                 if ($totaldesc == "TOTAL PENDAPATAN") {
@@ -439,10 +450,12 @@ class LapKoreksiFiskalController extends BaseController
                     echo "</tr>";
                 }
                 $totalrupiah = 0;
+                $totalfiskal = 0;
             }
 
             if ((substr($kdakun_old, 0, 2) != substr($data->kdakun, 0, 2)) && $kdakun_old != '' && substr($kdakun_old, 0, 1) == '7' && $kdakun_old != '70000') {
                 $totalrupiah = 0;
+                $totalfiskal = 0;
             }
 
             // Konversi spasi indentasi level menggunakan Entitas HTML agar terbaca sempurna di Excel
@@ -461,6 +474,7 @@ class LapKoreksiFiskalController extends BaseController
                 case '4':
                     $spasi = str_repeat('&nbsp;', 12);
                     $totalrupiah += $data->jumlah;
+                    $totalfiskal += $fiskal_val;
                     break;
                 default:
                     $spasi = '';
@@ -469,14 +483,16 @@ class LapKoreksiFiskalController extends BaseController
 
             // TANGKAP STRUKTUR HTML PAJAK UNTUK DICETAK DI AKHIR (Sesuai 6 Kolom)
             if ($data->kdakun == "730000" || $data->kdakun == "73000") {
-                $nama_pajak_aman = htmlspecialchars($data->nmakun, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $bebanpajakpenghasilan = $data->jumlah;
+                $fiskal_pajak = (float)$data->jumlah + $korfis_pos - $korfis_neg; // Rumus pajak
+
                 $pajakRowHtml = "<tr>";
                 $pajakRowHtml .= "<td class='col-kode'>{$data->kdakun}</td>";
-                $pajakRowHtml .= "<td class='col-akun'>{$spasi}{$nama_pajak_aman}</td>";
+                $pajakRowHtml .= "<td class='col-akun'>{$spasi}Beban Pajak Penghasilan</td>";
                 $pajakRowHtml .= "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->jumlah}</td>";
                 $pajakRowHtml .= "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_pos}</td>";
                 $pajakRowHtml .= "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_neg}</td>";
-                $pajakRowHtml .= "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$fiskal_val}</td>";
+                $pajakRowHtml .= "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$fiskal_pajak}</td>";
                 $pajakRowHtml .= "</tr>";
             }
 
@@ -485,48 +501,41 @@ class LapKoreksiFiskalController extends BaseController
                 $totalpendapatan += $data->jumlah;
             } elseif ((substr($data->kdakun, 0, 1) == '5' || substr($data->kdakun, 0, 1) == '6' || substr($data->kdakun, 0, 2) == '72') && $data->level == '4') {
                 $totalpengeluaran += $data->jumlah;
-            } else {
-                $totalpengeluaran += 0;
             }
 
+            // Jeda Baris Antar Kategori Besar
             if ((substr($kdakun_old, 0, 1) != substr($data->kdakun, 0, 1)) && $kdakun_old != '') {
-                echo "<tr><td colspan='6' style='border:none;'></td></tr>"; // Baris pemisah kosong disesuaikan
+                echo "<tr><td colspan='6' style='border:none;'></td></tr>"; 
             }
 
-            // Cetak Baris Akun Individu ke File Excel Berdasarkan Tingkat Ringkasan Level
-            $nama_akun_aman = htmlspecialchars($data->nmakun, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $style_induk = ($data->level == '1') ? "style='font-weight: bold; background-color: #fcfcfc;'" : "";
-
-            if ($akunlevel3 == 1) {
-                if ($data->level != '4') {
-                    $nilai = ($data->kdakun != '70000' && $data->level != '1') ? $data->jumlah : '';
-                    
-                    echo "<tr {$style_induk}>";
-                    echo "<td class='col-kode'>{$data->kdakun}</td>";
-                    echo "<td class='col-akun'>{$spasi}{$nama_akun_aman}</td>";
-                    if ($nilai !== '') {
-                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nilai}</td>";
-                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_pos}</td>";
-                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_neg}</td>";
-                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$fiskal_val}</td>";
-                    } else {
-                        echo "<td></td><td></td><td></td><td></td>"; // Mengisi slot agar struktur stabil
-                    }
-                    echo "</tr>";
+            // Cetak Baris Akun Individu (Jika bukan Akun Pajak)
+            if ($data->kdakun != "730000" && $data->kdakun != "73000") {
+                $renderBaris = false;
+                
+                if ($akunlevel3 == 1) {
+                    if ($data->level != '4') { $renderBaris = true; }
+                } else {
+                    $renderBaris = true;
                 }
-            } else {
-                if ($data->kdakun != "730000" && $data->kdakun != "73000") {
-                    $nilai = ($data->kdakun != '70000' && $data->level == 4) ? $data->jumlah : '';
+
+                if ($renderBaris) {
+                    $nama_akun_aman = htmlspecialchars($data->nmakun, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $style_induk = ($data->level == '1') ? "style='font-weight: bold; background-color: #fcfcfc;'" : "";
                     
+                    // Logika menentukan apakah baris ini boleh menampilkan angka/nominal atau hanya header
+                    $tampilAngka = ($data->kdakun != '70000' && $data->kdakun != '700000' && $data->level != 1);
+
                     echo "<tr {$style_induk}>";
                     echo "<td class='col-kode'>{$data->kdakun}</td>";
                     echo "<td class='col-akun'>{$spasi}{$nama_akun_aman}</td>";
-                    if ($nilai !== '') {
-                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$nilai}</td>";
+
+                    if ($tampilAngka) {
+                        echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$data->jumlah}</td>";
                         echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_pos}</td>";
                         echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$korfis_neg}</td>";
                         echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$fiskal_val}</td>";
                     } else {
+                        // Kosongkan kolom jika tidak memenuhi kriteria TampilAngka
                         echo "<td></td><td></td><td></td><td></td>";
                     }
                     echo "</tr>";
@@ -546,7 +555,8 @@ class LapKoreksiFiskalController extends BaseController
             echo "<td></td>";
             echo "<td>{$totaldesc2}</td>";
             echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalrupiah}</td>";
-            echo "<td colspan='3'></td>";
+            echo "<td colspan='2'></td>";
+            echo "<td class='col-num' style='mso-number-format:\"\#\,\#\#0;\(\#\,\#\#0\)\";'>{$totalfiskal}</td>";
             echo "</tr>";
         }
 
@@ -579,6 +589,6 @@ class LapKoreksiFiskalController extends BaseController
         echo "</table>";
         echo "</body>";
         echo "</html>";
-        exit;
+        echo "exit";
     }
 }

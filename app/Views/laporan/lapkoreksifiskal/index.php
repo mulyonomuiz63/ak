@@ -351,9 +351,8 @@
                             echo ' </tbody>
                                 </table>';
                             ?>
-    
-    
-    
+                          </tbody>
+                        </table>    
                       </div>
                     <?php endif; ?>
 
