@@ -139,7 +139,7 @@ $routes->group('jurnal', ['filter' => 'authFilter'], function ($routes) {
 });
 
 //laporan
-$routes->group('laporan', ['filter' => 'authFilter'], function ($routes) {
+$routes->group('[lL]aporan', ['filter' => 'authFilter'], function ($routes) {
     //laporan jurnal
     $routes->get('lapjurnal', 'Laporan\LapJurnalController::index');
     $routes->post('lapjurnal', 'Laporan\LapJurnalController::index');
