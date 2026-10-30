@@ -114,7 +114,7 @@ $list_bulan = [
                   <?php foreach ($jurnal as $rows): ?>
                     <option value="<?= $rows->tgljurnal ?>" <?= (isset($jurnal_bulan) && $jurnal_bulan->tahun == $rows->tgljurnal) ? 'selected' : '' ?>><?= $rows->tgljurnal ?></option>
                   <?php endforeach; ?>
-                  <option value="null">Kosong</option>
+                  <option value="">Kosong</option>
                 </select>
               </div>
 
@@ -438,6 +438,8 @@ $list_bulan = [
 
     // 2. Ketika Tgl Input (tglinsert) diubah -> Refresh tabel
     $('#tglinsert').on('change', function(e) {
+        $('#bulan').val('');
+        $('#tahun').val('');
         t.draw();
         e.preventDefault();
     });
