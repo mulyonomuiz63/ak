@@ -181,6 +181,9 @@ class JurnalController extends BaseController
 				$row[] = '<input type="checkbox" class="check-item" name="idjurnal[]" value="' . encrypt($rowdata->idjurnal) . '" >';
 				$row[] = date('d-m-Y', strtotime($rowdata->tgljurnal));
 
+				// SISIPKAN BARIS INI UNTUK KOLOM TGL INPUT:
+				$row[] = ($rowdata->tglinsert) ? date('d-m-Y H:i', strtotime($rowdata->tglinsert)) : '-';
+
 				// ========================================================================
 				// 2. KUMPULKAN SEMUA BADGE (BALANCE, OBJEK, FISKAL)
 				// ========================================================================

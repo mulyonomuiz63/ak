@@ -46,56 +46,58 @@ $list_bulan = [
       <!-- HEADER DENGAN TAMPILAN FILTER YANG DI UPGRADE -->
       <div class="card-header bg-white py-3 border-bottom-primary">
         <!-- Baris Utama: Pencarian & Tombol Aksi -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between">
-            <div class="d-flex align-items-center mb-2 mb-md-0 w-100 w-md-auto">
-              
-              <?php if ($isAdmin): ?>
-                <input type="hidden" id="idperusahaan" name="idperusahaan">
-                <div class="input-group input-group-sm mr-2" style="max-width: 250px;">
-                  <input type="text" id="tampilperusahaan" class="form-control" placeholder="Cari nama perusahaan..">
-                  <div class="input-group-append">
-                    <span class="input-group-text bg-light text-primary"><i class="fas fa-search"></i></span>
-                  </div>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100">
+          <!-- Bagian Kiri (Pencarian & Filter) -->
+          <div class="d-flex align-items-center mb-2 mb-md-0">
+
+            <?php if ($isAdmin): ?>
+              <input type="hidden" id="idperusahaan" name="idperusahaan">
+              <div class="input-group input-group-sm mr-2" style="max-width: 250px;">
+                <input type="text" id="tampilperusahaan" class="form-control" placeholder="Cari nama perusahaan..">
+                <div class="input-group-append">
+                  <span class="input-group-text bg-light text-primary"><i class="fas fa-search"></i></span>
                 </div>
-              <?php endif; ?>
+              </div>
+            <?php endif; ?>
 
-              <!-- Tombol Trigger Filter -->
-              <button class="btn btn-sm btn-outline-primary shadow-sm" type="button" data-toggle="collapse" data-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
-                <i class="fas fa-filter"></i> Filter Data
-              </button>
-            </div>
+            <!-- Tombol Trigger Filter -->
+            <button class="btn btn-sm btn-outline-primary shadow-sm" type="button" data-toggle="collapse" data-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter">
+              <i class="fas fa-filter"></i> Filter Data
+            </button>
 
-            <!-- Tombol Aksi Kanan -->
-            <div class="w-100 w-md-auto text-md-right text-left mt-2 mt-md-0">
-              <?php if (!$isSupervisor): ?>
-                <?php
-                // Tentukan link berdasarkan limit hitJurnal
-                $link_delete = $allowEdit ? 'button' : site_url('histori');
-                $link_add    = $allowEdit ? site_url('jurnal/tambah') : site_url('histori');
-                ?>
+          </div>
 
-                <?php if ($allowEdit): ?>
-                  <button type="button" class="btn btn-sm btn-danger shadow-sm tooltips" id="btn-delete" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
-                    <i class="fa fa-trash"></i> Hapus
-                  </button>
-                <?php else: ?>
-                  <a href="<?= $link_delete ?>" class="btn btn-sm btn-danger shadow-sm tooltips" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
-                    <i class="fa fa-trash"></i> Hapus
-                  </a>
-                <?php endif; ?>
+          <!-- Bagian Kanan (Hapus & Tambah) -->
+          <div class="d-flex align-items-center">
+            <?php if (!$isSupervisor): ?>
+              <?php
+              // Tentukan link berdasarkan limit hitJurnal
+              $link_delete = $allowEdit ? 'button' : site_url('histori');
+              $link_add    = $allowEdit ? site_url('jurnal/tambah') : site_url('histori');
+              ?>
 
-                <a href="<?= $link_add ?>" class="btn btn-sm btn-success shadow-sm tooltips ml-1" data-toggle="tooltip" data-placement="top" title="Tambah Data Jurnal">
-                  <i class="fas fa-plus"></i> Tambah
+              <?php if ($allowEdit): ?>
+                <button type="button" class="btn btn-sm btn-danger shadow-sm tooltips" id="btn-delete" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
+                  <i class="fa fa-trash"></i> Hapus
+                </button>
+              <?php else: ?>
+                <a href="<?= $link_delete ?>" class="btn btn-sm btn-danger shadow-sm tooltips" data-toggle="tooltip" data-placement="top" title="Hapus Data Jurnal">
+                  <i class="fa fa-trash"></i> Hapus
                 </a>
               <?php endif; ?>
-            </div>
+
+              <a href="<?= $link_add ?>" class="btn btn-sm btn-success shadow-sm tooltips ml-2" data-toggle="tooltip" data-placement="top" title="Tambah Data Jurnal">
+                <i class="fas fa-plus"></i> Tambah
+              </a>
+            <?php endif; ?>
+          </div>
         </div>
 
         <!-- Area Filter (Collapsible agar rapi & hemat tempat) -->
         <div class="collapse mt-3" id="collapseFilter">
           <div class="card card-body bg-light border-0 shadow-sm p-3">
             <div class="row align-items-end">
-              
+
               <div class="col-md-2 col-sm-6 mb-2">
                 <label class="font-weight-bold text-muted small mb-1">Bulan</label>
                 <select class="form-control form-control-sm" name="bulan" id="bulan">
@@ -133,7 +135,7 @@ $list_bulan = [
                 </select>
               </div>
 
-              <!-- FILTER TGL INSERT (BARU) -->
+              <!-- FILTER TGL INSERT -->
               <div class="col-md-3 col-sm-12 mb-2">
                 <label class="font-weight-bold text-muted small mb-1">Tgl Input (Insert)</label>
                 <input type="date" class="form-control form-control-sm" id="tglinsert" name="tglinsert" title="Pilih tanggal input terbaru">
@@ -156,12 +158,13 @@ $list_bulan = [
             <thead style="background-color: #055F93; color: white;">
               <tr>
                 <th class="text-center" style="width: 3%;"><input type="checkbox" id="check-all"></th>
-                <th class="text-center" style="width: 13%;">Tgl Jurnal</th>
-                <th class="text-center" style="width: 13%;">No. Jurnal</th>
-                <th class="text-center" style="width: 13%;">Referensi</th>
+                <th class="text-center" style="width: 10%;">Tgl Jurnal</th>
+                <th class="text-center" style="width: 11%;">Tgl Input</th> <!-- KOLOM BARU -->
+                <th class="text-center" style="width: 12%;">No. Jurnal</th>
+                <th class="text-center" style="width: 11%;">Referensi</th>
                 <th class="text-center">Keterangan</th>
                 <th class="text-center" style="width: 10%;">Pembuat</th>
-                <th class="text-center" style="width: 14%;">Jumlah (Rp.)</th>
+                <th class="text-center" style="width: 13%;">Jumlah (Rp.)</th>
                 <th class="text-center" style="width: 5%;">Lamp</th>
                 <th class="text-center" style="width: 5%;">Opsi</th>
               </tr>
@@ -333,8 +336,6 @@ $list_bulan = [
           d.bulan = $('#bulan').val();
           d.status_approve = $('#status_approve').val();
           d.fiskal_objek = $('#fiskal_objek').val();
-          
-          // PENAMBAHAN DATA FILTER TGL INSERT
           d.tglinsert = $('#tglinsert').val();
         }
       },
@@ -344,27 +345,23 @@ $list_bulan = [
           "className": 'dt-body-center'
         },
         {
-          "targets": [1],
+          "targets": [1, 2, 3], // Tgl Jurnal, Tgl Input, No. Jurnal
           "className": 'dt-body-center'
         },
         {
-          "targets": [2],
-          "className": 'dt-body-center'
-        },
-        {
-          "targets": [5],
+          "targets": [7], // Jumlah (Rp.)
           "className": 'dt-body-right'
         },
         {
-          "targets": [6],
-          "orderable": false,
-          "className": 'dt-body-right'
-        },
-        {
-          "targets": [7],
+          "targets": [8], // Lamp
           "orderable": false,
           "className": 'dt-body-center'
         },
+        {
+          "targets": [9], // Opsi
+          "orderable": false,
+          "className": 'dt-body-center'
+        }
       ],
       "language": {
         "infoFiltered": ""
@@ -373,10 +370,10 @@ $list_bulan = [
 
     // 2. EVENT LISTENER KLIK BARIS (CHILD ROW JURNAL)
     $('#table tbody').on('click', 'td:not(:first-child):not(:last-child)', function(e) {
-      
+
       // CEK: Jika yang diklik adalah tombol copy, icon copy, atau teks "lihat semua", batalkan buka detail
       if ($(e.target).closest('.btn-copy-idjurnal, .toggle-text').length > 0) {
-        return; 
+        return;
       }
 
       var tr = $(this).closest('tr');
@@ -630,8 +627,7 @@ $list_bulan = [
       activeRow = tr;
 
       // ======================================================
-      // 1. Ekstrak data Akun, Debet, Kredit dari baris tabel
-      // Sesuai HTML controller yang di-generate:
+      // Ekstrak data Akun, Debet, Kredit dari baris tabel
       // td:eq(0) = Button Edit
       // td:eq(1) = Akun
       // td:eq(2) = Debet
@@ -645,7 +641,7 @@ $list_bulan = [
       $('#info_debet').text(debet || '0');
       $('#info_kredit').text(kredit || '0');
 
-      // 2. Set value form modal dengan data-*
+      // Set value form modal dengan data-*
       $('#edit_iddetailjurnal').val(tr.data('id'));
       $('#edit_objek').val(tr.data('objek'));
       $('#edit_objekpajak').val(tr.data('objekpajak'));
@@ -732,7 +728,6 @@ $list_bulan = [
             activeRow.find('.td-fiskal').html(textFiskal[valFiskal]);
             activeRow.find('.td-korpos').html(formatRupiah(valKorPos));
             activeRow.find('.td-korneg').html(formatRupiah(valKorNeg));
-            // Potong string menjadi maksimal 10 karakter jika lebih dari 10
             let shortKet = valKet.length > 10 ? valKet.substring(0, 10) + '...' : valKet;
             activeRow.find('.td-ket').text(shortKet);
 

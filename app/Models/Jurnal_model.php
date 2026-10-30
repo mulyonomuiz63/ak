@@ -94,9 +94,9 @@ class Jurnal_model extends Model
         }
         // =========================================================================================
 
-        if (!empty($_POST['idperusahaan'])) {
+        if (!empty($_POST['tglinsert'])) {
             // Memfilter data khusus di tanggal insert (mengabaikan jam)
-            $this->dt->where('DATE(tglinsert)', $_POST['idperusahaan']);
+            $this->builder->where("DATE(tglinsert) =", $_POST['tglinsert']);
         }
 
         $cari = isset($_POST['cari']) ? $_POST['cari'] : "";
