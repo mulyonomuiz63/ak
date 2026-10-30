@@ -51,13 +51,20 @@ class Jurnal_model extends Model
             }
         }
 
-        if ($_POST['status_approve'] != '2') {
-            if ($_POST['tahun'] != '') {
-                $this->builder->where('YEAR(tgljurnal)', $_POST['tahun']);
-            }
+        if (!empty($_POST['tglinsert'])) {
+            // Memfilter data khusus di tanggal insert (mengabaikan jam)
+            $this->builder->where("DATE(tglinsert) =", $_POST['tglinsert']);
+        }
+        
+        if (empty($_POST['tglinsert'])) {
+            if ($_POST['status_approve'] != '2') {
+                if ($_POST['tahun'] != '') {
+                    $this->builder->where('YEAR(tgljurnal)', $_POST['tahun']);
+                }
 
-            if ($_POST['bulan'] != '') {
-                $this->builder->where('MONTH(tgljurnal)', $_POST['bulan']);
+                if ($_POST['bulan'] != '') {
+                    $this->builder->where('MONTH(tgljurnal)', $_POST['bulan']);
+                }
             }
         }
 
@@ -93,11 +100,6 @@ class Jurnal_model extends Model
             $this->builder->where($subquery_fiskal, null, false);
         }
         // =========================================================================================
-
-        if (!empty($_POST['tglinsert'])) {
-            // Memfilter data khusus di tanggal insert (mengabaikan jam)
-            $this->builder->where("DATE(tglinsert) =", $_POST['tglinsert']);
-        }
 
         $cari = isset($_POST['cari']) ? $_POST['cari'] : "";
         if ($cari != "") {

@@ -429,9 +429,23 @@ $list_bulan = [
       e.preventDefault();
     });
 
-    $('#tahun, #bulan, #status_approve, #fiskal_objek, #tglinsert').on('change', function(e) {
-      t.draw();
-      e.preventDefault();
+    // 1. Ketika Bulan atau Tahun diubah -> Kosongkan Tgl Input (tglinsert) lalu refresh
+    $('#bulan, #tahun').on('change', function(e) {
+        $('#tglinsert').val(''); // Otomatis reset input tglinsert jadi kosong
+        t.draw();
+        e.preventDefault();
+    });
+
+    // 2. Ketika Tgl Input (tglinsert) diubah -> Refresh tabel
+    $('#tglinsert').on('change', function(e) {
+        t.draw();
+        e.preventDefault();
+    });
+
+    // 3. Ketika filter lainnya diubah
+    $('#status_approve, #fiskal_objek').on('change', function(e) {
+        t.draw();
+        e.preventDefault();
     });
 
     // Konfirmasi hapus satuan
