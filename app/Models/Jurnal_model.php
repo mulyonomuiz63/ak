@@ -55,7 +55,7 @@ class Jurnal_model extends Model
             // Memfilter data khusus di tanggal insert (mengabaikan jam)
             $this->builder->where("DATE(tglinsert) =", $_POST['tglinsert']);
         }
-        
+
         if (empty($_POST['tglinsert'])) {
             if ($_POST['status_approve'] != '2') {
                 if ($_POST['tahun'] != '') {
@@ -138,8 +138,12 @@ class Jurnal_model extends Model
             $this->builder->orderBy($subquery_balance, 'ASC', false);
 
             // Urutan selanjutnya baru berdasarkan tanggal terbaru
-            $this->builder->orderBy('tgljurnal', 'desc');
-            $this->builder->orderBy('tglinsert', 'desc');
+            if (empty($_POST['tglinsert'])) {
+                $this->builder->orderBy('tgljurnal', 'desc');
+                $this->builder->orderBy('tglinsert', 'desc');
+            } else {
+                $this->builder->orderBy('tglinsert', 'desc');
+            }
         }
     }
 
